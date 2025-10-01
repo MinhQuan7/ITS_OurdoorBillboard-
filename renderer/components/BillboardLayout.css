@@ -1,0 +1,81 @@
+/* BillboardLayout.css - Styles cho màn hình LED 384x384 */
+
+/* Container chính */
+.billboard-container {
+  width: 384px;
+  height: 384px;
+  display: flex;
+  flex-direction: column;
+  background-color: #000;
+  color: white;
+}
+
+/* Hàng trên (chứa 2 cột) */
+.top-row {
+  flex: 3; /* Chiếm 3/4 = 75% chiều cao */
+  display: flex;
+  flex-direction: row; /* Chia thành 2 cột ngang */
+}
+
+/* Cột trái (Weather Panel) */
+.left-column {
+  flex: 1; /* Chiếm 50% chiều rộng */
+  background-color: #1a1a2e;
+  padding: 10px;
+  border: 2px solid #ff0000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Cột phải (IoT Panel) */
+.right-column {
+  flex: 1; /* Chiếm 50% chiều rộng */
+  background-color: #16213e;
+  padding: 10px;
+  border: 2px solid #ff0000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Hàng dưới (Company Logo) */
+.bottom-row {
+  flex: 1; /* Chiếm 1/4 = 25% chiều cao */
+  background-color: #ff6b35;
+}
+
+/* Typography styles */
+.panel-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.temperature-large {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.info-text {
+  font-size: 12px;
+}
+
+.info-text-small {
+  font-size: 10px;
+  margin-top: 5px;
+}
+
+.sensor-value {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.status-badge {
+  font-size: 10px;
+  background-color: green;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-top: 5px;
+}

@@ -1,0 +1,6 @@
+1. Màn hình LED P5 outdoor kích thước 1.920mm x 1.920mm có độ phân giải là:
+384 x 384 pixels
++ Thời gian hoạt động 24/24
++ Thông tin hiển thị thông tin nhiệt độ, độ ẩm, thời tiết,... sẽ được chèn thay đổi và hình ảnh quảng cáo theo thời gian nhất định. 
+QC1|TT|QC2|TT|QC3|TT|QC4|TT|QC5|TT (trong đó "TT" là thông tin thời tiết, nhiệt độ, độ ẩm. "QC" là nội dung quảng cáo)
++ Thay đổi được hình nền thì tốt quá
