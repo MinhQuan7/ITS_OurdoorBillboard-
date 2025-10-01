@@ -1,23 +1,23 @@
-// app.js - JavaScript version đơn giản cho ngày đầu học
-// File này sẽ tạo layout cơ bản mà không cần React để dễ hiểu và test nhanh
+// app.js - Simple JavaScript version for initial learning
+// This file creates basic layout without React for easy understanding and quick testing
 
 document.addEventListener("DOMContentLoaded", function () {
   console.log("Billboard App started");
 
-  // Tạo layout chính
+  // Create main layout
   createBillboardLayout();
 
-  // Thêm sự kiện click để demo interaction
+  // Add click events to demo interaction
   addInteractiveFeatures();
 });
 
 /**
- * Tạo layout chính cho billboard 384x384
+ * Create main layout for 384x384 billboard
  */
 function createBillboardLayout() {
   const root = document.getElementById("root");
 
-  // Container chính
+  // Main container
   const container = document.createElement("div");
   container.className = "billboard-container";
   container.style.cssText = `
@@ -32,10 +32,10 @@ function createBillboardLayout() {
         padding: 0;
     `;
 
-  // Hàng trên (75% - chứa 2 cột)
+  // Top row (75% - contains 2 columns)
   const topRow = createTopRow();
 
-  // Hàng dưới (25% - Company logo)
+  // Bottom row (25% - Company logo)
   const bottomRow = createBottomRow();
 
   container.appendChild(topRow);
@@ -44,7 +44,7 @@ function createBillboardLayout() {
 }
 
 /**
- * Tạo hàng trên với 2 cột (Weather + IoT)
+ * Create top row with 2 columns (Weather + IoT)
  */
 function createTopRow() {
   const topRow = document.createElement("div");
@@ -54,10 +54,10 @@ function createTopRow() {
         flex-direction: row;
     `;
 
-  // Cột trái - Weather Panel
+  // Left column - Weather Panel
   const leftColumn = createWeatherPanel();
 
-  // Cột phải - IoT Panel
+  // Right column - IoT Panel
   const rightColumn = createIoTPanel();
 
   topRow.appendChild(leftColumn);
@@ -67,7 +67,7 @@ function createTopRow() {
 }
 
 /**
- * Tạo Weather Panel (cột trái)
+ * Create Weather Panel (left column)
  */
 function createWeatherPanel() {
   const weatherPanel = document.createElement("div");
@@ -97,7 +97,7 @@ function createWeatherPanel() {
 }
 
 /**
- * Tạo IoT Panel (cột phải)
+ * Create IoT Panel (right column)
  */
 function createIoTPanel() {
   const iotPanel = document.createElement("div");
@@ -129,7 +129,7 @@ function createIoTPanel() {
 }
 
 /**
- * Tạo hàng dưới với Company Logo
+ * Create bottom row with Company Logo
  */
 function createBottomRow() {
   const bottomRow = document.createElement("div");
@@ -197,10 +197,10 @@ function createBottomRow() {
 }
 
 /**
- * Thêm các tính năng tương tác để demo event handling
+ * Add interactive features to demo event handling
  */
 function addInteractiveFeatures() {
-  // Click event cho Weather Panel
+  // Click event for Weather Panel
   const weatherPanel = document.getElementById("weather-panel");
   weatherPanel.addEventListener("click", function () {
     console.log("Weather panel clicked!");
@@ -210,11 +210,11 @@ function addInteractiveFeatures() {
     weatherPanel.style.backgroundColor =
       currentBg === "rgb(26, 26, 46)" ? "#2a2a4e" : "#1a1a2e";
 
-    // Hiển thị alert message
+    // Show alert message
     showAlert("Weather data refreshed!");
   });
 
-  // Click event cho IoT Panel
+  // Click event for IoT Panel
   const iotPanel = document.getElementById("iot-panel");
   iotPanel.addEventListener("click", function () {
     console.log("IoT panel clicked!");
@@ -224,11 +224,11 @@ function addInteractiveFeatures() {
     iotPanel.style.backgroundColor =
       currentBg === "rgb(22, 33, 62)" ? "#323e6e" : "#16213e";
 
-    // Update random data để demo
+    // Update random data for demo
     updateIoTData();
   });
 
-  // Click event cho Company Logo
+  // Click event for Company Logo
   const companyLogo = document.getElementById("company-logo");
   companyLogo.addEventListener("click", function () {
     console.log("Company logo clicked!");
@@ -262,7 +262,7 @@ function addInteractiveFeatures() {
 }
 
 /**
- * Hiển thị alert message tạm thời
+ * Show temporary alert message
  */
 function showAlert(message) {
   const alertDiv = document.createElement("div");
@@ -282,14 +282,14 @@ function showAlert(message) {
 
   document.body.appendChild(alertDiv);
 
-  // Tự động xóa sau 2 giây
+  // Auto remove after 2 seconds
   setTimeout(() => {
     document.body.removeChild(alertDiv);
   }, 2000);
 }
 
 /**
- * Update IoT data với random values
+ * Update IoT data with random values
  */
 function updateIoTData() {
   const iotPanel = document.getElementById("iot-panel");
@@ -319,7 +319,7 @@ function refreshAllData() {
   showAlert("All data refreshed!");
 }
 
-// Export functions để có thể sử dụng trong console để test
+// Export functions to be able to use in console for testing
 window.billboardApp = {
   updateIoTData,
   refreshAllData,

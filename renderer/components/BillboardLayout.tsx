@@ -1,20 +1,20 @@
-// BillboardLayout.tsx - Layout chính cho màn hình LED 384x384
+// BillboardLayout.tsx - Main layout for 384x384 LED screen
 import React from "react";
 import CompanyLogo from "./CompanyLogo";
 import "./BillboardLayout.css";
 
 /**
  * BillboardLayout Component
- * Chia layout thành 3 khu vực:
- * - Hàng trên: 2 cột (Weather + IoT) - chiếm 75% chiều cao
- * - Hàng dưới: Company Logo - chiếm 25% chiều cao
+ * Divides layout into 3 areas:
+ * - Top row: 2 columns (Weather + IoT) - takes 75% height
+ * - Bottom row: Company Logo - takes 25% height
  */
 const BillboardLayout: React.FC = () => {
   return (
     <div className="billboard-container">
-      {/* Hàng trên: 2 cột */}
+      {/* Top row: 2 columns */}
       <div className="top-row">
-        {/* Cột trái: Weather Panel */}
+        {/* Left column: Weather Panel */}
         <div className="left-column">
           <h3 className="panel-title">TP. THỪA THIÊN HUẾ</h3>
           <div className="temperature-large">24,2°</div>
@@ -23,7 +23,7 @@ const BillboardLayout: React.FC = () => {
           <div className="info-text-small">Chất lượng không khí: Tốt</div>
         </div>
 
-        {/* Cột phải: IoT Panel */}
+        {/* Right column: IoT Panel */}
         <div className="right-column">
           <h3 className="panel-title">THIẾT BỊ ĐO</h3>
           <div className="sensor-value">Nhiệt độ: 24,0°</div>
@@ -34,7 +34,7 @@ const BillboardLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Hàng dưới: Company Logo */}
+      {/* Bottom row: Company Logo */}
       <div className="bottom-row">
         <CompanyLogo />
       </div>

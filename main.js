@@ -1,58 +1,58 @@
 // main.js - Electron Main Process
-// Quản lý cửa sổ chính và lifecycle của ứng dụng
+// Manages main window and application lifecycle
 
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
+const { app, BrowserWindow } = require("electron");
+const path = require("path");
 
-// Biến global để lưu reference của cửa sổ chính
+// Global variable to store main window reference
 let mainWindow;
 
 /**
- * Tạo cửa sổ chính của ứng dụng
- * Kích thước cố định: 384x384 pixels (tương ứng với màn hình LED)
+ * Create main application window
+ * Fixed size: 384x384 pixels (corresponding to LED screen)
  */
 function createWindow() {
-  // Tạo cửa sổ với cấu hình cho màn hình LED outdoor
+  // Create window with configuration for outdoor LED screen
   mainWindow = new BrowserWindow({
-    width: 384,           // Chiều rộng cố định
-    height: 384,          // Chiều cao cố định  
-    frame: false,         // Không viền window (fullscreen appearance)
-    resizable: false,     // Không cho phép thay đổi kích thước
-    alwaysOnTop: true,    // Luôn hiển thị trên cùng
+    width: 384, // Fixed width
+    height: 384, // Fixed height
+    frame: false, // No window border (fullscreen appearance)
+    resizable: false, // Don't allow resize
+    alwaysOnTop: true, // Always display on top
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true
+      enableRemoteModule: true,
     },
-    icon: path.join(__dirname, 'assets/icon.png') // Icon ứng dụng (tùy chọn)
+    icon: path.join(__dirname, "assets/icon.png"), // Application icon (optional)
   });
 
-  // Load file HTML chính
-  mainWindow.loadFile('renderer/index.html');
+  // Load main HTML file
+  mainWindow.loadFile("renderer/index.html");
 
-  // Bật DevTools cho development (có thể tắt ở production)
-  if (process.argv.includes('--dev')) {
+  // Enable DevTools for development (can be disabled in production)
+  if (process.argv.includes("--dev")) {
     mainWindow.webContents.openDevTools();
   }
 
-  // Xử lý khi cửa sổ bị đóng
-  mainWindow.on('closed', () => {
+  // Handle when window is closed
+  mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
 
-// Khởi chạy ứng dụng khi Electron sẵn sàng
+// Launch application when Electron is ready
 app.whenReady().then(createWindow);
 
-// Thoát ứng dụng khi tất cả cửa sổ đóng (trừ macOS)
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+// Quit application when all windows are closed (except macOS)
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
-// Tạo lại cửa sổ khi click vào dock (macOS)
-app.on('activate', () => {
+// Recreate window when clicking dock icon (macOS)
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }

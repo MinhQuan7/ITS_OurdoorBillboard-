@@ -1,24 +1,24 @@
-// CompanyLogo.tsx - Component hiển thị logo công ty
+// CompanyLogo.tsx - Component for displaying company logo
 import React from "react";
 
 /**
  * CompanyLogo Component
- * Hiển thị logo và thông tin công ty ở khu vực dưới cùng
- * Kích thước: 384px width x 96px height (1/4 của tổng chiều cao)
+ * Displays logo and company information in the bottom area
+ * Size: 384px width x 96px height (1/4 of total height)
  */
 const CompanyLogo: React.FC = () => {
-  // Style cho container chính của logo
+  // Style for main logo container
   const logoContainerStyle: React.CSSProperties = {
     width: "100%",
     height: "100%",
-    backgroundColor: "#ff6b35", // Màu cam như trong ảnh mẫu
+    backgroundColor: "#ff6b35", // Orange color as in sample image
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: "8px",
   };
 
-  // Style cho logo 'C'
+  // Style for logo 'C'
   const logoCircleStyle: React.CSSProperties = {
     width: "60px",
     height: "60px",
@@ -33,14 +33,14 @@ const CompanyLogo: React.FC = () => {
     color: "#ff6b35",
   };
 
-  // Style cho text container
+  // Style for text container
   const textContainerStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
     color: "white",
   };
 
-  // Style cho text chính
+  // Style for main text
   const mainTextStyle: React.CSSProperties = {
     fontSize: "18px",
     fontWeight: "bold",
@@ -48,7 +48,7 @@ const CompanyLogo: React.FC = () => {
     margin: 0,
   };
 
-  // Style cho sub text
+  // Style for sub text
   const subTextStyle: React.CSSProperties = {
     fontSize: "12px",
     lineHeight: "1.2",
@@ -58,7 +58,7 @@ const CompanyLogo: React.FC = () => {
 
   return (
     <div style={logoContainerStyle}>
-      {/* Logo Circle với chữ 'C' */}
+      {/* Logo Circle with letter 'C' */}
       <div style={logoCircleStyle}>C</div>
 
       {/* Text Container */}

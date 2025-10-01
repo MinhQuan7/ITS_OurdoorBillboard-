@@ -1,13 +1,13 @@
-// App.tsx - Component chính của ứng dụng
+// App.tsx - Main component of the application
 import React from "react";
 import BillboardLayout from "./components/BillboardLayout";
 
 /**
- * App Component - Root component của ứng dụng
- * Kích thước cố định: 384x384 pixels tương ứng với màn hình LED
+ * App Component - Root component of the application
+ * Fixed size: 384x384 pixels corresponding to LED screen
  */
 const App: React.FC = () => {
-  // Style cho container chính
+  // Style for main container
   const appStyle: React.CSSProperties = {
     width: "384px",
     height: "384px",

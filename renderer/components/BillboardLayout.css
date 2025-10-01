@@ -1,6 +1,6 @@
-/* BillboardLayout.css - Styles cho màn hình LED 384x384 */
+/* BillboardLayout.css - Styles for 384x384 LED screen */
 
-/* Container chính */
+/* Main container */
 .billboard-container {
   width: 384px;
   height: 384px;
@@ -10,16 +10,16 @@
   color: white;
 }
 
-/* Hàng trên (chứa 2 cột) */
+/* Top row (contains 2 columns) */
 .top-row {
-  flex: 3; /* Chiếm 3/4 = 75% chiều cao */
+  flex: 3; /* Takes 3/4 = 75% height */
   display: flex;
-  flex-direction: row; /* Chia thành 2 cột ngang */
+  flex-direction: row; /* Split into 2 horizontal columns */
 }
 
-/* Cột trái (Weather Panel) */
+/* Left column (Weather Panel) */
 .left-column {
-  flex: 1; /* Chiếm 50% chiều rộng */
+  flex: 1; /* Takes 50% width */
   background-color: #1a1a2e;
   padding: 10px;
   border: 2px solid #ff0000;
@@ -29,9 +29,9 @@
   align-items: center;
 }
 
-/* Cột phải (IoT Panel) */
+/* Right column (IoT Panel) */
 .right-column {
-  flex: 1; /* Chiếm 50% chiều rộng */
+  flex: 1; /* Takes 50% width */
   background-color: #16213e;
   padding: 10px;
   border: 2px solid #ff0000;
@@ -41,9 +41,9 @@
   align-items: center;
 }
 
-/* Hàng dưới (Company Logo) */
+/* Bottom row (Company Logo) */
 .bottom-row {
-  flex: 1; /* Chiếm 1/4 = 25% chiều cao */
+  flex: 1; /* Takes 1/4 = 25% height */
   background-color: #ff6b35;
 }
 
