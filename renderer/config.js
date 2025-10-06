@@ -337,9 +337,22 @@ function addScheduleRule() {
 }
 
 async function saveAndApply() {
+  console.log("Saving configuration...", configManager.config);
   await configManager.saveConfiguration();
-  // Apply configuration to main billboard display
-  console.log("Configuration applied");
+
+  // Show success message
+  configManager.showNotification(
+    "Configuration saved and applied successfully!",
+    "success"
+  );
+
+  // Log current config for debugging
+  console.log("Configuration applied:", configManager.config);
+
+  // Optional: Close config window after save (uncomment if desired)
+  // setTimeout(() => {
+  //   exitConfig();
+  // }, 1000);
 }
 
 async function exitConfig() {

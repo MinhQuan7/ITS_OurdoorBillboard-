@@ -1,73 +1,175 @@
-// CompanyLogo.tsx - Component for displaying company logo
-import React from "react";
+// CompanyLogo.tsx - Component for displaying company logo with config support
+import React, { useState, useEffect } from "react";
+import "./CompanyLogo.css";
+
+interface LogoConfig {
+  logoMode: "fixed" | "loop" | "scheduled";
+  logoImages: Array<{
+    name: string;
+    path: string;
+    size: number;
+    type: string;
+  }>;
+  logoLoopDuration: number;
+  schedules: Array<{
+    time: string;
+    logoIndex: number;
+    days: string;
+  }>;
+}
 
 /**
  * CompanyLogo Component
- * Displays logo and company information in the bottom area
+ * Displays logo based on configuration with support for:
+ * - Fixed single logo
+ * - Loop multiple logos
+ * - Scheduled display
  * Size: 384px width x 96px height (1/4 of total height)
  */
 const CompanyLogo: React.FC = () => {
-  // Style for main logo container
-  const logoContainerStyle: React.CSSProperties = {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#ff6b35", // Orange color as in sample image
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "8px",
+  const [config, setConfig] = useState<LogoConfig | null>(null);
+  const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load configuration on mount
+  useEffect(() => {
+    loadConfig();
+
+    // Listen for config updates
+    if (window.electronAPI) {
+      window.electronAPI.onConfigUpdated(
+        (_event: any, updatedConfig: LogoConfig) => {
+          console.log("Logo config updated:", updatedConfig);
+          setConfig(updatedConfig);
+        }
+      );
+    }
+
+    return () => {
+      if (window.electronAPI) {
+        window.electronAPI.removeConfigListener();
+      }
+    };
+  }, []);
+
+  // Setup logo rotation for loop mode
+  useEffect(() => {
+    if (
+      !config ||
+      config.logoMode !== "loop" ||
+      config.logoImages.length <= 1
+    ) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentLogoIndex((prev) => (prev + 1) % config.logoImages.length);
+    }, config.logoLoopDuration * 1000);
+
+    return () => clearInterval(interval);
+  }, [config]);
+
+  const loadConfig = async () => {
+    try {
+      if (window.electronAPI) {
+        const savedConfig = await window.electronAPI.getConfig();
+        console.log("Loaded logo config:", savedConfig);
+        setConfig(savedConfig);
+      }
+    } catch (error) {
+      console.error("Error loading logo config:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Style for logo 'C'
-  const logoCircleStyle: React.CSSProperties = {
-    width: "60px",
-    height: "60px",
-    borderRadius: "50%",
-    backgroundColor: "white",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: "12px",
-    fontSize: "36px",
-    fontWeight: "bold",
-    color: "#ff6b35",
+  // Get current logo to display based on mode
+  const getCurrentLogo = () => {
+    if (!config || config.logoImages.length === 0) {
+      return null;
+    }
+
+    switch (config.logoMode) {
+      case "fixed":
+        return config.logoImages[0];
+
+      case "loop":
+        return config.logoImages[currentLogoIndex];
+
+      case "scheduled":
+        // Find current scheduled logo based on time
+        const now = new Date();
+        const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now
+          .getMinutes()
+          .toString()
+          .padStart(2, "0")}`;
+
+        const activeSchedule = config.schedules.find((schedule) => {
+          return (
+            schedule.time <= currentTime &&
+            schedule.logoIndex < config.logoImages.length
+          );
+        });
+
+        return activeSchedule
+          ? config.logoImages[activeSchedule.logoIndex]
+          : config.logoImages[0];
+
+      default:
+        return config.logoImages[0];
+    }
   };
 
-  // Style for text container
-  const textContainerStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    color: "white",
-  };
-
-  // Style for main text
-  const mainTextStyle: React.CSSProperties = {
-    fontSize: "18px",
-    fontWeight: "bold",
-    lineHeight: "1.2",
-    margin: 0,
-  };
-
-  // Style for sub text
-  const subTextStyle: React.CSSProperties = {
-    fontSize: "12px",
-    lineHeight: "1.2",
-    margin: 0,
-    opacity: 0.9,
-  };
-
-  return (
-    <div style={logoContainerStyle}>
-      {/* Logo Circle with letter 'C' */}
-      <div style={logoCircleStyle}>C</div>
-
-      {/* Text Container */}
-      <div style={textContainerStyle}>
-        <div style={mainTextStyle}>CÔNG TY</div>
-        <div style={subTextStyle}>VÌ CUỘC SỐNG TỐT ĐẸP HƠN</div>
+  // Render default fallback when no config or loading
+  const renderDefaultLogo = () => (
+    <div className="logo-container">
+      <div className="logo-circle">C</div>
+      <div className="logo-text-container">
+        <div className="logo-main-text">CÔNG TY</div>
+        <div className="logo-sub-text">VÌ CUỘC SỐNG TỐT ĐẸP HƠN</div>
       </div>
     </div>
   );
+
+  // Render configured logo
+  const renderConfiguredLogo = (logo: any) => (
+    <div className="logo-container">
+      <div className="logo-image-container">
+        <img
+          src={logo.path}
+          alt={logo.name}
+          className="logo-image"
+          onError={(e) => {
+            console.error("Logo image failed to load:", logo.path);
+            // Fallback to default logo on error
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+      </div>
+      {config?.logoMode === "loop" && config.logoImages.length > 1 && (
+        <div className="logo-indicator">
+          {currentLogoIndex + 1} / {config.logoImages.length}
+        </div>
+      )}
+    </div>
+  );
+
+  // All styles are now in CompanyLogo.css
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="logo-container loading">
+        <div className="logo-loading">Loading...</div>
+      </div>
+    );
+  }
+
+  // Get current logo to display
+  const currentLogo = getCurrentLogo();
+
+  // Render appropriate logo
+  return currentLogo ? renderConfiguredLogo(currentLogo) : renderDefaultLogo();
 };
 
 export default CompanyLogo;

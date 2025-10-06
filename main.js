@@ -22,10 +22,10 @@ function createMainWindow() {
     alwaysOnTop: true,
     show: false, // Don't show initially
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
-      preload: path.join(__dirname, "preload.js")
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      preload: path.join(__dirname, "preload.js"),
     },
     icon: path.join(__dirname, "assets/icon.png"),
   });
@@ -60,10 +60,10 @@ function createConfigWindow() {
     resizable: true,
     show: false,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
-      preload: path.join(__dirname, "preload.js")
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      preload: path.join(__dirname, "preload.js"),
     },
     icon: path.join(__dirname, "assets/icon.png"),
   });
@@ -91,7 +91,7 @@ function createConfigWindow() {
  */
 function toggleConfigMode() {
   console.log("F1 pressed - Toggling config mode");
-  
+
   if (!isConfigMode) {
     // Enter config mode
     isConfigMode = true;
@@ -107,12 +107,12 @@ function toggleConfigMode() {
 // Launch application when Electron is ready
 app.whenReady().then(() => {
   createMainWindow();
-  
+
   // Register global F1 shortcut for config mode
-  globalShortcut.register('F1', () => {
+  globalShortcut.register("F1", () => {
     toggleConfigMode();
   });
-  
+
   console.log("Billboard app started - Press F1 for config mode");
 });
 
@@ -136,22 +136,22 @@ app.on("will-quit", () => {
 });
 
 // IPC handlers for config communication
-const fs = require('fs');
-const { dialog } = require('electron');
+const fs = require("fs");
+const { dialog } = require("electron");
 
 // Configuration file path
-const configPath = path.join(__dirname, 'config.json');
+const configPath = path.join(__dirname, "config.json");
 
 ipcMain.handle("get-config", async () => {
   try {
     if (fs.existsSync(configPath)) {
-      const configData = fs.readFileSync(configPath, 'utf8');
+      const configData = fs.readFileSync(configPath, "utf8");
       return JSON.parse(configData);
     }
   } catch (error) {
-    console.error('Error loading config:', error);
+    console.error("Error loading config:", error);
   }
-  
+
   // Return default configuration
   return {
     logoMode: "fixed",
@@ -160,9 +160,9 @@ ipcMain.handle("get-config", async () => {
     layoutPositions: {
       weather: { x: 0, y: 0, width: 192, height: 288 },
       iot: { x: 192, y: 0, width: 192, height: 288 },
-      logo: { x: 0, y: 288, width: 384, height: 96 }
+      logo: { x: 0, y: 288, width: 384, height: 96 },
     },
-    schedules: []
+    schedules: [],
   };
 });
 
@@ -170,12 +170,12 @@ ipcMain.handle("save-config", async (event, config) => {
   try {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log("Configuration saved successfully");
-    
+
     // Send config update to main window if it exists
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('config-updated', config);
+      mainWindow.webContents.send("config-updated", config);
     }
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error saving config:", error);
@@ -192,19 +192,19 @@ ipcMain.handle("exit-config", async () => {
 ipcMain.handle("select-logo-files", async () => {
   try {
     const result = await dialog.showOpenDialog(configWindow, {
-      title: 'Select Logo Images',
+      title: "Select Logo Images",
       filters: [
-        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'svg', 'gif'] }
+        { name: "Images", extensions: ["png", "jpg", "jpeg", "svg", "gif"] },
       ],
-      properties: ['openFile', 'multiSelections']
+      properties: ["openFile", "multiSelections"],
     });
-    
+
     if (!result.canceled) {
       return result.filePaths;
     }
     return [];
   } catch (error) {
-    console.error('Error selecting files:', error);
+    console.error("Error selecting files:", error);
     return [];
   }
 });

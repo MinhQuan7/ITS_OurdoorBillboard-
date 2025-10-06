@@ -1,0 +1,33 @@
+{
+  "logoMode": "fixed",
+  "logoImages": [
+    {
+      "name": "addSymbol_IndustrialDashboard.png",
+      "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\addSymbol_IndustrialDashboard.png",
+      "size": 0,
+      "type": "image/*"
+    }
+  ],
+  "logoLoopDuration": 5,
+  "layoutPositions": {
+    "weather": {
+      "x": 0,
+      "y": 0,
+      "width": 192,
+      "height": 288
+    },
+    "iot": {
+      "x": 192,
+      "y": 0,
+      "width": 192,
+      "height": 288
+    },
+    "logo": {
+      "x": 0,
+      "y": 288,
+      "width": 384,
+      "height": 96
+    }
+  },
+  "schedules": []
+}
