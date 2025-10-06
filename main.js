@@ -26,11 +26,22 @@ function createMainWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       preload: path.join(__dirname, "preload.js"),
+      devTools: process.argv.includes("--dev"),
     },
     icon: path.join(__dirname, "assets/icon.png"),
   });
 
   mainWindow.loadFile("renderer/index.html");
+
+  // Forward console logs to main process in dev mode
+  if (process.argv.includes("--dev")) {
+    mainWindow.webContents.on(
+      "console-message",
+      (event, level, message, line, sourceId) => {
+        console.log(`[Renderer] ${message}`);
+      }
+    );
+  }
 
   mainWindow.once("ready-to-show", () => {
     if (!isConfigMode) {

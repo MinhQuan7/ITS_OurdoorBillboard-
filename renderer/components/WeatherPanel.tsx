@@ -13,8 +13,89 @@ interface WeatherPanelProps {
   className?: string;
 }
 
-// Global weather service instance to prevent recreation
-let globalWeatherService: WeatherService | null = null;
+// Global weather service instance
+class GlobalWeatherServiceManager {
+  private static instance: WeatherService | null = null;
+  private static subscribers: Set<(data: WeatherData | null) => void> =
+    new Set();
+
+  public static getInstance(): WeatherService {
+    if (!GlobalWeatherServiceManager.instance) {
+      const weatherConfig: WeatherConfig = {
+        location: {
+          lat: 16.4637, // Huế coordinates
+          lon: 107.5909,
+          city: "TP. THỪA THIÊN HUẾ",
+        },
+        updateInterval: 10, // Update every 10 minutes
+        retryInterval: 3, // Retry every 3 minutes on failure
+        maxRetries: 5, // More retries for reliability
+      };
+
+      try {
+        console.log(
+          "WeatherServiceManager: Creating weather service for",
+          weatherConfig.location.city
+        );
+        console.log(
+          "WeatherServiceManager: WeatherService constructor available:",
+          typeof WeatherService
+        );
+        GlobalWeatherServiceManager.instance = new WeatherService(
+          weatherConfig
+        );
+        console.log(
+          "WeatherServiceManager: Weather service created successfully"
+        );
+      } catch (error) {
+        console.error(
+          "WeatherServiceManager: Failed to create weather service:",
+          error
+        );
+        throw error;
+      }
+
+      // Set up data change notifications - check more frequently
+      setInterval(() => {
+        const data =
+          GlobalWeatherServiceManager.instance?.getCurrentWeather() || null;
+        GlobalWeatherServiceManager.notifySubscribers(data);
+      }, 10000); // Check for updates every 10 seconds
+    }
+
+    return GlobalWeatherServiceManager.instance;
+  }
+
+  public static subscribe(
+    callback: (data: WeatherData | null) => void
+  ): () => void {
+    console.log("WeatherServiceManager: Subscribe called");
+    GlobalWeatherServiceManager.subscribers.add(callback);
+
+    // Get or create instance first
+    console.log("WeatherServiceManager: Getting instance...");
+    const instance = GlobalWeatherServiceManager.getInstance();
+
+    // Immediately provide current data
+    const currentData = instance?.getCurrentWeather() || null;
+    console.log(
+      "WeatherServiceManager: Current data available:",
+      !!currentData
+    );
+    callback(currentData);
+
+    // Return unsubscribe function
+    return () => {
+      GlobalWeatherServiceManager.subscribers.delete(callback);
+    };
+  }
+
+  private static notifySubscribers(data: WeatherData | null): void {
+    GlobalWeatherServiceManager.subscribers.forEach((callback) =>
+      callback(data)
+    );
+  }
+}
 
 const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
@@ -22,65 +103,42 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
   const [connectionStatus, setConnectionStatus] = useState<
     "connected" | "error" | "offline"
   >("offline");
-  const [weatherService, setWeatherService] = useState<WeatherService | null>(
-    null
-  );
-
-  // Weather service configuration for Thừa Thiên Huế
-  const weatherConfig: WeatherConfig = {
-    location: {
-      lat: 16.4637, // Huế coordinates
-      lon: 107.5909,
-      city: "TP. THỪA THIÊN HUẾ",
-    },
-    updateInterval: 15, // Update every 15 minutes
-    retryInterval: 5, // Retry every 5 minutes on failure
-    maxRetries: 3,
-  };
+  const [lastClickTime, setLastClickTime] = useState<number>(0);
 
   useEffect(() => {
-    // Use existing global service or create new one
-    if (!globalWeatherService) {
-      console.log("WeatherPanel: Creating new global weather service");
-      globalWeatherService = new WeatherService(weatherConfig);
-    } else {
-      console.log("WeatherPanel: Reusing existing global weather service");
-    }
-    
-    setWeatherService(globalWeatherService);
+    console.log("WeatherPanel: Initializing weather panel");
 
-    // Set up polling for weather data
-    const pollWeatherData = () => {
-      const data = globalWeatherService!.getCurrentWeather();
-      const status = globalWeatherService!.getStatus();
+    // Subscribe to global weather service
+    const unsubscribe = GlobalWeatherServiceManager.subscribe((data) => {
+      console.log(
+        "WeatherPanel: Subscription callback called with data:",
+        !!data
+      );
 
       if (data) {
         setWeatherData(data);
         setConnectionStatus("connected");
         setIsLoading(false);
-        console.log("WeatherPanel: Updated weather data:", {
+        console.log("WeatherPanel: Weather data updated:", {
+          city: data.cityName,
           temp: data.temperature,
           humidity: data.humidity,
-          lastUpdated: data.lastUpdated.toLocaleTimeString()
+          condition: data.weatherCondition,
+          lastUpdated: data.lastUpdated.toLocaleTimeString(),
         });
       } else {
-        setConnectionStatus("error");
-        console.log("WeatherPanel: No weather data available");
+        console.log(
+          "WeatherPanel: No weather data, keeping loading state or showing error"
+        );
+        if (!isLoading) {
+          setConnectionStatus("error");
+        }
       }
-    };
+    });
 
-    // Initial poll
-    pollWeatherData();
-
-    // Poll every 30 seconds to update UI
-    const pollInterval = setInterval(pollWeatherData, 30000);
-
-    // Cleanup on unmount - Don't destroy global service
-    return () => {
-      clearInterval(pollInterval);
-      // Keep global service running for other components
-    };
-  }, []);
+    // Cleanup subscription on unmount
+    return unsubscribe;
+  }, [isLoading]);
 
   // Format UV Index level
   const getUVLevel = (uvIndex: number): string => {
@@ -117,28 +175,38 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
     }
   };
 
-  // Handle manual refresh - Only refresh if data is stale (older than 5 minutes)
+  // Handle manual refresh with click throttling
   const handleRefresh = async () => {
-    if (weatherService && weatherData) {
-      const now = new Date();
-      const dataAge = now.getTime() - weatherData.lastUpdated.getTime();
-      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
-      
-      // Only refresh if data is older than 5 minutes
-      if (dataAge > fiveMinutes) {
-        console.log("WeatherPanel: Data is stale, refreshing...");
-        setIsLoading(true);
-        await weatherService.refreshWeatherData();
-        
-        // Update UI with new data
-        const newData = weatherService.getCurrentWeather();
-        if (newData) {
-          setWeatherData(newData);
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTime;
+
+    // Prevent rapid clicking (throttle to 2 seconds)
+    if (timeSinceLastClick < 2000) {
+      console.log("WeatherPanel: Click throttled");
+      return;
+    }
+
+    setLastClickTime(now);
+    console.log("WeatherPanel: Manual refresh requested");
+
+    try {
+      setIsLoading(true);
+      const weatherService = GlobalWeatherServiceManager.getInstance();
+      await weatherService.refreshWeatherData();
+
+      // Give some time for the service to update
+      setTimeout(() => {
+        const updatedData = weatherService.getCurrentWeather();
+        if (updatedData) {
+          setWeatherData(updatedData);
+          setConnectionStatus("connected");
         }
         setIsLoading(false);
-      } else {
-        console.log("WeatherPanel: Data is fresh, no refresh needed");
-      }
+      }, 1000);
+    } catch (error) {
+      console.error("WeatherPanel: Manual refresh failed:", error);
+      setConnectionStatus("error");
+      setIsLoading(false);
     }
   };
 
@@ -283,7 +351,7 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
         })}
         {/* Debug info - can be removed in production */}
         <span className="debug-info">
-          ({connectionStatus === 'connected' ? 'API' : 'Cache'})
+          ({connectionStatus === "connected" ? "API" : "Cache"})
         </span>
       </div>
 

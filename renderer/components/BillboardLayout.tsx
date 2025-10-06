@@ -1,7 +1,6 @@
 // BillboardLayout.tsx - Main layout for 384x384 LED screen
 import React from "react";
-// Temporarily disabled debug component for production
-// import WeatherDebug from "./WeatherDebug";
+import WeatherPanel from "./WeatherPanel";
 import CompanyLogo from "./CompanyLogo";
 import "./BillboardLayout.css";
 

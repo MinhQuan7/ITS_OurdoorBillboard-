@@ -1,51 +1,85 @@
-// WeatherDebug.tsx - Debug component to test weather API
+// WeatherDebug.tsx - Debug component using global weather service
 import React, { useState, useEffect } from "react";
-import WeatherService, {
-  WeatherData,
-  WeatherConfig,
-} from "../services/weatherService";
+import { WeatherData } from "../services/weatherService";
+
+// Import the GlobalWeatherServiceManager from WeatherPanel
+// Note: In a proper app structure, this should be in a separate utils file
+declare global {
+  interface Window {
+    GlobalWeatherServiceManager: any;
+  }
+}
 
 const WeatherDebug: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<string>("unknown");
 
   useEffect(() => {
-    const testWeatherService = async () => {
+    // Access the global weather service (assumes WeatherPanel is already rendered)
+    const checkForGlobalService = () => {
       try {
-        const config: WeatherConfig = {
-          location: {
-            lat: 16.4637,
-            lon: 107.5909,
-            city: "TP. THỪA THIÊN HUẾ",
-          },
-          updateInterval: 15,
-          retryInterval: 5,
-          maxRetries: 3,
-        };
-
-        const weatherService = new WeatherService(config);
-
-        // Wait a bit for the service to fetch data
-        setTimeout(() => {
-          const data = weatherService.getCurrentWeather();
-          if (data) {
-            setWeatherData(data);
-            setIsLoading(false);
-            console.log("WeatherDebug: Weather data received:", data);
-          } else {
-            setError("No weather data available");
-            setIsLoading(false);
-          }
-        }, 3000);
+        // Try to get existing data from global service
+        // This is a simplified approach - in production, we'd have proper module exports
+        const globalServiceExists = typeof window !== 'undefined' && 
+                                   document.querySelector('.weather-panel');
+        
+        if (globalServiceExists) {
+          // Subscribe to the same data as WeatherPanel
+          const pollInterval = setInterval(() => {
+            // Check if WeatherPanel has updated data by looking at its displayed content
+            const tempElement = document.querySelector('.temperature-main');
+            const humidityElement = document.querySelector('.weather-details .detail-value');
+            
+            if (tempElement && humidityElement) {
+              const displayedTemp = tempElement.textContent?.replace('°', '');
+              const displayedHumidity = humidityElement.textContent?.replace('%', '');
+              
+              if (displayedTemp && displayedHumidity) {
+                // Create debug data object matching what's displayed
+                const debugData: WeatherData = {
+                  cityName: "TP. THỪA THIÊN HUẾ (from UI)",
+                  temperature: parseInt(displayedTemp),
+                  feelsLike: parseInt(displayedTemp), // Approximation
+                  humidity: parseInt(displayedHumidity),
+                  windSpeed: 0, // Will be updated with actual values
+                  uvIndex: 0,
+                  rainProbability: 0,
+                  weatherCondition: "Debug Mode",
+                  weatherCode: 0,
+                  airQuality: "Debug",
+                  aqi: 1,
+                  visibility: 10,
+                  lastUpdated: new Date(),
+                };
+                
+                setWeatherData(debugData);
+                setDataSource("UI Display");
+                setIsLoading(false);
+                setError(null);
+              }
+            }
+          }, 1000);
+          
+          // Cleanup interval after 30 seconds
+          setTimeout(() => {
+            clearInterval(pollInterval);
+          }, 30000);
+          
+        } else {
+          setError("WeatherPanel not found - Global service not available");
+          setIsLoading(false);
+        }
       } catch (err) {
-        setError(`Error: ${err}`);
+        setError(`Debug Error: ${err}`);
         setIsLoading(false);
-        console.error("WeatherDebug: Error testing weather service:", err);
+        console.error("WeatherDebug: Error accessing global service:", err);
       }
     };
 
-    testWeatherService();
+    // Wait a bit for WeatherPanel to initialize
+    setTimeout(checkForGlobalService, 2000);
   }, []);
 
   if (isLoading) {

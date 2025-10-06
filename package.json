@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --dev",
+    "dev": "npm run build:renderer && electron . --dev",
+    "build:renderer": "tsc && node build-renderer.js",
     "restart": "taskkill /f /im electron.exe 2>nul & timeout /t 2 & npm run dev",
     "kill": "taskkill /f /im electron.exe 2>nul",
     "clean-start": "taskkill /f /im electron.exe 2>nul & taskkill /f /im node.exe 2>nul & timeout /t 2 & npm run dev",
