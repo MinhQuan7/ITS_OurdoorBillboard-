@@ -13,6 +13,8 @@ export interface WeatherData {
   airQuality: string;
   aqi: number;
   visibility: number;
+  pm25: number;
+  pm10: number;
   lastUpdated: Date;
 }
 
@@ -201,6 +203,8 @@ class WeatherService {
         airQuality: airQualityData.text,
         aqi: airQualityData.index,
         visibility: visibility,
+        pm25: 2.06,
+        pm10: 2.4,
         lastUpdated: new Date(),
       };
 
@@ -306,6 +310,8 @@ class WeatherService {
         airQuality: "Tốt",
         aqi: 1,
         visibility: 10,
+        pm25: 2.06,
+        pm10: 2.4,
         lastUpdated: new Date(),
       };
       console.log("WeatherService: Using fallback data");

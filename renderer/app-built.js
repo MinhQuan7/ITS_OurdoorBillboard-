@@ -4,6 +4,59 @@
 // Import React from CDN (already loaded in HTML)
 const { useState, useEffect } = React;
 
+// Weather Icons System
+const WeatherIcons = {
+  CLEAR_DAY: `<svg viewBox="0 0 64 64" fill="currentColor">
+    <circle cx="32" cy="32" r="10" fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+    <g stroke="#FFD700" stroke-width="3" stroke-linecap="round">
+      <line x1="32" y1="8" x2="32" y2="16"/>
+      <line x1="32" y1="48" x2="32" y2="56"/>
+      <line x1="13.86" y1="13.86" x2="19.44" y2="19.44"/>
+      <line x1="44.56" y1="44.56" x2="50.14" y2="50.14"/>
+      <line x1="8" y1="32" x2="16" y2="32"/>
+      <line x1="48" y1="32" x2="56" y2="32"/>
+      <line x1="13.86" y1="50.14" x2="19.44" y2="44.56"/>
+      <line x1="44.56" y1="19.44" x2="50.14" y2="13.86"/>
+    </g>
+  </svg>`,
+  PARTLY_CLOUDY: `<svg viewBox="0 0 64 64" fill="currentColor">
+    <circle cx="20" cy="20" r="6" fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+    <path d="M44 28c4 0 8 3 8 7s-4 7-8 7H20c-5 0-9-4-9-9s4-9 9-9c1 0 2 0 3 1 2-6 8-10 15-10 8 0 15 6 15 14v-1z" fill="#B0C4DE" stroke="#87CEEB" stroke-width="1"/>
+  </svg>`,
+  CLOUDY: `<svg viewBox="0 0 64 64" fill="currentColor">
+    <path d="M48 35c3 0 6 2 6 5s-3 5-6 5H18c-4 0-8-3-8-8s4-8 8-8c1 0 2 0 3 1 2-5 7-9 13-9 7 0 13 5 13 12 0-1 0-1 1-1 2-2 5-3 8-3z" fill="#B0C4DE" stroke="#87CEEB" stroke-width="2"/>
+  </svg>`,
+  RAINY: `<svg viewBox="0 0 64 64" fill="currentColor">
+    <path d="M48 30c3 0 6 2 6 5s-3 5-6 5H18c-4 0-8-3-8-8s4-8 8-8c1 0 2 0 3 1 2-5 7-9 13-9 7 0 13 5 13 12z" fill="#87CEEB" stroke="#4682B4" stroke-width="2"/>
+    <g stroke="#4682B4" stroke-width="2" stroke-linecap="round">
+      <line x1="18" y1="44" x2="20" y2="52"/>
+      <line x1="26" y1="42" x2="28" y2="50"/>
+      <line x1="34" y1="44" x2="36" y2="52"/>
+      <line x1="42" y1="42" x2="44" y2="50"/>
+    </g>
+  </svg>`,
+  DEFAULT: `<svg viewBox="0 0 64 64" fill="currentColor">
+    <circle cx="32" cy="32" r="28" fill="#B0C4DE" stroke="#87CEEB" stroke-width="3"/>
+    <text x="32" y="42" text-anchor="middle" font-size="32" font-weight="bold" fill="#FFFFFF">?</text>
+  </svg>`
+};
+
+function getWeatherIcon(weatherCode, condition) {
+  if (weatherCode === 0 || weatherCode === 1 || condition.includes("quang") || condition.includes("nắng")) {
+    return WeatherIcons.CLEAR_DAY;
+  }
+  if (weatherCode === 2 || weatherCode === 3 || condition.includes("mây") || condition.includes("u ám")) {
+    return WeatherIcons.PARTLY_CLOUDY;
+  }
+  if (condition.includes("âm u") || condition.includes("nhiều mây")) {
+    return WeatherIcons.CLOUDY;
+  }
+  if ((weatherCode >= 61 && weatherCode <= 65) || condition.includes("mưa") || condition.includes("phùn")) {
+    return WeatherIcons.RAINY;
+  }
+  return WeatherIcons.DEFAULT;
+}
+
 // Enhanced WeatherService with proper logging and error handling
 class WeatherService {
   constructor(config) {
@@ -425,12 +478,40 @@ function WeatherPanel({ className = "" }) {
       })
     ]),
 
-    // Main temperature
+    // Main temperature with weather icon
     React.createElement("div", { 
-      key: "temp-main",
-      className: "temperature-main",
-      style: { fontSize: "32px", fontWeight: "bold", marginBottom: "4px" }
-    }, `${weatherData.temperature}°`),
+      key: "temp-main-container",
+      style: { 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        gap: "8px", 
+        marginBottom: "4px" 
+      }
+    }, [
+      // Weather icon on the left
+      React.createElement("div", {
+        key: "weather-icon",
+        style: { 
+          width: "36px", 
+          height: "36px", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))",
+          color: "#FFD700"
+        },
+        dangerouslySetInnerHTML: { 
+          __html: getWeatherIcon(weatherData.weatherCode, weatherData.weatherCondition) 
+        }
+      }),
+      // Temperature on the right
+      React.createElement("div", { 
+        key: "temp-main",
+        className: "temperature-main",
+        style: { fontSize: "32px", fontWeight: "bold", color: "#ffffff" }
+      }, `${weatherData.temperature}°`)
+    ]),
 
     // Feels like temperature
     React.createElement("div", { 

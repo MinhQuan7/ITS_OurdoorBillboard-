@@ -2,41 +2,47 @@
 
 .weather-panel {
   flex: 1;
-  background-color: #1a1a2e;
-  padding: 8px;
-  border: 2px solid #ff0000;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%);
+  padding: 0;
+  border: none;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
   position: relative;
   cursor: pointer;
-  transition: background-color 0.3s ease;
   font-family: "Arial", sans-serif;
   color: white;
   overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.3);
 }
 
 .weather-panel:hover {
-  background-color: #2a2a4e;
+  background: linear-gradient(135deg, #2d4a6f 0%, #3c6292 50%, #2a466d 100%);
 }
 
-/* Title section */
-.weather-title {
-  font-size: 12px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 4px;
+/* Header section */
+.weather-header {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
   position: relative;
   width: 100%;
+  box-sizing: border-box;
+}
+
+.city-name {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
 }
 
 .connection-indicator {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 6px;
-  height: 6px;
+  top: 8px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background-color: #ff0000;
 }
@@ -54,229 +60,213 @@
   background-color: #888888;
 }
 
-/* Main weather display */
-.weather-main {
+/* Main content - two column layout */
+.weather-content {
+  display: flex;
+  flex: 1;
+  width: 100%;
+}
+
+/* Left column - Main weather info */
+.weather-left {
+  flex: 1;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.weather-icon-large {
+  margin-bottom: 8px;
+}
+
+.weather-icon-svg {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.weather-icon-inline .weather-icon-svg {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.weather-icon-svg svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Make weather icons yellow/golden like in the image */
+.weather-icon-svg.rainy svg,
+.weather-icon-svg.cloudy svg,
+.weather-icon-svg.stormy svg {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) sepia(100%) saturate(200%)
+    hue-rotate(30deg) brightness(1.2);
+}
+
+.temperature-display {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.temp-main-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.temp-main {
+  font-size: 48px;
+  font-weight: bold;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  margin-bottom: 4px;
+}
+
+.temp-feels {
+  font-size: 18px;
+  color: #ffffff;
+  opacity: 0.9;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.weather-details-left {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.detail-row {
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.detail-text {
+  font-size: 14px;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-weight: 500;
+}
+
+.air-quality-status {
+  font-size: 12px;
+  color: #ffffff;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* Right column - Device measurements */
+.weather-right {
+  flex: 0 0 140px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.device-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 16px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
+}
+
+.measurement-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.measurement-label {
+  font-size: 12px;
+  color: #ffffff;
+  opacity: 0.9;
+}
+
+.measurement-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.unit {
+  font-size: 10px;
+  font-weight: normal;
+  opacity: 0.8;
+  margin-left: 2px;
+}
+
+.air-quality-badge {
+  background: #4ade80;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-top: auto;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 4px rgba(74, 222, 128, 0.3);
+}
+
+/* Weather Alert Banner - matches the red banner design */
+.weather-alert-banner {
+  position: absolute;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-bottom: 6px;
-  padding: 4px;
-}
-
-.weather-icon {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-}
-
-.weather-icon:hover {
-  transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.weather-icon svg {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-/* Weather icon colors */
-.weather-icon.sunny {
-  background: radial-gradient(
-    circle,
-    rgba(255, 215, 0, 0.3),
-    rgba(255, 165, 0, 0.1)
-  );
-}
-
-.weather-icon.rainy {
-  background: radial-gradient(
-    circle,
-    rgba(70, 130, 180, 0.3),
-    rgba(135, 206, 235, 0.1)
-  );
-}
-
-.weather-icon.cloudy {
-  background: radial-gradient(
-    circle,
-    rgba(176, 196, 222, 0.3),
-    rgba(211, 211, 211, 0.1)
-  );
-}
-
-.weather-icon.stormy {
-  background: radial-gradient(
-    circle,
-    rgba(75, 0, 130, 0.3),
-    rgba(138, 43, 226, 0.1)
-  );
-}
-
-.weather-icon.default {
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.05)
-  );
-}
-
-.temperature-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.temperature-main {
-  font-size: 28px;
-  font-weight: bold;
-  line-height: 1;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.temperature-range {
-  font-size: 10px;
-  color: #cccccc;
-  margin-top: 2px;
-  opacity: 0.8;
-}
-
-/* Weather condition */
-.weather-condition {
-  font-size: 10px;
-  text-align: center;
-  color: #e0e0e0;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
-/* Weather details */
-.weather-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-  width: 100%;
-  margin-bottom: 6px;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-}
-
-.weather-detail-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-
-.detail-label {
-  font-size: 8px;
-  color: #b0b0b0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-value {
-  font-size: 10px;
-  font-weight: bold;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-/* Air quality */
-.air-quality {
-  font-size: 8px;
-  text-align: center;
-  margin-bottom: 4px;
-  padding: 3px 6px;
-  border-radius: 10px;
+  padding: 12px 16px;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Air quality color indicators */
-.air-quality.good {
-  color: #00e400;
-}
-
-.air-quality.fair {
-  color: #ffff00;
-}
-
-.air-quality.moderate {
-  color: #ff7e00;
-  font-weight: bold;
-}
-
-.air-quality.poor {
-  color: #ff0000;
-  font-weight: bold;
-  animation: pulse 2s infinite;
-}
-
-.air-quality.very-poor {
-  color: #8f3f97;
-  font-weight: bold;
-  animation: pulse 1.5s infinite;
-}
-
-/* Weather Alert Banner */
-.weather-alert {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #ff4444, #cc0000);
-  color: #ffffff;
-  font-size: 8px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 3px 6px;
-  border-radius: 8px;
-  margin-bottom: 4px;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
   animation: alertPulse 2s infinite;
-  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
 }
 
-.alert-icon {
-  font-size: 10px;
-  animation: alertBlink 1.5s infinite;
+.alert-icon-warning {
+  background: #fbbf24;
+  color: #dc2626;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow: none;
+  flex-shrink: 0;
 }
 
-.alert-text {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-/* Last updated */
-.last-updated {
-  font-size: 7px;
-  color: #888888;
+.alert-text-large {
+  font-size: 16px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  flex: 1;
   text-align: center;
-  opacity: 0.8;
-}
-
-.debug-info {
-  font-size: 6px;
-  opacity: 0.5;
-  margin-left: 4px;
 }
 
 /* Loading states */
@@ -421,35 +411,22 @@
   }
 }
 
-/* Responsive adjustments for very small screens */
+/* Responsive adjustments for 384x384 screen */
 @media (max-width: 384px) {
-  .temperature-main {
-    font-size: 20px;
+  .temp-main {
+    font-size: 36px;
   }
 
-  .weather-icon {
-    width: 28px;
-    height: 28px;
+  .weather-icon-svg {
+    width: 60px;
+    height: 60px;
   }
 
-  .weather-detail-row {
-    font-size: 8px;
+  .weather-right {
+    flex: 0 0 120px;
   }
-}
 
-/* Color variations for different weather conditions */
-.weather-panel.sunny {
-  border-color: #ffd700;
-}
-
-.weather-panel.rainy {
-  border-color: #4682b4;
-}
-
-.weather-panel.cloudy {
-  border-color: #b0c4de;
-}
-
-.weather-panel.stormy {
-  border-color: #4b0082;
+  .alert-text-large {
+    font-size: 14px;
+  }
 }

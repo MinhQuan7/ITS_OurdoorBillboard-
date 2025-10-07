@@ -280,80 +280,98 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
       className={`weather-panel ${weatherType} ${className}`}
       onClick={handleRefresh}
     >
-      {/* Title */}
-      <div className="weather-title">
-        {weatherData.cityName}
+      {/* Header with city name */}
+      <div className="weather-header">
+        <div className="city-name">{weatherData.cityName}</div>
         <div className={`connection-indicator ${connectionStatus}`}></div>
       </div>
 
-      {/* Main temperature and weather icon */}
-      <div className="weather-main">
-        <div
-          className={`weather-icon ${weatherType}`}
-          dangerouslySetInnerHTML={{ __html: weatherIcon }}
-        />
-        <div className="temperature-section">
-          <div className="temperature-main">{weatherData.temperature}°</div>
-          <div className="temperature-range">{weatherData.feelsLike}°</div>
+      {/* Main content - two column layout */}
+      <div className="weather-content">
+        {/* Left column - Main weather info */}
+        <div className="weather-left">
+          <div className="temperature-display">
+            <div className="temp-main-container">
+              <div className="temp-main">{weatherData.temperature}°</div>
+              <div className="weather-icon-inline">
+                <div
+                  className={`weather-icon-svg ${weatherType}`}
+                  dangerouslySetInnerHTML={{ __html: weatherIcon }}
+                />
+              </div>
+            </div>
+            <div className="temp-feels">- {weatherData.feelsLike}°</div>
+          </div>
+
+          <div className="weather-details-left">
+            <div className="detail-row">
+              <span className="detail-text">Độ ẩm {weatherData.humidity}%</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-text">
+                Mưa {weatherData.rainProbability}%
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-text">
+                UV {getUVLevel(weatherData.uvIndex)}
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-text">
+                Gió {weatherData.windSpeed} km/h
+              </span>
+            </div>
+          </div>
+
+          <div className="air-quality-status">
+            Chất lượng không khí: {weatherData.airQuality}
+          </div>
+        </div>
+
+        {/* Right column - Device measurements */}
+        <div className="weather-right">
+          <div className="device-title">THIẾT BỊ ĐO</div>
+
+          <div className="measurement-item">
+            <div className="measurement-label">Nhiệt độ</div>
+            <div className="measurement-value">{weatherData.temperature}°</div>
+          </div>
+
+          <div className="measurement-item">
+            <div className="measurement-label">Độ ẩm</div>
+            <div className="measurement-value">{weatherData.humidity}%</div>
+          </div>
+
+          <div className="measurement-item">
+            <div className="measurement-label">PM2.5</div>
+            <div className="measurement-value">
+              {weatherData.pm25}
+              <span className="unit">μg/m³</span>
+            </div>
+          </div>
+
+          <div className="measurement-item">
+            <div className="measurement-label">PM10</div>
+            <div className="measurement-value">
+              {weatherData.pm10}
+              <span className="unit">μg/m³</span>
+            </div>
+          </div>
+
+          <div className="air-quality-badge">TỐT</div>
         </div>
       </div>
 
-      {/* Weather condition */}
-      <div className="weather-condition">{weatherData.weatherCondition}</div>
-
-      {/* Weather details grid */}
-      <div className="weather-details">
-        <div className="weather-detail-item">
-          <span className="detail-label">Độ ẩm</span>
-          <span className="detail-value">{weatherData.humidity}%</span>
-        </div>
-        <div className="weather-detail-item">
-          <span className="detail-label">Mưa</span>
-          <span className="detail-value">{weatherData.rainProbability}%</span>
-        </div>
-        <div className="weather-detail-item">
-          <span className="detail-label">UV</span>
-          <span className="detail-value">
-            {getUVLevel(weatherData.uvIndex)}
-          </span>
-        </div>
-        <div className="weather-detail-item">
-          <span className="detail-label">Gió</span>
-          <span className="detail-value">{weatherData.windSpeed} km/h</span>
-        </div>
-      </div>
-
-      {/* Air quality with enhanced styling */}
-      <div className={`air-quality ${getAirQualityClass(weatherData.aqi)}`}>
-        Chất lượng không khí: {weatherData.airQuality}
-      </div>
-
-      {/* Weather Alert Banner */}
+      {/* Weather Alert Banner - matches the red banner design */}
       {(weatherData.rainProbability > 70 ||
         weatherData.weatherCondition.includes("mưa to") ||
         weatherData.weatherCondition.includes("dông")) && (
-        <div className="weather-alert">
-          <div className="alert-icon">⚠</div>
-          <div className="alert-text">
-            {weatherData.weatherCondition.includes("dông")
-              ? "CẢNH BÁO DÔNG BẢO"
-              : "CẢNH BÁO MƯA LỚN"}
-          </div>
+        <div className="weather-alert-banner">
+          <div className="alert-icon-warning">!</div>
+          <div className="alert-text-large">CẢNH BÁO MƯA LỚN</div>
         </div>
       )}
-
-      {/* Last updated indicator with data source info */}
-      <div className="last-updated">
-        Cập nhật:{" "}
-        {weatherData.lastUpdated.toLocaleTimeString("vi-VN", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-        {/* Debug info - can be removed in production */}
-        <span className="debug-info">
-          ({connectionStatus === "connected" ? "API" : "Cache"})
-        </span>
-      </div>
 
       {/* Loading overlay for refresh */}
       {isLoading && (
