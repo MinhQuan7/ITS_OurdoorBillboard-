@@ -10,35 +10,21 @@
   color: white;
 }
 
-/* Top row (contains 2 columns) */
+/* Top row - Single unified panel */
 .top-row {
   flex: 3; /* Takes 3/4 = 75% height */
   display: flex;
-  flex-direction: row; /* Split into 2 horizontal columns */
+  width: 100%;
 }
 
-/* Left column (Weather Panel) */
-.left-column {
-  flex: 1; /* Takes 50% width */
-  background-color: #1a1a2e;
-  padding: 10px;
-  border: 2px solid #ff0000;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Right column (IoT Panel) */
-.right-column {
-  flex: 1; /* Takes 50% width */
-  background-color: #16213e;
-  padding: 10px;
-  border: 2px solid #ff0000;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+/* Unified Weather Panel - takes full width, no borders or separators */
+.unified-weather {
+  flex: 1;
+  width: 100%;
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  margin: 0;
 }
 
 /* Bottom row (Company Logo) */

@@ -13,20 +13,10 @@ import "./BillboardLayout.css";
 const BillboardLayout: React.FC = () => {
   return (
     <div className="billboard-container">
-      {/* Top row: 2 columns */}
+      {/* Top row: Single unified weather panel - no columns */}
       <div className="top-row">
-        {/* Left column: Real Weather Panel with API */}
-        <WeatherPanel className="left-column" />
-
-        {/* Right column: IoT Panel (keep existing data as requested) */}
-        <div className="right-column">
-          <h3 className="panel-title">THIẾT BỊ ĐO</h3>
-          <div className="sensor-value">Nhiệt độ: 24,0°</div>
-          <div className="sensor-value">Độ ẩm: 96%</div>
-          <div className="sensor-value">PM2.5: 2,06 μg</div>
-          <div className="sensor-value">PM10: 2,4 μg</div>
-          <div className="status-badge">TỐT</div>
-        </div>
+        {/* Unified Weather Panel with integrated IoT data */}
+        <WeatherPanel className="unified-weather" />
       </div>
 
       {/* Bottom row: Company Logo */}

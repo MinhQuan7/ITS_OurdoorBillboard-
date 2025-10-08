@@ -381,6 +381,24 @@ function WeatherPanel({ className = "" }) {
     }
   };
 
+  // Get air quality badge color and text based on AQI
+  const getAirQualityBadge = (aqi, airQuality) => {
+    switch (aqi) {
+      case 1:
+        return { color: "#4ade80", text: "TỐT" }; // Green - Good
+      case 2:
+        return { color: "#fbbf24", text: "KHẤP" }; // Yellow - Fair
+      case 3:
+        return { color: "#f97316", text: "TB" }; // Orange - Moderate
+      case 4:
+        return { color: "#ef4444", text: "KÉM" }; // Red - Poor
+      case 5:
+        return { color: "#7c2d12", text: "XẤU" }; // Dark red - Very poor
+      default:
+        return { color: "#4ade80", text: "TỐT" };
+    }
+  };
+
   // Get weather type for styling
   const getWeatherType = (condition) => {
     if (condition?.includes("quang") || condition?.includes("nắng") || condition?.includes("Trời quang")) {
@@ -569,18 +587,45 @@ function WeatherPanel({ className = "" }) {
       ])
     ]),
 
-    // Air quality
+    // Air quality section - split into 2 LED modules as requested
     React.createElement("div", { 
-      key: "air-quality",
-      className: \`air-quality \${getAirQualityClass(weatherData.aqi)}\`,
+      key: "air-quality-container",
       style: { 
-        fontSize: "9px", 
-        marginTop: "5px",
-        padding: "2px 4px",
-        borderRadius: "2px",
-        backgroundColor: "rgba(0,255,0,0.2)"
+        display: "flex",
+        width: "100%",
+        marginTop: "8px",
+        alignItems: "center",
+        justifyContent: "space-between"
       }
-    }, \`Chất lượng không khí: \${weatherData.airQuality}\`),
+    }, [
+      // Left half - LED Module 1: "Chất lượng không khí:"
+      React.createElement("div", { 
+        key: "air-quality-label",
+        style: { 
+          fontSize: "11px", 
+          color: "#ffffff",
+          fontWeight: "normal",
+          flex: 1
+        }
+      }, "Chất lượng không khí:"),
+      
+      // Right half - LED Module 2: Status badge dynamic color
+      React.createElement("div", { 
+        key: "air-quality-badge",
+        style: { 
+          fontSize: "11px",
+          fontWeight: "bold",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          backgroundColor: getAirQualityBadge(weatherData.aqi, weatherData.airQuality).color,
+          color: "#ffffff",
+          textAlign: "center",
+          minWidth: "40px",
+          boxShadow: \`0 2px 4px \${getAirQualityBadge(weatherData.aqi, weatherData.airQuality).color}30\`,
+          textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)"
+        }
+      }, getAirQualityBadge(weatherData.aqi, weatherData.airQuality).text)
+    ]),
 
     // Weather Alert Banner
     (weatherData.rainProbability > 70 || weatherData.weatherCondition.includes("mưa to") || weatherData.weatherCondition.includes("dông")) && 
