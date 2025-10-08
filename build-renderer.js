@@ -1466,7 +1466,7 @@ function IoTPanel({ eraIotService }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "#1a237e",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1477,7 +1477,7 @@ function IoTPanel({ eraIotService }) {
         boxSizing: "border-box",
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "THIẾT BỊ ĐO"),
       React.createElement("div", { key: "loading", style: { fontSize: "10px", color: "#888" } }, "Đang kết nối...")
     ]);
   }
@@ -1487,7 +1487,7 @@ function IoTPanel({ eraIotService }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "#1a237e",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1498,7 +1498,7 @@ function IoTPanel({ eraIotService }) {
         boxSizing: "border-box",
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "THIẾT BỊ ĐO"),
       React.createElement("div", { key: "error", style: { fontSize: "10px", color: "#ff4444" } }, !eraIotService ? "Chưa cấu hình" : "Lỗi kết nối")
     ]);
   }
@@ -1508,7 +1508,7 @@ function IoTPanel({ eraIotService }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "#1a237e",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1519,7 +1519,7 @@ function IoTPanel({ eraIotService }) {
         boxSizing: "border-box",
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "THIẾT BỊ ĐO"),
       React.createElement("div", { key: "offline", style: { fontSize: "10px", color: "#888" } }, "Không có dữ liệu")
     ]);
   }
@@ -1530,7 +1530,7 @@ function IoTPanel({ eraIotService }) {
     style: {
       width: "192px",
       height: "288px",
-      backgroundColor: "#1a1a1a",
+      backgroundColor: "#1a237e",
       color: "#fff",
       display: "flex",
       flexDirection: "column",
@@ -1551,7 +1551,7 @@ function IoTPanel({ eraIotService }) {
         borderBottom: "1px solid #333",
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "12px", fontWeight: "bold" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", { key: "title", style: { fontSize: "12px", fontWeight: "bold" } }, "THIẾT BỊ ĐO"),
       React.createElement("div", {
         key: "status",
         style: {

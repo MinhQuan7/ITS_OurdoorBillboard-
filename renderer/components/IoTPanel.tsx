@@ -186,7 +186,9 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
   if (isLoading && !sensorData) {
     return (
       <div className={`iot-panel-redesigned loading ${className}`}>
-        <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+        <div className="iot-panel-header">
+          <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+        </div>
         <div className="iot-loading-state">
           <div className="loading-text">Đang kết nối...</div>
         </div>
@@ -198,7 +200,9 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
   if (!eraIotService || (!sensorData && connectionStatus === "error")) {
     return (
       <div className={`iot-panel-redesigned error ${className}`}>
-        <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+        <div className="iot-panel-header">
+          <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+        </div>
         <div className="iot-error-state">
           <div className="error-text">
             {!eraIotService ? "Chưa cấu hình" : "Lỗi kết nối"}
@@ -212,7 +216,9 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
   if (!sensorData) {
     return (
       <div className={`iot-panel-redesigned offline ${className}`}>
-        <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+        <div className="iot-panel-header">
+          <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+        </div>
         <div className="iot-offline-state">
           <div className="offline-text">Không có dữ liệu</div>
         </div>
@@ -227,8 +233,10 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
       className={`iot-panel-redesigned active ${connectionStatus} ${className}`}
       onClick={handleRefresh}
     >
-      {/* Main Title */}
-      <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+      {/* Header section */}
+      <div className="iot-panel-header">
+        <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+      </div>
 
       {/* Sensor Values Display */}
       <div className="iot-sensor-values">

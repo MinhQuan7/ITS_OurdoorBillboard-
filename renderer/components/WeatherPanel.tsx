@@ -276,10 +276,11 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
   // Render loading state
   if (isLoading && !weatherData) {
     return (
-      <div className={`weather-panel loading ${className}`}>
-        <div className="weather-title">TP. THỪA THIÊN HUẾ</div>
+      <div className={`weather-panel-redesigned loading ${className}`}>
+        <div className="weather-panel-header">
+          <div className="city-name-title">TP. THỪA THIÊN HUẾ</div>
+        </div>
         <div className="weather-loading">
-          <div className="loading-spinner"></div>
           <div className="loading-text">Đang tải...</div>
         </div>
       </div>
@@ -289,14 +290,12 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
   // Render error state
   if (!weatherData && connectionStatus === "error") {
     return (
-      <div className={`weather-panel error ${className}`}>
-        <div className="weather-title">TP. THỪA THIÊN HUẾ</div>
+      <div className={`weather-panel-redesigned error ${className}`}>
+        <div className="weather-panel-header">
+          <div className="city-name-title">TP. THỪA THIÊN HUẾ</div>
+        </div>
         <div className="weather-error">
-          <div className="error-icon">⚠</div>
           <div className="error-text">Lỗi kết nối</div>
-          <button className="retry-button" onClick={handleRefresh}>
-            Thử lại
-          </button>
         </div>
       </div>
     );
@@ -340,108 +339,73 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
 
   return (
     <div
-      className={`weather-panel unified ${weatherType} ${className}`}
+      className={`weather-panel-redesigned ${weatherType} ${className}`}
       onClick={handleRefresh}
     >
-      {/* Background overlay for better text readability */}
-      <div className="weather-overlay"></div>
-
       {/* Header with city name */}
-      <div className="weather-header">
-        <div className="city-name">{weatherData.cityName}</div>
-        <div className={`connection-indicator ${connectionStatus}`}></div>
+      <div className="weather-panel-header">
+        <div className="city-name-title">{weatherData.cityName}</div>
       </div>
 
-      {/* Unified content layout - single integrated block */}
-      <div className="weather-unified-content">
-        {/* Main temperature and weather icon */}
-        <div className="weather-main-display">
-          <div className="weather-icon-large">
-            <div
-              className={`weather-icon-svg ${weatherType}`}
-              dangerouslySetInnerHTML={{ __html: weatherIcon }}
-            />
-          </div>
-          <div className="temperature-main">
-            <div className="temp-value">{weatherData.temperature}°</div>
-            <div className="temp-feels">- {weatherData.feelsLike}°</div>
-          </div>
+      {/* Main weather display with icon and temperature */}
+      <div className="weather-main-section">
+        <div className="weather-icon-container">
+          <div
+            className={`weather-icon-display ${weatherType}`}
+            dangerouslySetInnerHTML={{ __html: weatherIcon }}
+          />
         </div>
+        <div className="temperature-display">
+          <div className="main-temp">{weatherData.temperature.toFixed(1)}</div>
+          <div className="feels-like-temp">- {weatherData.feelsLike}°</div>
+        </div>
+      </div>
 
-        {/* Integrated measurements grid */}
-        <div className="weather-measurements-grid">
-          <div className="measure-item">
-            <span className="measure-label">Độ ẩm</span>
-            <span className="measure-value">{weatherData.humidity}%</span>
-          </div>
-          <div className="measure-item">
-            <span className="measure-label">Mưa</span>
-            <span className="measure-value">
-              {weatherData.rainProbability}%
-            </span>
-          </div>
-          <div className="measure-item">
-            <span className="measure-label">
-              UV {getUVLevel(weatherData.uvIndex)}
-            </span>
-          </div>
-          <div className="measure-item">
-            <span className="measure-label">Gió</span>
-            <span className="measure-value">{weatherData.windSpeed} km/h</span>
-          </div>
+      {/* Weather measurements grid */}
+      <div className="weather-data-grid">
+        <div className="weather-data-row">
+          <span className="data-label">Độ ẩm</span>
+          <span className="data-value">{weatherData.humidity}%</span>
         </div>
+        <div className="weather-data-row">
+          <span className="data-label">Mưa</span>
+          <span className="data-value">{weatherData.rainProbability}%</span>
+        </div>
+        <div className="weather-data-row">
+          <span className="data-label">PM2.5</span>
+          <span className="data-value">
+            {weatherData.pm25}
+            <span className="data-unit">μg/m³</span>
+          </span>
+        </div>
+        <div className="weather-data-row">
+          <span className="data-label">PM10</span>
+          <span className="data-value">
+            {weatherData.pm10}
+            <span className="data-unit">μg/m³</span>
+          </span>
+        </div>
+      </div>
 
-        {/* Device measurements section */}
-        <div className="device-measurements">
-          <div className="device-section-title">THIẾT BỊ ĐO</div>
-          <div className="device-grid">
-            <div className="device-item">
-              <span className="device-label">Nhiệt độ</span>
-              <span className="device-value">{weatherData.temperature}°</span>
-            </div>
-            <div className="device-item">
-              <span className="device-label">Độ ẩm</span>
-              <span className="device-value">{weatherData.humidity}%</span>
-            </div>
-            <div className="device-item">
-              <span className="device-label">PM2.5</span>
-              <span className="device-value">
-                {weatherData.pm25}
-                <span className="unit">μg/m³</span>
-              </span>
-            </div>
-            <div className="device-item">
-              <span className="device-label">PM10</span>
-              <span className="device-value">
-                {weatherData.pm10}
-                <span className="unit">μg/m³</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Air quality status */}
-        <div className="air-quality-section">
-          <div className="air-quality-text">
-            Chất lượng không khí: {weatherData.airQuality}
-          </div>
-          <div className="air-quality-badge">TỐT</div>
-        </div>
+      {/* Air quality status */}
+      <div className="weather-air-quality">
+        <div className="air-quality-label">Chất lượng không khí: Tốt</div>
+        <div className="air-quality-status">TỐT</div>
       </div>
 
       {/* Weather Alert Banner */}
       {(weatherData.rainProbability > 70 ||
         weatherData.weatherCondition.includes("mưa to") ||
         weatherData.weatherCondition.includes("dông")) && (
-        <div className="weather-alert-banner">
-          <div className="alert-icon-warning">!</div>
-          <div className="alert-text-large">CẢNH BÁO MƯA LỚN</div>
+        <div className="weather-alert-warning">
+          <div className="alert-warning-icon">!</div>
+          <div className="alert-warning-text">CẢNH BÁO MƯA LỚN</div>
         </div>
       )}
 
       {/* Loading overlay for refresh */}
       {isLoading && (
-        <div className="refresh-overlay">
+        <div className="weather-refresh-overlay">
           <div className="refresh-spinner"></div>
         </div>
       )}
