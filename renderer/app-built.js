@@ -1176,8 +1176,497 @@ function CompanyLogo() {
   }, currentLogo ? renderCustomLogo(currentLogo) : renderDefaultLogo());
 }
 
-// Updated BillboardLayout with unified WeatherPanel (no separators)
+// E-Ra IoT Service Integration
+class EraIotService {
+  constructor(config) {
+    this.config = config;
+    this.currentData = null;
+    this.updateTimer = null;
+    this.isUpdating = false;
+    console.log("EraIotService: Initialized with config", {
+      baseUrl: this.config.baseUrl,
+      hasAuthToken: !!this.config.authToken,
+      sensorConfigs: this.config.sensorConfigs,
+    });
+  }
+
+  async startPeriodicUpdates() {
+    if (this.updateTimer) {
+      this.stopPeriodicUpdates();
+    }
+
+    // Initial fetch
+    await this.fetchSensorData();
+
+    // Set up periodic updates
+    this.updateTimer = setInterval(() => {
+      this.fetchSensorData();
+    }, this.config.updateInterval * 60 * 1000);
+
+    console.log(`EraIotService: Started periodic updates every ${this.config.updateInterval} minutes`);
+  }
+
+  stopPeriodicUpdates() {
+    if (this.updateTimer) {
+      clearInterval(this.updateTimer);
+      this.updateTimer = null;
+      console.log("EraIotService: Stopped periodic updates");
+    }
+  }
+
+  async fetchSensorData() {
+    if (this.isUpdating) {
+      console.log("EraIotService: Update already in progress, skipping");
+      return;
+    }
+
+    this.isUpdating = true;
+    console.log("EraIotService: Starting sensor data fetch");
+
+    try {
+      const sensorPromises = [
+        this.fetchSensorValue(this.config.sensorConfigs.temperature, "temperature"),
+        this.fetchSensorValue(this.config.sensorConfigs.humidity, "humidity"),
+        this.fetchSensorValue(this.config.sensorConfigs.pm25, "pm25"),
+        this.fetchSensorValue(this.config.sensorConfigs.pm10, "pm10"),
+      ];
+
+      const results = await Promise.allSettled(sensorPromises);
+      
+      const sensorData = {
+        temperature: null,
+        humidity: null,
+        pm25: null,
+        pm10: null,
+        lastUpdated: new Date(),
+      };
+
+      let successCount = 0;
+      const sensorNames = ["temperature", "humidity", "pm25", "pm10"];
+      
+      results.forEach((result, index) => {
+        const sensorName = sensorNames[index];
+        
+        if (result.status === "fulfilled" && result.value !== null) {
+          sensorData[sensorName] = result.value;
+          successCount++;
+          console.log(`EraIotService: ${sensorName} = ${result.value}`);
+        } else {
+          console.error(`EraIotService: Failed to fetch ${sensorName}:`, result.reason || "No data");
+        }
+      });
+
+      // Determine overall status
+      let status;
+      if (successCount === 4) {
+        status = "success";
+      } else if (successCount > 0) {
+        status = "partial";
+      } else {
+        status = "error";
+      }
+
+      this.currentData = {
+        ...sensorData,
+        status,
+        errorMessage: status === "error" ? "Connection failed" : undefined,
+      };
+
+      console.log("EraIotService: Data update completed", {
+        status,
+        successCount: `${successCount}/4`,
+        temperature: sensorData.temperature,
+        humidity: sensorData.humidity,
+        pm25: sensorData.pm25,
+        pm10: sensorData.pm10,
+      });
+    } catch (error) {
+      console.error("EraIotService: Critical error during sensor fetch:", error);
+      this.useFallbackData(error);
+    } finally {
+      this.isUpdating = false;
+    }
+  }
+
+  async fetchSensorValue(configId, sensorName) {
+    try {
+      console.log(`EraIotService: Fetching ${sensorName} (config ID: ${configId})`);
+
+      const response = await fetch(`${this.config.baseUrl}/api/chip_manager/configs/${configId}/current_value/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': this.config.authToken,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'ITS-Billboard-EraIoT/1.0',
+        },
+        timeout: this.config.timeout,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`EraIotService: Raw API response for ${sensorName}:`, data);
+
+      return this.extractValue(data);
+    } catch (error) {
+      console.error(`EraIotService: Error fetching ${sensorName}:`, error);
+      throw error;
+    }
+  }
+
+  extractValue(data) {
+    if (typeof data === "number") return data;
+    if (data?.current_value_only && typeof data.current_value_only === "number") return data.current_value_only;
+    if (data?.current_value && typeof data.current_value === "number") return data.current_value;
+    if (data?.value && typeof data.value === "number") return data.value;
+    if (Array.isArray(data) && data[0]?.current_value_only) return data[0].current_value_only;
+    if (Array.isArray(data) && data[0]?.current_value) return data[0].current_value;
+    if (Array.isArray(data) && data[0]?.value) return data[0].value;
+    return null;
+  }
+
+  useFallbackData(error) {
+    this.currentData = {
+      temperature: null,
+      humidity: null,
+      pm25: 15.0,
+      pm10: 25.0,
+      lastUpdated: new Date(),
+      status: "error",
+      errorMessage: `Connection failed: ${error.message || "Unknown error"}`,
+    };
+    console.log("EraIotService: Using fallback sensor data");
+  }
+
+  getCurrentData() {
+    return this.currentData;
+  }
+
+  async refreshData() {
+    console.log("EraIotService: Manual refresh requested");
+    await this.fetchSensorData();
+  }
+
+  destroy() {
+    this.stopPeriodicUpdates();
+    this.currentData = null;
+    console.log("EraIotService: Destroyed");
+  }
+}
+
+// IoT Panel Component
+function IoTPanel({ eraIotService }) {
+  const [sensorData, setSensorData] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [connectionStatus, setConnectionStatus] = React.useState("offline");
+
+  React.useEffect(() => {
+    if (!eraIotService) {
+      console.log("IoTPanel: No E-Ra IoT service provided");
+      setIsLoading(false);
+      setConnectionStatus("offline");
+      return;
+    }
+
+    console.log("IoTPanel: Initializing with E-Ra IoT service");
+
+    const pollInterval = setInterval(() => {
+      const data = eraIotService.getCurrentData();
+      if (data) {
+        console.log("IoTPanel: Received sensor data:", data);
+        setSensorData(data);
+        setIsLoading(false);
+        setConnectionStatus(data.status === "error" ? "error" : "connected");
+      }
+    }, 3000);
+
+    const initialData = eraIotService.getCurrentData();
+    if (initialData) {
+      setSensorData(initialData);
+      setIsLoading(false);
+      setConnectionStatus(initialData.status === "error" ? "error" : "connected");
+    }
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [eraIotService]);
+
+  const getSensorStatus = (value, type) => {
+    if (value === null) return "offline";
+    
+    switch (type) {
+      case "temperature":
+        if (value >= 15 && value <= 35) return "good";
+        if (value >= 10 && value <= 40) return "warning";
+        return "error";
+      case "humidity":
+        if (value >= 30 && value <= 70) return "good";
+        if (value >= 20 && value <= 80) return "warning";
+        return "error";
+      case "pm25":
+        if (value <= 12) return "good";
+        if (value <= 35) return "warning";
+        return "error";
+      case "pm10":
+        if (value <= 20) return "good";
+        if (value <= 50) return "warning";
+        return "error";
+      default:
+        return "good";
+    }
+  };
+
+  const formatSensorData = (data) => {
+    return [
+      {
+        label: "Nhiệt độ",
+        value: data.temperature !== null ? `${data.temperature.toFixed(1)}` : "--",
+        unit: "°C",
+        status: getSensorStatus(data.temperature, "temperature"),
+        icon: "🌡️",
+      },
+      {
+        label: "Độ ẩm",
+        value: data.humidity !== null ? `${data.humidity.toFixed(1)}` : "--",
+        unit: "%",
+        status: getSensorStatus(data.humidity, "humidity"),
+        icon: "💧",
+      },
+      {
+        label: "PM2.5",
+        value: data.pm25 !== null ? `${data.pm25.toFixed(1)}` : "--",
+        unit: "μg/m³",
+        status: getSensorStatus(data.pm25, "pm25"),
+        icon: "🌫️",
+      },
+      {
+        label: "PM10",
+        value: data.pm10 !== null ? `${data.pm10.toFixed(1)}` : "--",
+        unit: "μg/m³",
+        status: getSensorStatus(data.pm10, "pm10"),
+        icon: "💨",
+      },
+    ];
+  };
+
+  if (isLoading && !sensorData) {
+    return React.createElement("div", {
+      style: {
+        width: "192px",
+        height: "288px",
+        backgroundColor: "#1a1a1a",
+        color: "#fff",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "12px",
+        padding: "8px",
+        boxSizing: "border-box",
+      }
+    }, [
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", { key: "loading", style: { fontSize: "10px", color: "#888" } }, "Đang kết nối...")
+    ]);
+  }
+
+  if (!eraIotService || (!sensorData && connectionStatus === "error")) {
+    return React.createElement("div", {
+      style: {
+        width: "192px",
+        height: "288px",
+        backgroundColor: "#1a1a1a",
+        color: "#fff",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "12px",
+        padding: "8px",
+        boxSizing: "border-box",
+      }
+    }, [
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", { key: "error", style: { fontSize: "10px", color: "#ff4444" } }, !eraIotService ? "Chưa cấu hình" : "Lỗi kết nối")
+    ]);
+  }
+
+  if (!sensorData) {
+    return React.createElement("div", {
+      style: {
+        width: "192px",
+        height: "288px",
+        backgroundColor: "#1a1a1a",
+        color: "#fff",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "12px",
+        padding: "8px",
+        boxSizing: "border-box",
+      }
+    }, [
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", { key: "offline", style: { fontSize: "10px", color: "#888" } }, "Không có dữ liệu")
+    ]);
+  }
+
+  const sensors = formatSensorData(sensorData);
+
+  return React.createElement("div", {
+    style: {
+      width: "192px",
+      height: "288px",
+      backgroundColor: "#1a1a1a",
+      color: "#fff",
+      display: "flex",
+      flexDirection: "column",
+      padding: "8px",
+      boxSizing: "border-box",
+      fontSize: "11px",
+    }
+  }, [
+    // Header
+    React.createElement("div", {
+      key: "header",
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "8px",
+        paddingBottom: "4px",
+        borderBottom: "1px solid #333",
+      }
+    }, [
+      React.createElement("div", { key: "title", style: { fontSize: "12px", fontWeight: "bold" } }, "CẢM BIẾN IOT"),
+      React.createElement("div", {
+        key: "status",
+        style: {
+          width: "8px",
+          height: "8px",
+          borderRadius: "50%",
+          backgroundColor: connectionStatus === "connected" ? "#4CAF50" : connectionStatus === "error" ? "#f44336" : "#888",
+        }
+      })
+    ]),
+
+    // Sensors
+    ...sensors.map((sensor, index) => 
+      React.createElement("div", {
+        key: index,
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "4px 0",
+          borderBottom: index < sensors.length - 1 ? "1px solid #333" : "none",
+        }
+      }, [
+        React.createElement("div", {
+          key: "info",
+          style: { display: "flex", alignItems: "center", flex: 1 }
+        }, [
+          React.createElement("span", { key: "icon", style: { marginRight: "4px", fontSize: "12px" } }, sensor.icon),
+          React.createElement("span", { key: "label", style: { fontSize: "10px" } }, sensor.label)
+        ]),
+        React.createElement("div", {
+          key: "value",
+          style: { 
+            display: "flex", 
+            alignItems: "center", 
+            color: sensor.status === "good" ? "#4CAF50" : sensor.status === "warning" ? "#FF9800" : "#f44336"
+          }
+        }, [
+          React.createElement("span", { key: "val", style: { fontWeight: "bold", marginRight: "2px" } }, sensor.value),
+          React.createElement("span", { key: "unit", style: { fontSize: "8px" } }, sensor.unit)
+        ])
+      ])
+    ),
+
+    // Footer
+    React.createElement("div", {
+      key: "footer",
+      style: {
+        marginTop: "auto",
+        paddingTop: "4px",
+        borderTop: "1px solid #333",
+        fontSize: "8px",
+        color: "#888",
+        textAlign: "center",
+      }
+    }, sensorData ? `${sensorData.lastUpdated.toLocaleTimeString("vi-VN")}` : "")
+  ]);
+}
+
+// Updated BillboardLayout with E-Ra IoT integration
 function BillboardLayout() {
+  const [eraIotService, setEraIotService] = React.useState(null);
+
+  console.log("BillboardLayout: Component initialized");
+
+  React.useEffect(() => {
+    console.log("BillboardLayout: useEffect triggered");
+    
+    const initializeEraIot = async () => {
+      try {
+        console.log("BillboardLayout: Loading E-Ra IoT configuration...");
+        
+        if (typeof window !== "undefined" && window.electronAPI) {
+          console.log("BillboardLayout: electronAPI available, fetching config...");
+          
+          const config = await window.electronAPI.getConfig();
+          console.log("BillboardLayout: Raw config received:", {
+            hasEraIot: !!config?.eraIot,
+            enabled: config?.eraIot?.enabled,
+            hasAuthToken: !!config?.eraIot?.authToken,
+          });
+          
+          if (config?.eraIot?.authToken) {
+            console.log("BillboardLayout: Initializing E-Ra IoT service");
+            
+            const eraConfig = {
+              authToken: config.eraIot.authToken,
+              baseUrl: config.eraIot.baseUrl || "https://backend.eoh.io",
+              sensorConfigs: config.eraIot.sensorConfigs || {
+                temperature: 138997,
+                humidity: 138998,
+                pm25: 138999,
+                pm10: 139000,
+              },
+              updateInterval: config.eraIot.updateInterval || 5,
+              timeout: config.eraIot.timeout || 15000,
+              retryAttempts: config.eraIot.retryAttempts || 3,
+              retryDelay: config.eraIot.retryDelay || 2000,
+            };
+
+            const service = new EraIotService(eraConfig);
+            await service.startPeriodicUpdates();
+            setEraIotService(service);
+          } else {
+            console.log("BillboardLayout: No valid E-Ra IoT AUTHTOKEN found");
+          }
+        } else {
+          console.log("BillboardLayout: electronAPI not available");
+        }
+      } catch (error) {
+        console.error("BillboardLayout: Failed to initialize E-Ra IoT service:", error);
+      }
+    };
+
+    initializeEraIot();
+
+    return () => {
+      if (eraIotService) {
+        eraIotService.destroy();
+      }
+    };
+  }, []);
+
   return React.createElement("div", {
     style: {
       width: "384px",
@@ -1198,7 +1687,8 @@ function BillboardLayout() {
         width: "100%",
       }
     }, [
-      React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" })
+      React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" }),
+      React.createElement(IoTPanel, { key: "iot", eraIotService: eraIotService })
     ]),
     React.createElement(CompanyLogo, { key: "logo" })
   ]);

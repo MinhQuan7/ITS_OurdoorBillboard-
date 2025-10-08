@@ -17,7 +17,10 @@ const BillboardLayout: React.FC = () => {
     null
   );
 
+  console.log("BillboardLayout: Component initialized");
+
   useEffect(() => {
+    console.log("BillboardLayout: useEffect triggered");
     // Load E-Ra IoT configuration and initialize service
     const initializeEraIot = async () => {
       try {
@@ -27,14 +30,10 @@ const BillboardLayout: React.FC = () => {
           enabled: config?.enabled,
           hasAuthToken: !!config?.authToken,
           authTokenPreview: config?.authToken?.substring(0, 20) + "...",
-          isPlaceholder: config?.authToken?.includes("1234272955")
+          isPlaceholder: config?.authToken?.includes("1234272955"),
         });
 
-        if (
-          config &&
-          config.authToken &&
-          config.authToken.trim() !== ""
-        ) {
+        if (config && config.authToken && config.authToken.trim() !== "") {
           if (config.authToken.includes("1234272955")) {
             console.log(
               "BillboardLayout: E-Ra IoT using placeholder AUTHTOKEN - will show error state"
@@ -109,23 +108,22 @@ const BillboardLayout: React.FC = () => {
   const loadEraIotConfig = async (): Promise<EraIotConfig | null> => {
     try {
       console.log("BillboardLayout: Loading E-Ra IoT configuration...");
-      
+
       // Try to access config from electron main process
       if (typeof window !== "undefined" && (window as any).electronAPI) {
-        console.log("BillboardLayout: electronAPI available, fetching config...");
-        
+        console.log(
+          "BillboardLayout: electronAPI available, fetching config..."
+        );
+
         const config = await (window as any).electronAPI.getConfig?.();
         console.log("BillboardLayout: Raw config received:", {
           hasEraIot: !!config?.eraIot,
           enabled: config?.eraIot?.enabled,
           hasAuthToken: !!config?.eraIot?.authToken,
-          authTokenPrefix: config?.eraIot?.authToken?.substring(0, 10)
+          authTokenPrefix: config?.eraIot?.authToken?.substring(0, 10),
         });
-        
-        if (
-          config?.eraIot &&
-          config.eraIot.authToken
-        ) {
+
+        if (config?.eraIot && config.eraIot.authToken) {
           return {
             enabled: config.eraIot.enabled,
             authToken: config.eraIot.authToken,
