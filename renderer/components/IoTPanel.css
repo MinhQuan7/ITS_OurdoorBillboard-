@@ -1,0 +1,334 @@
+/* IoTPanel.css - Styling for E-Ra IoT sensor data display */
+
+.iot-panel {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  padding: 8px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.iot-panel:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(46, 82, 152, 0.4);
+}
+
+/* Header section */
+.iot-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.iot-title {
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  margin-bottom: 2px;
+}
+
+.iot-subtitle {
+  font-size: 10px;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.connection-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.connection-indicator.connected {
+  background-color: #4caf50;
+}
+
+.connection-indicator.error {
+  background-color: #f44336;
+}
+
+.connection-indicator.offline {
+  background-color: #757575;
+}
+
+/* Status banner */
+.status-banner {
+  width: 100%;
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.status-banner.partial {
+  background-color: rgba(255, 193, 7, 0.8);
+  color: #333;
+}
+
+.status-banner.error {
+  background-color: rgba(244, 67, 54, 0.8);
+  color: white;
+}
+
+/* Sensors grid */
+.sensors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sensor-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px;
+  position: relative;
+  transition: all 0.3s ease;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.sensor-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.sensor-item.good {
+  border-left: 3px solid #4caf50;
+}
+
+.sensor-item.warning {
+  border-left: 3px solid #ff9800;
+}
+
+.sensor-item.error {
+  border-left: 3px solid #f44336;
+}
+
+.sensor-item.offline {
+  border-left: 3px solid #757575;
+  opacity: 0.6;
+}
+
+.sensor-icon {
+  font-size: 14px;
+  margin-right: 6px;
+  width: 20px;
+  text-align: center;
+}
+
+.sensor-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sensor-label {
+  font-size: 9px;
+  opacity: 0.8;
+  margin-bottom: 1px;
+}
+
+.sensor-value-container {
+  display: flex;
+  align-items: baseline;
+}
+
+.sensor-value {
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 2px;
+}
+
+.sensor-unit {
+  font-size: 8px;
+  opacity: 0.7;
+}
+
+.sensor-status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.sensor-status-indicator.good {
+  background-color: #4caf50;
+}
+
+.sensor-status-indicator.warning {
+  background-color: #ff9800;
+}
+
+.sensor-status-indicator.error {
+  background-color: #f44336;
+}
+
+.sensor-status-indicator.offline {
+  background-color: #757575;
+}
+
+/* Footer */
+.iot-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.last-updated {
+  font-size: 8px;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.error-message-small {
+  font-size: 7px;
+  color: #ffcdd2;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Loading states */
+.iot-loading,
+.iot-error,
+.iot-offline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100% - 40px);
+}
+
+.loading-spinner,
+.refresh-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 8px;
+}
+
+.loading-text,
+.error-text,
+.offline-text {
+  font-size: 10px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.error-icon,
+.offline-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.retry-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Refresh overlay */
+.refresh-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 60, 114, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* Panel state variants */
+.iot-panel.loading {
+  background: linear-gradient(135deg, #455a64 0%, #607d8b 100%);
+}
+
+.iot-panel.error {
+  background: linear-gradient(135deg, #b71c1c 0%, #d32f2f 100%);
+}
+
+.iot-panel.offline {
+  background: linear-gradient(135deg, #424242 0%, #616161 100%);
+}
+
+.iot-panel.connected {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+/* Animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 400px) {
+  .iot-title {
+    font-size: 12px;
+  }
+
+  .iot-subtitle {
+    font-size: 9px;
+  }
+
+  .sensor-value {
+    font-size: 11px;
+  }
+
+  .sensor-label {
+    font-size: 8px;
+  }
+}

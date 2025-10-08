@@ -1,0 +1,30 @@
+{
+  "timestamp": "2025-10-08T07:14:07.147Z",
+  "issues": [
+    "❌ AUTHTOKEN not configured",
+    "❌ No sensors returning valid data",
+    "⚠️ E-Ra IoT is disabled in configuration"
+  ],
+  "recommendations": [
+    "Run: node setup-era-token.js (to set your AUTHTOKEN)",
+    "Check sensor config IDs match your E-Ra device setup",
+    "Verify sensors are online and configured in E-Ra platform",
+    "Enable E-Ra IoT in the billboard app settings"
+  ],
+  "config": {
+    "enabled": false,
+    "authToken": "",
+    "baseUrl": "https://backend.eoh.io",
+    "sensorConfigs": {
+      "temperature": 138997,
+      "humidity": 138998,
+      "pm25": 138999,
+      "pm10": 139000
+    },
+    "updateInterval": 5,
+    "timeout": 15000,
+    "retryAttempts": 3,
+    "retryDelay": 2000
+  },
+  "workingAuthMethod": null
+}

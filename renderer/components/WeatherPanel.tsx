@@ -6,6 +6,7 @@ import WeatherService, {
   WeatherData,
   WeatherConfig,
 } from "../services/weatherService";
+import { EraIotConfig } from "../services/eraIotService";
 import { getWeatherIcon } from "../assets/weather-icons/weatherIcons";
 import "./WeatherPanel.css";
 
@@ -32,17 +33,23 @@ class GlobalWeatherServiceManager {
         maxRetries: 5, // More retries for reliability
       };
 
+      // Load E-Ra IoT configuration
+      const eraIotConfig: EraIotConfig | undefined =
+        GlobalWeatherServiceManager.loadEraIotConfig();
+
       try {
         console.log(
           "WeatherServiceManager: Creating weather service for",
           weatherConfig.location.city
         );
         console.log(
-          "WeatherServiceManager: WeatherService constructor available:",
-          typeof WeatherService
+          "WeatherServiceManager: E-Ra IoT config available:",
+          !!eraIotConfig
         );
+
         GlobalWeatherServiceManager.instance = new WeatherService(
-          weatherConfig
+          weatherConfig,
+          eraIotConfig
         );
         console.log(
           "WeatherServiceManager: Weather service created successfully"
@@ -94,6 +101,62 @@ class GlobalWeatherServiceManager {
     GlobalWeatherServiceManager.subscribers.forEach((callback) =>
       callback(data)
     );
+  }
+
+  /**
+   * Load E-Ra IoT configuration from config.json
+   */
+  private static loadEraIotConfig(): EraIotConfig | undefined {
+    try {
+      // Access config from electron main process if available
+      if (typeof window !== "undefined" && (window as any).electronAPI) {
+        const config = (window as any).electronAPI.getConfig?.();
+        if (
+          config?.eraIot &&
+          config.eraIot.enabled &&
+          config.eraIot.authToken
+        ) {
+          console.log(
+            "WeatherServiceManager: Loading E-Ra IoT config from Electron"
+          );
+          return {
+            authToken: config.eraIot.authToken,
+            baseUrl: config.eraIot.baseUrl || "https://backend.eoh.io",
+            sensorConfigs: config.eraIot.sensorConfigs || {
+              temperature: 138997,
+              humidity: 138998,
+              pm25: 138999,
+              pm10: 139000,
+            },
+            updateInterval: config.eraIot.updateInterval || 5,
+            timeout: config.eraIot.timeout || 15000,
+            retryAttempts: config.eraIot.retryAttempts || 3,
+            retryDelay: config.eraIot.retryDelay || 2000,
+          };
+        }
+      }
+
+      // Fallback: Try to read from localStorage or use demo config
+      const storedConfig = localStorage.getItem("eraIotConfig");
+      if (storedConfig) {
+        const parsedConfig = JSON.parse(storedConfig);
+        if (parsedConfig.authToken) {
+          console.log(
+            "WeatherServiceManager: Loading E-Ra IoT config from localStorage"
+          );
+          return parsedConfig;
+        }
+      }
+
+      console.log("WeatherServiceManager: No valid E-Ra IoT config found");
+      return undefined;
+    } catch (error) {
+      console.error(
+        "WeatherServiceManager: Failed to load E-Ra IoT config:",
+        error
+      );
+      return undefined;
+    }
   }
 }
 

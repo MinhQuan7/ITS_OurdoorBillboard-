@@ -19,4 +19,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Event listeners for config updates
   onConfigUpdated: (callback) => ipcRenderer.on("config-updated", callback),
   removeConfigListener: () => ipcRenderer.removeAllListeners("config-updated"),
+
+  // E-Ra IoT specific handlers
+  updateEraIotConfig: (config) =>
+    ipcRenderer.invoke("update-era-iot-config", config),
+  onEraIotConfigUpdated: (callback) =>
+    ipcRenderer.on("era-iot-config-updated", callback),
 });

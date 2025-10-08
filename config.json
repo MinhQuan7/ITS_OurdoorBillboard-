@@ -35,5 +35,20 @@
       "height": 96
     }
   },
-  "schedules": []
+  "schedules": [],
+  "eraIot": {
+    "enabled": true,
+    "authToken": "Token 78072b06a81e166b8b900d95f4c2ba1234272955",
+    "baseUrl": "https://backend.eoh.io",
+    "sensorConfigs": {
+      "temperature": 138997,
+      "humidity": 138998,
+      "pm25": 138999,
+      "pm10": 139000
+    },
+    "updateInterval": 5,
+    "timeout": 15000,
+    "retryAttempts": 3,
+    "retryDelay": 2000
+  }
 }

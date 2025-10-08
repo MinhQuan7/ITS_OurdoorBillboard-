@@ -174,17 +174,56 @@ ipcMain.handle("get-config", async () => {
       logo: { x: 0, y: 288, width: 384, height: 96 },
     },
     schedules: [],
+    eraIot: {
+      enabled: false,
+      authToken: "Token 78072b06a81e166b8b900d95f4c2ba1234272955",
+      baseUrl: "https://backend.eoh.io",
+      sensorConfigs: {
+        temperature: 138997,
+        humidity: 138998,
+        pm25: 138999,
+        pm10: 139000,
+      },
+      updateInterval: 5,
+      timeout: 15000,
+      retryAttempts: 3,
+      retryDelay: 2000,
+    },
   };
 });
 
 ipcMain.handle("save-config", async (event, config) => {
   try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    // Ensure E-Ra IoT config is preserved
+    let currentConfig = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        const configData = fs.readFileSync(configPath, "utf8");
+        currentConfig = JSON.parse(configData);
+      } catch (error) {
+        console.warn("Could not load existing config, using defaults");
+      }
+    }
+
+    // Merge E-Ra IoT config if provided
+    const mergedConfig = {
+      ...currentConfig,
+      ...config,
+    };
+
+    if (config.eraIot) {
+      mergedConfig.eraIot = {
+        ...currentConfig.eraIot,
+        ...config.eraIot,
+      };
+    }
+
+    fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
     console.log("Configuration saved successfully");
 
     // Send config update to main window if it exists
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("config-updated", config);
+      mainWindow.webContents.send("config-updated", mergedConfig);
     }
 
     return { success: true };
@@ -228,4 +267,38 @@ ipcMain.handle("minimize-app", async () => {
 
 ipcMain.handle("close-app", async () => {
   app.quit();
+});
+
+// E-Ra IoT specific configuration handler
+ipcMain.handle("update-era-iot-config", async (event, eraIotConfig) => {
+  try {
+    let currentConfig = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        const configData = fs.readFileSync(configPath, "utf8");
+        currentConfig = JSON.parse(configData);
+      } catch (error) {
+        console.warn("Could not load existing config, using defaults");
+      }
+    }
+
+    // Update E-Ra IoT configuration
+    currentConfig.eraIot = {
+      ...currentConfig.eraIot,
+      ...eraIotConfig,
+    };
+
+    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
+    console.log("E-Ra IoT configuration updated successfully");
+
+    // Send config update to main window if it exists
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("era-iot-config-updated", eraIotConfig);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating E-Ra IoT config:", error);
+    return { success: false, error: error.message };
+  }
 });

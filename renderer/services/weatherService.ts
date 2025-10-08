@@ -1,4 +1,5 @@
 import axios from "axios";
+import EraIotService, { EraIotConfig, EraIotData } from "./eraIotService";
 
 export interface WeatherData {
   cityName: string;
@@ -35,6 +36,7 @@ class WeatherService {
   private updateTimer: NodeJS.Timeout | null = null;
   private retryCount: number = 0;
   private isUpdating: boolean = false;
+  private eraIotService: EraIotService | null = null;
 
   private apiEndpoints = [
     {
@@ -44,8 +46,23 @@ class WeatherService {
     },
   ];
 
-  constructor(config: WeatherConfig) {
+  constructor(config: WeatherConfig, eraIotConfig?: EraIotConfig) {
     this.config = config;
+
+    // Initialize E-Ra IoT service if configuration is provided
+    if (eraIotConfig && eraIotConfig.authToken) {
+      try {
+        this.eraIotService = new EraIotService(eraIotConfig);
+        this.eraIotService.startPeriodicUpdates();
+        console.log("WeatherService: E-Ra IoT service initialized");
+      } catch (error) {
+        console.error(
+          "WeatherService: Failed to initialize E-Ra IoT service:",
+          error
+        );
+      }
+    }
+
     this.initializeService();
   }
 
@@ -190,11 +207,14 @@ class WeatherService {
         visibility
       );
 
+      // Get real sensor data from E-Ra IoT service if available
+      const sensorData = this.getSensorData();
+
       const weatherData = {
         cityName: city,
-        temperature: Math.round(current.temperature),
+        temperature: Math.round(sensorData.temperature ?? current.temperature),
         feelsLike: Math.round(feelsLike),
-        humidity: Math.round(humidity),
+        humidity: Math.round(sensorData.humidity ?? humidity),
         windSpeed: Math.round(current.windspeed),
         uvIndex: Math.round(uvIndex),
         rainProbability: Math.round(rainProbability),
@@ -203,8 +223,8 @@ class WeatherService {
         airQuality: airQualityData.text,
         aqi: airQualityData.index,
         visibility: visibility,
-        pm25: 2.06,
-        pm10: 2.4,
+        pm25: sensorData.pm25 ?? 2.06,
+        pm10: sensorData.pm10 ?? 2.4,
         lastUpdated: new Date(),
       };
 
@@ -324,6 +344,50 @@ class WeatherService {
     return this.currentData.lastUpdated < twoHoursAgo;
   }
 
+  /**
+   * Get sensor data from E-Ra IoT service with fallback values
+   */
+  private getSensorData(): {
+    temperature: number | null;
+    humidity: number | null;
+    pm25: number | null;
+    pm10: number | null;
+  } {
+    if (!this.eraIotService) {
+      return {
+        temperature: null,
+        humidity: null,
+        pm25: null,
+        pm10: null,
+      };
+    }
+
+    const iotData = this.eraIotService.getCurrentData();
+    if (!iotData) {
+      return {
+        temperature: null,
+        humidity: null,
+        pm25: null,
+        pm10: null,
+      };
+    }
+
+    console.log("WeatherService: Using E-Ra IoT sensor data:", {
+      temperature: iotData.temperature,
+      humidity: iotData.humidity,
+      pm25: iotData.pm25,
+      pm10: iotData.pm10,
+      status: iotData.status,
+    });
+
+    return {
+      temperature: iotData.temperature,
+      humidity: iotData.humidity,
+      pm25: iotData.pm25,
+      pm10: iotData.pm10,
+    };
+  }
+
   public getCurrentWeather(): WeatherData | null {
     return this.currentData;
   }
@@ -366,8 +430,31 @@ class WeatherService {
 
   public destroy(): void {
     this.stopPeriodicUpdates();
+    if (this.eraIotService) {
+      this.eraIotService.destroy();
+    }
     this.currentData = null;
     console.log("WeatherService: Destroyed");
+  }
+
+  /**
+   * Get E-Ra IoT service status for debugging
+   */
+  public getIotStatus(): {
+    enabled: boolean;
+    status?: string;
+    lastUpdate?: Date | null;
+  } {
+    if (!this.eraIotService) {
+      return { enabled: false };
+    }
+
+    const status = this.eraIotService.getStatus();
+    return {
+      enabled: true,
+      status: status.currentStatus,
+      lastUpdate: status.lastUpdate,
+    };
   }
 }
 

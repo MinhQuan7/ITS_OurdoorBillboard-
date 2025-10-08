@@ -1,6 +1,7 @@
 // App.tsx - Main component of the application
 import React from "react";
 import BillboardLayout from "./components/BillboardLayout";
+import EraIotConfig from "./components/EraIotConfig";
 
 /**
  * App Component - Root component of the application
@@ -20,6 +21,7 @@ const App: React.FC = () => {
   return (
     <div style={appStyle}>
       <BillboardLayout />
+      <EraIotConfig />
     </div>
   );
 };

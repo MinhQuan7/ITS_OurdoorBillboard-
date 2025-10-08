@@ -10,14 +10,49 @@
   color: white;
 }
 
-/* Top row - Single unified panel */
+/* Top row - Two columns layout */
 .top-row {
   flex: 3; /* Takes 3/4 = 75% height */
   display: flex;
   width: 100%;
+  gap: 0; /* No gap between panels */
 }
 
-/* Unified Weather Panel - takes full width, no borders or separators */
+/* Weather column */
+.weather-column {
+  flex: 1; /* Takes 50% width */
+  width: 50%;
+  height: 100%;
+}
+
+/* IoT column */
+.iot-column {
+  flex: 1; /* Takes 50% width */
+  width: 50%;
+  height: 100%;
+}
+
+/* Weather Panel in column layout */
+.weather-panel-column {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  margin: 0;
+}
+
+/* IoT Panel in column layout */
+.iot-panel-column {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  margin: 0;
+}
+
+/* Legacy unified weather support - in case we need to revert */
 .unified-weather {
   flex: 1;
   width: 100%;
