@@ -772,7 +772,7 @@ function WeatherPanel({ className = "" }) {
           key: "weather-right",
           style: { 
             flex: "0 0 140px",
-            background: "rgba(0, 0, 0, 0.2)",
+            background: "rgba(255, 255, 255, 0.2)",
             padding: "12px",
             display: "flex",
             flexDirection: "column"
@@ -988,7 +988,6 @@ function WeatherPanel({ className = "" }) {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(26, 26, 46, 0.8)",
         alignItems: "center",
         justifyContent: "center",
         zIndex: 10
@@ -1458,7 +1457,6 @@ function IoTPanel({ eraIotService }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1479,7 +1477,7 @@ function IoTPanel({ eraIotService }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1500,7 +1498,7 @@ function IoTPanel({ eraIotService }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1522,7 +1520,6 @@ function IoTPanel({ eraIotService }) {
     style: {
       width: "192px",
       height: "288px",
-      backgroundColor: "#1a1a1a",
       color: "#fff",
       display: "flex",
       flexDirection: "column",
@@ -1565,7 +1562,8 @@ function IoTPanel({ eraIotService }) {
           alignItems: "center",
           padding: "4px 0",
           borderBottom: index < sensors.length - 1 ? "1px solid #333" : "none",
-        }
+          backgroundColor: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
+          }
       }, [
         React.createElement("div", {
           key: "info",
@@ -1673,7 +1671,6 @@ function BillboardLayout() {
       height: "384px",
       display: "flex",
       flexDirection: "column",
-      backgroundColor: "#000",
       fontFamily: "Arial, sans-serif",
       margin: 0,
       padding: 0,
