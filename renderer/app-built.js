@@ -1357,7 +1357,7 @@ class EraIotService {
 }
 
 // IoT Panel Component
-function IoTPanel({ eraIotService }) {
+function IoTPanel({ eraIotService, className = "" }) {
   const [sensorData, setSensorData] = React.useState(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [connectionStatus, setConnectionStatus] = React.useState("offline");
@@ -1517,6 +1517,7 @@ function IoTPanel({ eraIotService }) {
   const sensors = formatSensorData(sensorData);
 
   return React.createElement("div", {
+    className: "iot-panel " + className,
     style: {
       width: "192px",
       height: "288px",
@@ -1526,8 +1527,27 @@ function IoTPanel({ eraIotService }) {
       padding: "8px",
       boxSizing: "border-box",
       fontSize: "11px",
+      background: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
+      backgroundImage: "url('assets/imgs/research.jpg')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      position: "relative",
     }
   }, [
+    // Background overlay for better text readability
+    React.createElement("div", {
+      key: "overlay",
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "linear-gradient(135deg, rgba(30, 58, 95, 0.85) 0%, rgba(44, 82, 130, 0.75) 50%, rgba(26, 54, 93, 0.85) 100%)",
+        zIndex: 1
+      }
+    }),
     // Header
     React.createElement("div", {
       key: "header",
@@ -1538,6 +1558,8 @@ function IoTPanel({ eraIotService }) {
         marginBottom: "8px",
         paddingBottom: "4px",
         borderBottom: "1px solid #333",
+        position: "relative",
+        zIndex: 2,
       }
     }, [
       React.createElement("div", { key: "title", style: { fontSize: "12px", fontWeight: "bold" } }, "CẢM BIẾN IOT"),
@@ -1562,7 +1584,9 @@ function IoTPanel({ eraIotService }) {
           alignItems: "center",
           padding: "4px 0",
           borderBottom: index < sensors.length - 1 ? "1px solid #333" : "none",
-          backgroundColor: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
+          background: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
+          position: "relative",
+          zIndex: 2,
           }
       }, [
         React.createElement("div", {
@@ -1596,6 +1620,8 @@ function IoTPanel({ eraIotService }) {
         fontSize: "8px",
         color: "#888",
         textAlign: "center",
+        position: "relative",
+        zIndex: 2,
       }
     }, sensorData ? `${sensorData.lastUpdated.toLocaleTimeString("vi-VN")}` : "")
   ]);
@@ -1685,7 +1711,7 @@ function BillboardLayout() {
       }
     }, [
       React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" }),
-      React.createElement(IoTPanel, { key: "iot", eraIotService: eraIotService })
+      React.createElement(IoTPanel, { key: "iot", eraIotService: eraIotService, className: "unified" })
     ]),
     React.createElement(CompanyLogo, { key: "logo" })
   ]);
