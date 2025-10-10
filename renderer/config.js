@@ -187,12 +187,12 @@ class BillboardConfigManager {
 
     ruleDiv.innerHTML = `
             <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 5px;">Time</label>
+                <label style="display: block; font-size: 14px; color: #6c757d; margin-bottom: 5px;">Time</label>
                 <input type="time" class="form-control" style="width: 120px;" 
                        onchange="configManager.updateScheduleRule(${ruleIndex}, 'time', this.value)">
             </div>
             <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 5px;">Logo</label>
+                <label style="display: block; font-size: 14px; color: #6c757d; margin-bottom: 5px;">Logo</label>
                 <select class="form-control" 
                         onchange="configManager.updateScheduleRule(${ruleIndex}, 'logoIndex', this.value)">
                     <option value="">Select Logo</option>
@@ -205,7 +205,7 @@ class BillboardConfigManager {
                 </select>
             </div>
             <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 5px;">Days</label>
+                <label style="display: block; font-size: 14px; color: #6c757d; margin-bottom: 5px;">Days</label>
                 <select class="form-control" 
                         onchange="configManager.updateScheduleRule(${ruleIndex}, 'days', this.value)">
                     <option value="daily">Daily</option>

@@ -159,11 +159,11 @@ class BillboardApp {
 
     iotPanel.innerHTML = `
             <h3 style="font-size: 14px; margin-bottom: 8px; margin-top: 0;">THIẾT BỊ ĐO</h3>
-            <div style="font-size: 12px; margin-bottom: 4px;">Nhiệt độ: 24,0°</div>
-            <div style="font-size: 12px; margin-bottom: 4px;">Độ ẩm: 96%</div>
-            <div style="font-size: 12px; margin-bottom: 4px;">PM2.5: 2,06 μg</div>
-            <div style="font-size: 12px; margin-bottom: 4px;">PM10: 2,4 μg</div>
-            <div style="font-size: 10px; background-color: green; padding: 2px 6px; border-radius: 3px; margin-top: 5px;">
+            <div style="font-size: 14px; margin-bottom: 4px;">Nhiệt độ: 24,0°</div>
+            <div style="font-size: 14px; margin-bottom: 4px;">Độ ẩm: 96%</div>
+            <div style="font-size: 14px; margin-bottom: 4px;">PM2.5: 2,06 μg</div>
+            <div style="font-size: 14px; margin-bottom: 4px;">PM10: 2,4 μg</div>
+            <div style="font-size: 12px; background-color: green; padding: 2px 6px; border-radius: 3px; margin-top: 5px;">
                 TỐT
             </div>
         `;
@@ -400,7 +400,7 @@ class BillboardApp {
       weatherPanel.innerHTML = `
                 <h3 style="font-size: 14px; margin-bottom: 8px; margin-top: 0;">TP. THỪA THIÊN HUẾ</h3>
                 <div style="font-size: 32px; font-weight: bold;">${temp}°</div>
-                <div style="font-size: 12px;">Độ ẩm ${humidity}% | UV Thấp</div>
+                <div style="font-size: 14px;">Độ ẩm ${humidity}% | UV Thấp</div>
                 <div style="font-size: 12px;">Mưa ${Math.floor(
                   Math.random() * 100
                 )}% | Gió ${(Math.random() * 5).toFixed(1)} km/h</div>
@@ -420,11 +420,11 @@ class BillboardApp {
 
       iotPanel.innerHTML = `
                 <h3 style="font-size: 14px; margin-bottom: 8px; margin-top: 0;">THIẾT BỊ ĐO</h3>
-                <div style="font-size: 12px; margin-bottom: 4px;">Nhiệt độ: ${temp}°</div>
-                <div style="font-size: 12px; margin-bottom: 4px;">Độ ẩm: ${humidity}%</div>
-                <div style="font-size: 12px; margin-bottom: 4px;">PM2.5: ${pm25} μg</div>
-                <div style="font-size: 12px; margin-bottom: 4px;">PM10: ${pm10} μg</div>
-                <div style="font-size: 10px; background-color: green; padding: 2px 6px; border-radius: 3px; margin-top: 5px;">
+                <div style="font-size: 14px; margin-bottom: 4px;">Nhiệt độ: ${temp}°</div>
+                <div style="font-size: 14px; margin-bottom: 4px;">Độ ẩm: ${humidity}%</div>
+                <div style="font-size: 14px; margin-bottom: 4px;">PM2.5: ${pm25} μg</div>
+                <div style="font-size: 14px; margin-bottom: 4px;">PM10: ${pm10} μg</div>
+                <div style="font-size: 12px; background-color: green; padding: 2px 6px; border-radius: 3px; margin-top: 5px;">
                     TỐT
                 </div>
             `;

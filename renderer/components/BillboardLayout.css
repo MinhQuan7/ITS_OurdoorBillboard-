@@ -67,11 +67,11 @@
 /* Weather Alert Banner - positioned between top and bottom rows */
 .weather-alert-banner {
   position: absolute;
-  bottom: 96px;
+  bottom: 0px;
   left: 0;
   right: 0;
   width: 384px;
-  height: 48px;
+  height: 100%;
   background: linear-gradient(135deg, #dc2626, #b91c1c);
   color: #ffffff;
   display: flex;

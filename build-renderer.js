@@ -699,66 +699,144 @@ function WeatherPanel({ className = "" }) {
             }
           }, \`- \${weatherData.feelsLike}°\`),
 
-          // Weather details (left column in image)
+          // Weather details grid beneath temperature
           React.createElement("div", { 
-            key: "weather-details-left",
-            style: { width: "100%", marginBottom: "12px" }
+            key: "weather-details-grid",
+            style: { 
+              width: "100%",
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: "8px",
+              marginBottom: "12px"
+            }
           }, [
             React.createElement("div", { 
               key: "humidity",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, \`Độ ẩm \${weatherData.humidity}%\`)
+              }, "Độ ẩm"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, `\${weatherData.humidity}%`)
             ]),
             React.createElement("div", { 
               key: "rain",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, \`Mưa \${weatherData.rainProbability}%\`)
+              }, "Mưa"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, `\${weatherData.rainProbability}%`)
             ]),
             React.createElement("div", { 
               key: "uv",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, \`UV \${getUVLevel(weatherData.uvIndex)}\`)
+              }, "UV"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, `\${getUVLevel(weatherData.uvIndex)}`)
             ]),
             React.createElement("div", { 
               key: "wind",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, \`Gió \${weatherData.windSpeed} km/h\`)
+              }, "Gió"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, `\${weatherData.windSpeed} km/h`)
             ])
           ]),
 
@@ -812,7 +890,7 @@ function WeatherPanel({ className = "" }) {
           }, [
             React.createElement("span", { 
               key: "label",
-              style: { fontSize: "12px", color: "#ffffff", opacity: 0.9 }
+              style: { fontSize: "14px", color: "#ffffff", opacity: 0.9 }
             }, "Nhiệt độ"),
             React.createElement("span", { 
               key: "value",
@@ -838,7 +916,7 @@ function WeatherPanel({ className = "" }) {
           }, [
             React.createElement("span", { 
               key: "label",
-              style: { fontSize: "12px", color: "#ffffff", opacity: 0.9 }
+              style: { fontSize: "14px", color: "#ffffff", opacity: 0.9 }
             }, "Độ ẩm"),
             React.createElement("span", { 
               key: "value",
@@ -864,7 +942,7 @@ function WeatherPanel({ className = "" }) {
           }, [
             React.createElement("span", { 
               key: "label",
-              style: { fontSize: "12px", color: "#ffffff", opacity: 0.9 }
+              style: { fontSize: "14px", color: "#ffffff", opacity: 0.9 }
             }, "PM2.5"),
             React.createElement("span", { 
               key: "value",
@@ -896,7 +974,7 @@ function WeatherPanel({ className = "" }) {
           }, [
             React.createElement("span", { 
               key: "label",
-              style: { fontSize: "12px", color: "#ffffff", opacity: 0.9 }
+              style: { fontSize: "14px", color: "#ffffff", opacity: 0.9 }
             }, "PM10"),
             React.createElement("span", { 
               key: "value",
@@ -943,7 +1021,7 @@ function WeatherPanel({ className = "" }) {
       style: { 
         display: (weatherData.rainProbability > 70 || weatherData.weatherCondition.includes("mưa to") || weatherData.weatherCondition.includes("dông")) ? "flex" : "none",
         position: "absolute",
-        bottom: "60px",
+        bottom: "0px",
         left: 0,
         right: 0,
         background: "linear-gradient(135deg, #dc2626, #b91c1c)",
@@ -1470,7 +1548,7 @@ function IoTPanel({ eraIotService, className = "" }) {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        fontSize: "12px",
+        fontSize: "14px",
         padding: "8px",
         boxSizing: "border-box",
       }
@@ -1490,7 +1568,7 @@ function IoTPanel({ eraIotService, className = "" }) {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        fontSize: "12px",
+        fontSize: "14px",
         padding: "8px",
         boxSizing: "border-box",
       }
@@ -1505,13 +1583,13 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
+    
         color: "#fff",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        fontSize: "12px",
+        fontSize: "14px",
         padding: "8px",
         boxSizing: "border-box",
       }
@@ -1533,8 +1611,7 @@ function IoTPanel({ eraIotService, className = "" }) {
       flexDirection: "column",
       padding: "8px",
       boxSizing: "border-box",
-      fontSize: "11px",
-      background: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
+      fontSize: "14px",
       backgroundImage: "url('assets/imgs/research.jpg')",
       backgroundSize: "cover",
       backgroundPosition: "center",
@@ -1551,7 +1628,7 @@ function IoTPanel({ eraIotService, className = "" }) {
         left: 0,
         right: 0,
         bottom: 0,
-        background: "linear-gradient(135deg, rgba(30, 58, 95, 0.85) 0%, rgba(44, 82, 130, 0.75) 50%, rgba(26, 54, 93, 0.85) 100%)",
+     
         zIndex: 1
       }
     }),
@@ -1591,7 +1668,6 @@ function IoTPanel({ eraIotService, className = "" }) {
           alignItems: "center",
           padding: "4px 0",
           borderBottom: index < sensors.length - 1 ? "1px solid #333" : "none",
-          background: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
           position: "relative",
           zIndex: 2,
           }
@@ -1600,8 +1676,8 @@ function IoTPanel({ eraIotService, className = "" }) {
           key: "info",
           style: { display: "flex", alignItems: "center", flex: 1 }
         }, [
-          React.createElement("span", { key: "icon", style: { marginRight: "4px", fontSize: "12px" } }, sensor.icon),
-          React.createElement("span", { key: "label", style: { fontSize: "10px" } }, sensor.label)
+          React.createElement("span", { key: "icon", style: { marginRight: "4px", fontSize: "14px" } }, sensor.icon),
+          React.createElement("span", { key: "label", style: { fontSize: "14px" } }, sensor.label)
         ]),
         React.createElement("div", {
           key: "value",
@@ -1752,7 +1828,7 @@ document.addEventListener("DOMContentLoaded", () => {
 const outputPath = path.join(__dirname, "renderer", "app-built.js");
 fs.writeFileSync(outputPath, bundleContent.trim());
 
-console.log("✅ Renderer components built successfully!");
-console.log("✅ Real weather API integration enabled");
-console.log("✅ Data consistency issues resolved");
-console.log("📁 Output: renderer/app-built.js");
+console.log("Renderer components built successfully!");
+console.log("Real weather API integration enabled");
+console.log("Data consistency issues resolved");
+console.log("Output: renderer/app-built.js");

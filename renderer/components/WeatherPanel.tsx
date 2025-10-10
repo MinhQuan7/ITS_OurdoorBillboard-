@@ -396,8 +396,9 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({
             </span>
           </div>
           <div className="measure-item">
-            <span className="measure-label">
-              UV {getUVLevel(weatherData.uvIndex)}
+            <span className="measure-label">UV</span>
+            <span className="measure-value">
+              {getUVLevel(weatherData.uvIndex)}
             </span>
           </div>
           <div className="measure-item">
