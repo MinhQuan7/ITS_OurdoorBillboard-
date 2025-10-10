@@ -12,6 +12,7 @@ import "./WeatherPanel.css";
 
 interface WeatherPanelProps {
   className?: string;
+  onWeatherUpdate?: (data: WeatherData | null) => void;
 }
 
 // Global weather service instance
@@ -160,7 +161,10 @@ class GlobalWeatherServiceManager {
   }
 }
 
-const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
+const WeatherPanel: React.FC<WeatherPanelProps> = ({
+  className = "",
+  onWeatherUpdate,
+}) => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [connectionStatus, setConnectionStatus] = useState<
@@ -182,6 +186,12 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
         setWeatherData(data);
         setConnectionStatus("connected");
         setIsLoading(false);
+
+        // Notify parent component about weather update
+        if (onWeatherUpdate) {
+          onWeatherUpdate(data);
+        }
+
         console.log("WeatherPanel: Weather data updated:", {
           city: data.cityName,
           temp: data.temperature,
@@ -196,12 +206,17 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
         if (!isLoading) {
           setConnectionStatus("error");
         }
+
+        // Notify parent component
+        if (onWeatherUpdate) {
+          onWeatherUpdate(null);
+        }
       }
     });
 
     // Cleanup subscription on unmount
     return unsubscribe;
-  }, [isLoading]);
+  }, [isLoading, onWeatherUpdate]);
 
   // Format UV Index level
   const getUVLevel = (uvIndex: number): string => {
@@ -428,16 +443,6 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
           <div className="air-quality-badge">TỐT</div>
         </div>
       </div>
-
-      {/* Weather Alert Banner */}
-      {(weatherData.rainProbability > 70 ||
-        weatherData.weatherCondition.includes("mưa to") ||
-        weatherData.weatherCondition.includes("dông")) && (
-        <div className="weather-alert-banner">
-          <div className="alert-icon-warning">!</div>
-          <div className="alert-text-large">CẢNH BÁO MƯA LỚN</div>
-        </div>
-      )}
 
       {/* Loading overlay for refresh */}
       {isLoading && (

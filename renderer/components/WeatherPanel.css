@@ -1,7 +1,8 @@
-/* WeatherPanel.css - Professional weather panel styles for 384x384 LED screen */
+/* WeatherPanel.css - Professional weather panel styles for 192x288 pixel panel */
 
 .weather-panel {
-  flex: 1;
+  width: 192px; /* Fixed width for exact panel size */
+  height: 288px; /* Fixed height for exact panel size */
   background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%);
   padding: 0;
   border: none;
@@ -47,23 +48,23 @@
   z-index: 1;
 }
 
-/* Header section */
+/* Header section - Optimized for 192px width */
 .weather-header {
   background: rgba(0, 0, 0, 0.3);
-  padding: 8px 12px;
+  padding: 4px 8px; /* Reduced padding for smaller panel */
   position: relative;
-  width: 100%;
+  width: 192px;
   box-sizing: border-box;
   z-index: 2;
 }
 
 .city-name {
-  font-size: 16px;
+  font-size: 12px; /* Reduced from 16px for 192px width */
   font-weight: bold;
   text-align: center;
   color: white;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-  letter-spacing: 1px;
+  letter-spacing: 0.5px; /* Slightly reduced */
 }
 
 .connection-indicator {
@@ -90,24 +91,24 @@
   background-color: #888888;
 }
 
-/* Unified content layout - single integrated block */
+/* Unified content layout - optimized for 192x288 panel */
 .weather-unified-content {
   flex: 1;
-  padding: 16px;
+  padding: 8px; /* Reduced padding for smaller panel */
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px; /* Reduced gap */
   position: relative;
   z-index: 2;
 }
 
-/* Main weather display - temperature and icon */
+/* Main weather display - temperature and icon (optimized for 192px width) */
 .weather-main-display {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-bottom: 8px;
+  gap: 8px; /* Reduced gap for smaller panel */
+  margin-bottom: 4px;
 }
 
 .weather-icon-large {
@@ -115,8 +116,8 @@
 }
 
 .weather-icon-svg {
-  width: 80px;
-  height: 80px;
+  width: 50px; /* Reduced from 80px for 192px width */
+  height: 50px; /* Reduced from 80px for 192px width */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +142,7 @@
 }
 
 .temp-value {
-  font-size: 48px;
+  font-size: 32px; /* Reduced from 48px for 192px width */
   font-weight: bold;
   line-height: 1;
   color: #ffffff;
@@ -149,11 +150,11 @@
 }
 
 .temp-feels {
-  font-size: 18px;
+  font-size: 12px; /* Reduced from 18px for 192px width */
   color: #ffffff;
   opacity: 0.9;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* Integrated measurements grid */
@@ -268,49 +269,6 @@
   border-radius: 4px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   box-shadow: 0 2px 4px rgba(74, 222, 128, 0.3);
-}
-
-/* Weather Alert Banner - matches the red banner design */
-.weather-alert-banner {
-  position: absolute;
-  bottom: 60px;
-  left: 0;
-  right: 0;
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px 16px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-  animation: alertPulse 2s infinite;
-  z-index: 3;
-}
-
-.alert-icon-warning {
-  background: #fbbf24;
-  color: #dc2626;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: bold;
-  text-shadow: none;
-  flex-shrink: 0;
-}
-
-.alert-text-large {
-  font-size: 16px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  flex: 1;
-  text-align: center;
 }
 
 /* Loading states */
@@ -432,56 +390,51 @@
   }
 }
 
-@keyframes alertPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
-  }
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.6);
-  }
-}
-
-@keyframes alertBlink {
-  0%,
-  50% {
-    opacity: 1;
-  }
-  51%,
-  100% {
-    opacity: 0.5;
-  }
-}
-
-/* Responsive adjustments for 384x384 screen */
-@media (max-width: 384px) {
+/* Specific adjustments for 192x288 weather panel */
+@media (max-width: 192px) {
   .temp-value {
-    font-size: 36px;
+    font-size: 28px; /* Further reduced for narrow panel */
   }
 
   .weather-icon-svg {
-    width: 60px;
-    height: 60px;
+    width: 40px; /* Further reduced for narrow panel */
+    height: 40px;
   }
 
   .weather-measurements-grid {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 4px;
   }
 
   .device-grid {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 4px;
   }
 
   .alert-text-large {
-    font-size: 14px;
+    font-size: 10px;
   }
 
   .weather-unified-content {
-    padding: 12px;
-    gap: 8px;
+    padding: 6px;
+    gap: 4px;
   }
+
+  .city-name {
+    font-size: 10px;
+  }
+}
+
+/* Default optimizations for our 192px width panel */
+.weather-measurements-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column for narrow width */
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column for narrow width */
+  gap: 4px;
 }

@@ -1477,7 +1477,6 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1a365d 100%)",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
