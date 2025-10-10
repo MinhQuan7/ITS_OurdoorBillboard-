@@ -1535,7 +1535,6 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1556,7 +1555,6 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1577,7 +1575,7 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a1a1a",
+    
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1600,7 +1598,6 @@ function IoTPanel({ eraIotService, className = "" }) {
     style: {
       width: "192px",
       height: "288px",
-      backgroundColor: "#1a1a1a",
       color: "#fff",
       display: "flex",
       flexDirection: "column",
