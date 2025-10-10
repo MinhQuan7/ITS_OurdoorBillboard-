@@ -377,7 +377,7 @@ function WeatherPanel({ className = "" }) {
   const getAirQualityBadge = (aqi, airQuality) => {
     switch (aqi) {
       case 1:
-        return { color: "#22c55e", text: "TỐT" }; // Green - Good
+        return { color: "#4ade80", text: "TỐT" }; // Green - Good
       case 2:
         return { color: "#fbbf24", text: "KHẤP" }; // Yellow - Fair
       case 3:
@@ -387,7 +387,7 @@ function WeatherPanel({ className = "" }) {
       case 5:
         return { color: "#7c2d12", text: "XẤU" }; // Dark red - Very poor
       default:
-        return { color: "#22c55e", text: "TỐT" };
+        return { color: "#4ade80", text: "TỐT" };
     }
   };
 
@@ -988,7 +988,7 @@ function WeatherPanel({ className = "" }) {
           React.createElement("div", { 
             key: "air-quality-badge",
             style: { 
-              background: "#22c55e",
+              background: "#4ade80",
               color: "#ffffff",
               fontSize: "12px",
               fontWeight: "bold",
@@ -997,7 +997,7 @@ function WeatherPanel({ className = "" }) {
               borderRadius: "6px",
               marginTop: "auto",
               textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
-              boxShadow: "0 2px 4px rgba(34, 197, 94, 0.3)"
+              boxShadow: "0 2px 4px rgba(74, 222, 128, 0.3)"
             }
           }, "TỐT")
         ])
@@ -1535,7 +1535,6 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         width: "192px",
         height: "288px",
-        backgroundColor: "#1a237e",
         color: "#fff",
         display: "flex",
         flexDirection: "column",
@@ -1546,7 +1545,7 @@ function IoTPanel({ eraIotService, className = "" }) {
         boxSizing: "border-box",
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "THIẾT BỊ ĐO"),
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
       React.createElement("div", { key: "loading", style: { fontSize: "10px", color: "#888" } }, "Đang kết nối...")
     ]);
   }
@@ -1566,7 +1565,7 @@ function IoTPanel({ eraIotService, className = "" }) {
         boxSizing: "border-box",
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "THIẾT BỊ ĐO"),
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
       React.createElement("div", { key: "error", style: { fontSize: "10px", color: "#ff4444" } }, !eraIotService ? "Chưa cấu hình" : "Lỗi kết nối")
     ]);
   }
@@ -1587,7 +1586,7 @@ function IoTPanel({ eraIotService, className = "" }) {
         boxSizing: "border-box",
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "THIẾT BỊ ĐO"),
+      React.createElement("div", { key: "title", style: { fontSize: "14px", fontWeight: "bold", marginBottom: "8px" } }, "CẢM BIẾN IOT"),
       React.createElement("div", { key: "offline", style: { fontSize: "10px", color: "#888" } }, "Không có dữ liệu")
     ]);
   }
@@ -1639,7 +1638,7 @@ function IoTPanel({ eraIotService, className = "" }) {
         zIndex: 2,
       }
     }, [
-      React.createElement("div", { key: "title", style: { fontSize: "12px", fontWeight: "bold" } }, "THIẾT BỊ ĐO"),
+      React.createElement("div", { key: "title", style: { fontSize: "12px", fontWeight: "bold" } }, "CẢM BIẾN IOT"),
       React.createElement("div", {
         key: "status",
         style: {

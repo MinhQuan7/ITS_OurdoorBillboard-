@@ -1,13 +1,16 @@
-/* IoTPanel.css - Redesigned styling for device measurements display matching weather panel design */
+/* IoTPanel.css - Styling for E-Ra IoT sensor data display */
 
-.iot-panel-redesigned {
+.iot-panel {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
   color: white;
+  padding: 8px;
+  border-radius: 8px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  transition: all 0.3s ease;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   z-index: 999999;
 }
@@ -58,8 +61,58 @@
 .iot-title {
   font-size: 14px !important;
   font-weight: bold;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  margin-bottom: 2px;
+}
+
+.iot-subtitle {
+  font-size: 10px;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.connection-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.connection-indicator.connected {
+  background-color: #4caf50;
+}
+
+.connection-indicator.error {
+  background-color: #f44336;
+}
+
+.connection-indicator.offline {
+  background-color: #757575;
+}
+
+/* Status banner */
+.status-banner {
+  width: 100%;
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.status-banner.partial {
+  background-color: rgba(255, 193, 7, 0.8);
+  color: #333;
+}
+
+.status-banner.error {
+  background-color: rgba(244, 67, 54, 0.8);
   color: white;
-  letter-spacing: 1px;
 }
 
 /* Sensors grid */
@@ -116,8 +169,6 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
 }
 
 .sensor-label {
@@ -126,140 +177,155 @@
   margin-bottom: 1px;
 }
 
-.iot-sensor-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: white;
-}
-
-.iot-sensor-value {
-  font-size: 20px;
-  font-weight: bold;
-  color: white;
+.sensor-value-container {
   display: flex;
   align-items: baseline;
+}
+
+.sensor-value {
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 2px;
+}
+
+.sensor-unit {
+  font-size: 8px;
+  opacity: 0.7;
+}
+
+.sensor-status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.sensor-status-indicator.good {
+  background-color: #4caf50;
+}
+
+.sensor-status-indicator.warning {
+  background-color: #ff9800;
+}
+
+.sensor-status-indicator.error {
+  background-color: #f44336;
+}
+
+.sensor-status-indicator.offline {
+  background-color: #757575;
+}
+
+/* Footer */
+.iot-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 2px;
   position: relative;
   z-index: 2;
 }
 
-.iot-sensor-unit {
-  font-size: 11px;
-  font-weight: normal;
-  opacity: 0.8;
-}
-
-/* Air Quality Status - matching weather panel air quality section */
-.iot-air-quality {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin-top: auto;
-}
-
-.air-quality-text {
-  font-size: 12px;
-  color: white;
+.last-updated {
+  font-size: 8px;
+  opacity: 0.7;
   text-align: center;
 }
 
-.air-quality-badge {
-  background-color: #4caf50;
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
-  padding: 6px 16px;
-  border-radius: 16px;
-  letter-spacing: 1px;
+.error-message-small {
+  font-size: 7px;
+  color: #ffcdd2;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Loading and Error States - matching weather panel structure */
-.iot-loading-state {
+/* Loading states */
+.iot-loading,
+.iot-error,
+.iot-offline {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  flex: 1;
   justify-content: center;
+  height: calc(100% - 40px);
 }
 
-.iot-error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  justify-content: center;
-}
-
-.iot-offline-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  justify-content: center;
+.loading-spinner,
+.refresh-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 8px;
 }
 
 .loading-text,
 .error-text,
 .offline-text {
-  font-size: 14px;
-  color: white;
+  font-size: 10px;
   text-align: center;
+  margin-bottom: 8px;
 }
 
-/* Refresh overlay - matching weather panel style */
-.iot-refresh-overlay {
+.error-icon,
+.offline-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.retry-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Refresh overlay */
+.refresh-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(26, 35, 126, 0.8);
+  background: rgba(30, 60, 114, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 
-.refresh-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+/* Panel state variants */
+.iot-panel.loading {
+  background: linear-gradient(135deg, #455a64 0%, #607d8b 100%);
 }
 
-/* Panel state variants - matching weather panel states */
-.iot-panel-redesigned.loading {
-  background: #1a237e;
-  justify-content: center;
-  align-items: center;
+.iot-panel.error {
+  background: linear-gradient(135deg, #b71c1c 0%, #d32f2f 100%);
 }
 
-.iot-panel-redesigned.error {
-  background: #1a237e;
-  justify-content: center;
-  align-items: center;
+.iot-panel.offline {
+  background: linear-gradient(135deg, #424242 0%, #616161 100%);
 }
 
-.iot-panel-redesigned.offline {
-  background: #1a237e;
-  justify-content: center;
-  align-items: center;
-}
-
-.iot-panel-redesigned.connected {
-  background: #1a237e;
-}
-
-.iot-panel-redesigned.active {
-  background: #1a237e;
+.iot-panel.connected {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
 }
 
 /* Animations */

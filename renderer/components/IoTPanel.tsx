@@ -154,30 +154,30 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
         label: "Nhiệt độ",
         value:
           data.temperature !== null ? `${data.temperature.toFixed(1)}` : "--",
-        unit: "°",
+        unit: "°C",
         status: getSensorStatus(data.temperature, "temperature"),
-        icon: "",
+        icon: "🌡️",
       },
       {
         label: "Độ ẩm",
-        value: data.humidity !== null ? `${data.humidity.toFixed(0)}` : "--",
+        value: data.humidity !== null ? `${data.humidity.toFixed(1)}` : "--",
         unit: "%",
         status: getSensorStatus(data.humidity, "humidity"),
-        icon: "",
+        icon: "💧",
       },
       {
         label: "PM2.5",
         value: data.pm25 !== null ? `${data.pm25.toFixed(1)}` : "--",
         unit: "μg/m³",
         status: getSensorStatus(data.pm25, "pm25"),
-        icon: "",
+        icon: "🌫️",
       },
       {
         label: "PM10",
         value: data.pm10 !== null ? `${data.pm10.toFixed(1)}` : "--",
         unit: "μg/m³",
         status: getSensorStatus(data.pm10, "pm10"),
-        icon: "",
+        icon: "💨",
       },
     ];
   };
@@ -185,11 +185,13 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
   // Render loading state
   if (isLoading && !sensorData) {
     return (
-      <div className={`iot-panel-redesigned loading ${className}`}>
-        <div className="iot-panel-header">
-          <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+      <div className={`iot-panel loading ${className}`}>
+        <div className="iot-header">
+          <div className="iot-title">CẢM BIẾN THÔNG MINH</div>
+          <div className="iot-subtitle">E-Ra IoT Platform</div>
         </div>
-        <div className="iot-loading-state">
+        <div className="iot-loading">
+          <div className="loading-spinner"></div>
           <div className="loading-text">Đang kết nối...</div>
         </div>
       </div>
@@ -199,14 +201,21 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
   // Render error state
   if (!eraIotService || (!sensorData && connectionStatus === "error")) {
     return (
-      <div className={`iot-panel-redesigned error ${className}`}>
-        <div className="iot-panel-header">
-          <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+      <div className={`iot-panel error ${className}`}>
+        <div className="iot-header">
+          <div className="iot-title">CẢM BIẾN THÔNG MINH</div>
+          <div className="iot-subtitle">E-Ra IoT Platform</div>
         </div>
-        <div className="iot-error-state">
+        <div className="iot-error">
+          <div className="error-icon">⚠</div>
           <div className="error-text">
             {!eraIotService ? "Chưa cấu hình" : "Lỗi kết nối"}
           </div>
+          {eraIotService && (
+            <button className="retry-button" onClick={handleRefresh}>
+              Thử lại
+            </button>
+          )}
         </div>
       </div>
     );
@@ -215,12 +224,17 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
   // Render offline state
   if (!sensorData) {
     return (
-      <div className={`iot-panel-redesigned offline ${className}`}>
-        <div className="iot-panel-header">
-          <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+      <div className={`iot-panel offline ${className}`}>
+        <div className="iot-header">
+          <div className="iot-title">CẢM BIẾN THÔNG MINH</div>
+          <div className="iot-subtitle">E-Ra IoT Platform</div>
         </div>
-        <div className="iot-offline-state">
+        <div className="iot-offline">
+          <div className="offline-icon">📡</div>
           <div className="offline-text">Không có dữ liệu</div>
+          <button className="retry-button" onClick={handleRefresh}>
+            Kết nối lại
+          </button>
         </div>
       </div>
     );
@@ -230,36 +244,57 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
 
   return (
     <div
-      className={`iot-panel-redesigned active ${connectionStatus} ${className}`}
+      className={`iot-panel active ${connectionStatus} ${className}`}
       onClick={handleRefresh}
     >
-      {/* Header section */}
-      <div className="iot-panel-header">
-        <div className="iot-panel-title">THIẾT BỊ ĐO</div>
+      {/* Header */}
+      <div className="iot-header">
+        <div className="iot-title">CẢM BIẾN THÔNG MINH</div>
+        <div className="iot-subtitle">E-Ra IoT Platform</div>
+        <div className={`connection-indicator ${connectionStatus}`}></div>
       </div>
 
-      {/* Sensor Values Display */}
-      <div className="iot-sensor-values">
+      {/* Status banner for partial/error states */}
+      {sensorData.status !== "success" && (
+        <div className={`status-banner ${sensorData.status}`}>
+          {sensorData.status === "partial"
+            ? "⚡ Một số cảm biến offline"
+            : "❌ Lỗi kết nối cảm biến"}
+        </div>
+      )}
+
+      {/* Sensor grid */}
+      <div className="sensors-grid">
         {sensors.map((sensor, index) => (
-          <div key={index} className="iot-sensor-row">
-            <div className="iot-sensor-label">{sensor.label}</div>
-            <div className="iot-sensor-value">
-              {sensor.value}
-              <span className="iot-sensor-unit">{sensor.unit}</span>
+          <div key={index} className={`sensor-item ${sensor.status}`}>
+            <div className="sensor-icon">{sensor.icon}</div>
+            <div className="sensor-content">
+              <div className="sensor-label">{sensor.label}</div>
+              <div className="sensor-value-container">
+                <span className="sensor-value">{sensor.value}</span>
+                <span className="sensor-unit">{sensor.unit}</span>
+              </div>
             </div>
+            <div className={`sensor-status-indicator ${sensor.status}`}></div>
           </div>
         ))}
       </div>
 
-      {/* Air Quality Status */}
-      <div className="iot-air-quality">
-        <div className="air-quality-text">Chất lượng không khí: Tốt</div>
-        <div className="air-quality-badge">TỐT</div>
+      {/* Last updated info */}
+      <div className="iot-footer">
+        <div className="last-updated">
+          Cập nhật: {sensorData.lastUpdated.toLocaleTimeString("vi-VN")}
+        </div>
+        {sensorData.errorMessage && (
+          <div className="error-message-small" title={sensorData.errorMessage}>
+            ⚠ {sensorData.errorMessage.substring(0, 50)}...
+          </div>
+        )}
       </div>
 
       {/* Loading overlay for refresh */}
       {isLoading && (
-        <div className="iot-refresh-overlay">
+        <div className="refresh-overlay">
           <div className="refresh-spinner"></div>
         </div>
       )}
