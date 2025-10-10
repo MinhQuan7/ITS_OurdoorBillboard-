@@ -691,66 +691,144 @@ function WeatherPanel({ className = "" }) {
             }
           }, `- ${weatherData.feelsLike}°`),
 
-          // Weather details (left column in image)
+          // Weather details grid beneath temperature
           React.createElement("div", { 
-            key: "weather-details-left",
-            style: { width: "100%", marginBottom: "12px" }
+            key: "weather-details-grid",
+            style: { 
+              width: "100%",
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: "8px",
+              marginBottom: "12px"
+            }
           }, [
             React.createElement("div", { 
               key: "humidity",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, `Độ ẩm ${weatherData.humidity}%`)
+              }, "Độ ẩm"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, weatherData.humidity + '%')
             ]),
             React.createElement("div", { 
               key: "rain",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, `Mưa ${weatherData.rainProbability}%`)
+              }, "Mưa"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, weatherData.rainProbability + '%')
             ]),
             React.createElement("div", { 
               key: "uv",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, `UV ${getUVLevel(weatherData.uvIndex)}`)
+              }, "UV"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, getUVLevel(weatherData.uvIndex))
             ]),
             React.createElement("div", { 
               key: "wind",
-              style: { marginBottom: "6px", textAlign: "left" }
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 0, 0, 0.35)",
+                padding: "8px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+              }
             }, [
-              React.createElement("span", { 
-                key: "text",
+              React.createElement("div", { 
+                key: "label",
                 style: { 
                   fontSize: "14px", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)",
-                  fontWeight: 500
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
                 }
-              }, `Gió ${weatherData.windSpeed} km/h`)
+              }, "Gió"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                }
+              }, weatherData.windSpeed + ' km/h')
             ])
           ]),
 

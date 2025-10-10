@@ -740,7 +740,7 @@ function WeatherPanel({ className = "" }) {
                   color: "#ffffff", 
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
                 }
-              }, `\${weatherData.humidity}%`)
+              }, weatherData.humidity + '%')
             ]),
             React.createElement("div", { 
               key: "rain",
@@ -772,7 +772,7 @@ function WeatherPanel({ className = "" }) {
                   color: "#ffffff", 
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
                 }
-              }, `\${weatherData.rainProbability}%`)
+              }, weatherData.rainProbability + '%')
             ]),
             React.createElement("div", { 
               key: "uv",
@@ -804,7 +804,7 @@ function WeatherPanel({ className = "" }) {
                   color: "#ffffff", 
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
                 }
-              }, `\${getUVLevel(weatherData.uvIndex)}`)
+              }, getUVLevel(weatherData.uvIndex))
             ]),
             React.createElement("div", { 
               key: "wind",
@@ -836,7 +836,7 @@ function WeatherPanel({ className = "" }) {
                   color: "#ffffff", 
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
                 }
-              }, `\${weatherData.windSpeed} km/h`)
+              }, weatherData.windSpeed + ' km/h')
             ])
           ]),
 
