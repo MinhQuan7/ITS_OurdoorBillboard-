@@ -385,7 +385,7 @@ function WeatherPanel({ className = "" }) {
   const getAirQualityBadge = (aqi, airQuality) => {
     switch (aqi) {
       case 1:
-        return { color: "#4ade80", text: "TỐT" }; // Green - Good
+        return { color: "#22c55e", text: "TỐT" }; // Green - Good
       case 2:
         return { color: "#fbbf24", text: "KHẤP" }; // Yellow - Fair
       case 3:
@@ -395,7 +395,7 @@ function WeatherPanel({ className = "" }) {
       case 5:
         return { color: "#7c2d12", text: "XẤU" }; // Dark red - Very poor
       default:
-        return { color: "#4ade80", text: "TỐT" };
+        return { color: "#22c55e", text: "TỐT" };
     }
   };
 
@@ -996,7 +996,7 @@ function WeatherPanel({ className = "" }) {
           React.createElement("div", { 
             key: "air-quality-badge",
             style: { 
-              background: "#4ade80",
+              background: "#22c55e",
               color: "#ffffff",
               fontSize: "12px",
               fontWeight: "bold",
@@ -1005,7 +1005,7 @@ function WeatherPanel({ className = "" }) {
               borderRadius: "6px",
               marginTop: "auto",
               textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
-              boxShadow: "0 2px 4px rgba(74, 222, 128, 0.3)"
+              boxShadow: "0 2px 4px rgba(34, 197, 94, 0.3)"
             }
           }, "TỐT")
         ])
@@ -1543,10 +1543,7 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         width: "192px",
         height: "288px",
-<<<<<<< HEAD
         backgroundColor: "#1a237e",
-=======
->>>>>>> fix/label-size
         color: "#fff",
         display: "flex",
         flexDirection: "column",
