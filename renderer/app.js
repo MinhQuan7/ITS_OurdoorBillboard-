@@ -186,22 +186,22 @@ class IoTPanel extends React.Component {
       ),
       React.createElement(
         "div",
-        { style: { fontSize: "12px", marginBottom: "4px" } },
+        { style: { fontSize: "14px", marginBottom: "4px" } },
         `Nhiệt độ: ${sensorData.temperature}°`
       ),
       React.createElement(
         "div",
-        { style: { fontSize: "12px", marginBottom: "4px" } },
+        { style: { fontSize: "14px", marginBottom: "4px" } },
         `Độ ẩm: ${sensorData.humidity}%`
       ),
       React.createElement(
         "div",
-        { style: { fontSize: "12px", marginBottom: "4px" } },
+        { style: { fontSize: "14px", marginBottom: "4px" } },
         `PM2.5: ${sensorData.pm25} μg`
       ),
       React.createElement(
         "div",
-        { style: { fontSize: "12px", marginBottom: "4px" } },
+        { style: { fontSize: "14px", marginBottom: "4px" } },
         `PM10: ${sensorData.pm10} μg`
       ),
       React.createElement(

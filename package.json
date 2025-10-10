@@ -11,6 +11,7 @@
     "kill": "taskkill /f /im electron.exe 2>nul",
     "clean-start": "taskkill /f /im electron.exe 2>nul & taskkill /f /im node.exe 2>nul & timeout /t 2 & npm run dev",
     "build": "electron-builder",
+    
     "build:win": "electron-builder --win",
     "build:portable": "electron-builder --win portable",
     "pack": "electron-packager . --platform=win32 --arch=x64 --out=dist/ --overwrite",

@@ -12,6 +12,7 @@ import "./WeatherPanel.css";
 
 interface WeatherPanelProps {
   className?: string;
+  onWeatherUpdate?: (data: WeatherData | null) => void;
 }
 
 // Global weather service instance
@@ -160,7 +161,10 @@ class GlobalWeatherServiceManager {
   }
 }
 
-const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
+const WeatherPanel: React.FC<WeatherPanelProps> = ({
+  className = "",
+  onWeatherUpdate,
+}) => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [connectionStatus, setConnectionStatus] = useState<
@@ -182,6 +186,12 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
         setWeatherData(data);
         setConnectionStatus("connected");
         setIsLoading(false);
+
+        // Notify parent component about weather update
+        if (onWeatherUpdate) {
+          onWeatherUpdate(data);
+        }
+
         console.log("WeatherPanel: Weather data updated:", {
           city: data.cityName,
           temp: data.temperature,
@@ -196,12 +206,17 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
         if (!isLoading) {
           setConnectionStatus("error");
         }
+
+        // Notify parent component
+        if (onWeatherUpdate) {
+          onWeatherUpdate(null);
+        }
       }
     });
 
     // Cleanup subscription on unmount
     return unsubscribe;
-  }, [isLoading]);
+  }, [isLoading, onWeatherUpdate]);
 
   // Format UV Index level
   const getUVLevel = (uvIndex: number): string => {
@@ -359,17 +374,28 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
           <div className="main-temp">{weatherData.temperature.toFixed(1)}</div>
           <div className="feels-like-temp">- {weatherData.feelsLike}°</div>
         </div>
-      </div>
 
-      {/* Weather measurements grid */}
-      <div className="weather-data-grid">
-        <div className="weather-data-row">
-          <span className="data-label">Độ ẩm</span>
-          <span className="data-value">{weatherData.humidity}%</span>
-        </div>
-        <div className="weather-data-row">
-          <span className="data-label">Mưa</span>
-          <span className="data-value">{weatherData.rainProbability}%</span>
+        {/* Integrated measurements grid */}
+        <div className="weather-measurements-grid">
+          <div className="measure-item">
+            <span className="measure-label">Độ ẩm</span>
+            <span className="measure-value">{weatherData.humidity}%</span>
+          </div>
+          <div className="measure-item">
+            <span className="measure-label">Mưa</span>
+            <span className="measure-value">
+              {weatherData.rainProbability}%
+            </span>
+          </div>
+          <div className="measure-item">
+            <span className="measure-label">
+              UV {getUVLevel(weatherData.uvIndex)}
+            </span>
+          </div>
+          <div className="measure-item">
+            <span className="measure-label">Gió</span>
+            <span className="measure-value">{weatherData.windSpeed} km/h</span>
+          </div>
         </div>
         <div className="weather-data-row">
           <span className="data-label">PM2.5</span>
@@ -397,9 +423,9 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({ className = "" }) => {
       {(weatherData.rainProbability > 70 ||
         weatherData.weatherCondition.includes("mưa to") ||
         weatherData.weatherCondition.includes("dông")) && (
-        <div className="weather-alert-warning">
-          <div className="alert-warning-icon">!</div>
-          <div className="alert-warning-text">CẢNH BÁO MƯA LỚN</div>
+        <div className="weather-alert-banner">
+          <div className="alert-icon-warning">!</div>
+          <div className="alert-text-large">CẢNH BÁO MƯA LỚN</div>
         </div>
       )}
 

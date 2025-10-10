@@ -16,8 +16,26 @@ const BillboardLayout: React.FC = () => {
   const [eraIotService, setEraIotService] = useState<EraIotService | null>(
     null
   );
+  const [showWeatherAlert, setShowWeatherAlert] = useState<boolean>(false);
+  const [weatherData, setWeatherData] = useState<any>(null);
 
   console.log("BillboardLayout: Component initialized");
+
+  // Handle weather data updates from WeatherPanel
+  const handleWeatherUpdate = (data: any) => {
+    setWeatherData(data);
+
+    // Determine if we should show weather alert
+    if (data) {
+      const shouldShowAlert =
+        data.rainProbability > 70 ||
+        data.weatherCondition?.includes("mưa to") ||
+        data.weatherCondition?.includes("dông");
+      setShowWeatherAlert(shouldShowAlert);
+    } else {
+      setShowWeatherAlert(false);
+    }
+  };
 
   useEffect(() => {
     console.log("BillboardLayout: useEffect triggered");
@@ -171,7 +189,10 @@ const BillboardLayout: React.FC = () => {
       <div className="top-row">
         {/* Weather Panel */}
         <div className="weather-column">
-          <WeatherPanel className="weather-panel-column" />
+          <WeatherPanel
+            className="weather-panel-column"
+            onWeatherUpdate={handleWeatherUpdate}
+          />
         </div>
 
         {/* IoT Panel */}
@@ -182,6 +203,14 @@ const BillboardLayout: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* Weather Alert Banner - positioned between top row and bottom row */}
+      {showWeatherAlert && (
+        <div className="weather-alert-banner">
+          <div className="alert-icon-warning">!</div>
+          <div className="alert-text-large">CẢNH BÁO MƯA LỚN</div>
+        </div>
+      )}
 
       {/* Bottom row: Company Logo */}
       <div className="bottom-row">
