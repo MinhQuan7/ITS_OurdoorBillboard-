@@ -13,14 +13,248 @@ class BillboardConfigManager {
       schedules: [],
     };
 
+    // Initialize authentication service
+    this.authService = null;
+    this.initAuthService();
+
     this.init();
+  }
+
+  async initAuthService() {
+    try {
+      console.log("ConfigManager: Initializing auth service...");
+
+      // Check if EraAuthService is available (should be loaded from HTML script tag)
+      if (!window.EraAuthService) {
+        console.error(
+          "ConfigManager: EraAuthService not found on window object"
+        );
+        return;
+      }
+
+      this.authService = new window.EraAuthService();
+
+      // Subscribe to auth state changes
+      this.authService.onAuthStateChange((authState) => {
+        console.log("ConfigManager: Auth state changed:", authState);
+        this.updateLoginUI(authState);
+      });
+
+      // Initialize login UI with current auth state
+      const currentState = this.authService.getAuthState();
+      console.log("ConfigManager: Current auth state:", currentState);
+      this.updateLoginUI(currentState);
+
+      console.log("ConfigManager: Auth service initialized successfully");
+    } catch (error) {
+      console.error("ConfigManager: Failed to initialize auth service:", error);
+    }
   }
 
   init() {
     this.setupTabNavigation();
     this.setupLogoModeHandlers();
+    this.setupLoginHandlers();
     this.loadConfiguration();
     this.setupDragAndDrop();
+  }
+
+  setupLoginHandlers() {
+    const loginForm = document.getElementById("era-login-form");
+    const logoutBtn = document.getElementById("logout-btn");
+    const copyTokenBtn = document.getElementById("copy-token-btn");
+
+    if (loginForm) {
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.handleLogin();
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        this.handleLogout();
+      });
+    }
+
+    if (copyTokenBtn) {
+      copyTokenBtn.addEventListener("click", () => {
+        this.copyTokenToClipboard();
+      });
+    }
+  }
+
+  async handleLogin() {
+    if (!this.authService) {
+      this.showNotification("Authentication service not available", "error");
+      return;
+    }
+
+    const usernameInput = document.getElementById("era-username");
+    const passwordInput = document.getElementById("era-password");
+    const loginBtn = document.getElementById("login-btn");
+    const btnText = loginBtn.querySelector(".btn-text");
+    const btnLoader = loginBtn.querySelector(".btn-loader");
+
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!username || !password) {
+      this.showNotification("Please enter both username and password", "error");
+      return;
+    }
+
+    // Show loading state
+    loginBtn.disabled = true;
+    btnText.style.display = "none";
+    btnLoader.style.display = "inline";
+
+    try {
+      const result = await this.authService.login({ username, password });
+
+      if (result.success) {
+        this.showNotification("Login successful!", "success");
+
+        // Update E-Ra IoT configuration with new token
+        await this.updateEraIotConfig(result.token);
+
+        // Clear password field
+        passwordInput.value = "";
+      } else {
+        this.showNotification(result.message || "Login failed", "error");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      this.showNotification("Login failed: " + error.message, "error");
+    } finally {
+      // Reset button state
+      loginBtn.disabled = false;
+      btnText.style.display = "inline";
+      btnLoader.style.display = "none";
+    }
+  }
+
+  handleLogout() {
+    if (!this.authService) {
+      return;
+    }
+
+    this.authService.logout();
+    this.showNotification("Logged out successfully", "success");
+
+    // Clear form fields
+    document.getElementById("era-username").value = "";
+    document.getElementById("era-password").value = "";
+  }
+
+  updateLoginUI(authState) {
+    const statusIndicator = document.getElementById("status-indicator");
+    const statusText = statusIndicator?.querySelector(".status-text");
+    const loginForm = document.getElementById("era-login-form");
+    const logoutBtn = document.getElementById("logout-btn");
+    const tokenInfo = document.getElementById("token-info");
+    const tokenDisplay = document.getElementById("token-display");
+
+    if (!statusIndicator || !statusText) return;
+
+    if (authState.isAuthenticated) {
+      // Logged in state
+      statusIndicator.className = "status-indicator online";
+      statusText.textContent = `Logged in as ${
+        authState.user?.username || "User"
+      }`;
+
+      if (loginForm) loginForm.style.display = "none";
+      if (logoutBtn) logoutBtn.classList.add("logout-btn-visible");
+      if (tokenInfo) tokenInfo.style.display = "block";
+
+      // Update token display
+      if (tokenDisplay) {
+        const tokenText = tokenDisplay.querySelector(".token-text");
+        if (tokenText) {
+          tokenText.textContent = authState.token || "Token not available";
+        }
+      }
+    } else {
+      // Logged out state
+      statusIndicator.className = "status-indicator offline";
+      statusText.textContent = "Not logged in";
+
+      if (loginForm) loginForm.style.display = "block";
+      if (logoutBtn) logoutBtn.classList.remove("logout-btn-visible");
+      if (tokenInfo) tokenInfo.style.display = "none";
+    }
+  }
+
+  async updateEraIotConfig(token) {
+    try {
+      const gatewayToken = this.authService.extractGatewayToken(token);
+
+      if (!gatewayToken) {
+        console.error("Failed to extract gateway token");
+        return;
+      }
+
+      // Update authentication token via IPC
+      if (window.electronAPI) {
+        const result = await window.electronAPI.updateAuthToken(token);
+        if (result.success) {
+          console.log("Authentication token saved successfully");
+        } else {
+          console.error("Failed to save authentication token:", result.error);
+        }
+      }
+
+      // Update local config for immediate use
+      if (!this.config.eraIot) {
+        this.config.eraIot = {
+          enabled: true,
+          baseUrl: "https://backend.eoh.io",
+          sensorConfigs: {
+            temperature: 138997,
+            humidity: 138998,
+            pm25: 138999,
+            pm10: 139000,
+          },
+          updateInterval: 5,
+          timeout: 15000,
+          retryAttempts: 3,
+          retryDelay: 2000,
+        };
+      }
+
+      this.config.eraIot.authToken = token;
+
+      console.log("E-Ra IoT configuration updated with new token");
+    } catch (error) {
+      console.error("Failed to update E-Ra IoT config:", error);
+    }
+  }
+
+  copyTokenToClipboard() {
+    if (!this.authService) return;
+
+    const token = this.authService.getToken();
+    if (!token) {
+      this.showNotification("No token available to copy", "error");
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(token)
+      .then(() => {
+        this.showNotification("Token copied to clipboard", "success");
+      })
+      .catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = token;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        this.showNotification("Token copied to clipboard", "success");
+      });
   }
 
   setupTabNavigation() {

@@ -34,62 +34,54 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
       return;
     }
 
-    console.log("IoTPanel: Initializing with E-Ra IoT service");
+    console.log("IoTPanel: Initializing with real-time E-Ra IoT service");
 
-    // Set up polling for sensor data updates
-    const pollInterval = setInterval(() => {
-      const data = eraIotService.getCurrentData();
+    // Subscribe to real-time data updates (receives updates every second from MQTT service)
+    const unsubscribeData = eraIotService.onDataUpdate((data) => {
+      console.log("IoTPanel: Real-time data update received:", {
+        temperature: data.temperature,
+        humidity: data.humidity,
+        pm25: data.pm25,
+        pm10: data.pm10,
+        status: data.status,
+        lastUpdated: data.lastUpdated,
+        errorMessage: data.errorMessage,
+      });
 
-      if (data) {
-        console.log("IoTPanel: Received sensor data:", {
-          temperature: data.temperature,
-          humidity: data.humidity,
-          pm25: data.pm25,
-          pm10: data.pm10,
-          status: data.status,
-          lastUpdated: data.lastUpdated,
-          errorMessage: data.errorMessage,
-        });
-
-        setSensorData(data);
-        setIsLoading(false);
-
-        // Update connection status based on data status
-        switch (data.status) {
-          case "success":
-            setConnectionStatus("connected");
-            break;
-          case "partial":
-            setConnectionStatus("connected"); // Still showing some data
-            break;
-          case "error":
-            setConnectionStatus("error");
-            break;
-          default:
-            setConnectionStatus("offline");
-        }
-      } else {
-        console.log("IoTPanel: No sensor data available from service");
-        if (!isLoading) {
-          setConnectionStatus("offline");
-        }
-      }
-    }, 3000); // Poll every 3 seconds for more responsive updates
-
-    // Initial data fetch
-    const initialData = eraIotService.getCurrentData();
-    if (initialData) {
-      setSensorData(initialData);
+      setSensorData(data);
       setIsLoading(false);
-      setConnectionStatus(
-        initialData.status === "error" ? "error" : "connected"
-      );
-    }
 
+      // Update connection status based on data status
+      switch (data.status) {
+        case "success":
+          setConnectionStatus("connected");
+          break;
+        case "partial":
+          setConnectionStatus("connected"); // Still showing some data
+          break;
+        case "error":
+          setConnectionStatus("error");
+          break;
+        default:
+          setConnectionStatus("offline");
+      }
+    });
+
+    // Subscribe to service status updates
+    const unsubscribeStatus = eraIotService.onStatusUpdate((status) => {
+      console.log("IoTPanel: Service status update:", status);
+
+      if (!status.isRunning && !sensorData) {
+        setConnectionStatus("offline");
+      }
+    });
+
+    // Cleanup subscriptions
     return () => {
-      clearInterval(pollInterval);
+      unsubscribeData();
+      unsubscribeStatus();
     };
-  }, [eraIotService, isLoading]);
+  }, [eraIotService, sensorData]);
 
   // Handle manual refresh
   const handleRefresh = async () => {

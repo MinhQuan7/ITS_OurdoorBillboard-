@@ -710,9 +710,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(0, 0, 0, 0.35)",
-                padding: "8px",
-                borderRadius: "6px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+                padding: "8px"
               }
             }, [
               React.createElement("div", { 
@@ -742,9 +740,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(0, 0, 0, 0.35)",
-                padding: "8px",
-                borderRadius: "6px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+                padding: "8px"
               }
             }, [
               React.createElement("div", { 
@@ -774,9 +770,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(0, 0, 0, 0.35)",
-                padding: "8px",
-                borderRadius: "6px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+                padding: "8px"
               }
             }, [
               React.createElement("div", { 
@@ -806,9 +800,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(0, 0, 0, 0.35)",
-                padding: "8px",
-                borderRadius: "6px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+                padding: "8px"
               }
             }, [
               React.createElement("div", { 
@@ -1241,12 +1233,11 @@ function CompanyLogo() {
 
   return React.createElement("div", {
     style: {
-      flex: 1,
-      backgroundColor: "#ff6b35",
+      width: "100%",
+      height: "100%",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "8px",
       position: "relative",
       overflow: "hidden",
     }
@@ -1275,12 +1266,12 @@ class EraIotService {
     // Initial fetch
     await this.fetchSensorData();
 
-    // Set up periodic updates
+    // Set up faster periodic updates - now every 1 second for real-time responsiveness
     this.updateTimer = setInterval(() => {
       this.fetchSensorData();
-    }, this.config.updateInterval * 60 * 1000);
+    }, 1000); // 1000ms = 1 second
 
-    console.log(`EraIotService: Started periodic updates every ${this.config.updateInterval} minutes`);
+    console.log("EraIotService: Started periodic updates every 1 second for real-time data");
   }
 
   stopPeriodicUpdates() {
@@ -1448,17 +1439,17 @@ function IoTPanel({ eraIotService, className = "" }) {
       return;
     }
 
-    console.log("IoTPanel: Initializing with E-Ra IoT service");
+    console.log("IoTPanel: Initializing with real-time E-Ra IoT service (1-second updates)");
 
     const pollInterval = setInterval(() => {
       const data = eraIotService.getCurrentData();
       if (data) {
-        console.log("IoTPanel: Received sensor data:", data);
+        console.log("IoTPanel: Real-time sensor data update:", data);
         setSensorData(data);
         setIsLoading(false);
         setConnectionStatus(data.status === "error" ? "error" : "connected");
       }
-    }, 3000);
+    }, 1000); // Now polls every 1 second to match service update frequency
 
     const initialData = eraIotService.getCurrentData();
     if (initialData) {
@@ -1633,7 +1624,6 @@ function IoTPanel({ eraIotService, className = "" }) {
         alignItems: "center",
         marginBottom: "8px",
         paddingBottom: "4px",
-        borderBottom: "1px solid #333",
         position: "relative",
         zIndex: 2,
       }
@@ -1659,7 +1649,6 @@ function IoTPanel({ eraIotService, className = "" }) {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "4px 0",
-          borderBottom: index < sensors.length - 1 ? "1px solid #333" : "none",
           position: "relative",
           zIndex: 2,
           }
@@ -1691,7 +1680,6 @@ function IoTPanel({ eraIotService, className = "" }) {
       style: {
         marginTop: "auto",
         paddingTop: "4px",
-        borderTop: "1px solid #333",
         fontSize: "8px",
         color: "#888",
         textAlign: "center",
@@ -1702,9 +1690,11 @@ function IoTPanel({ eraIotService, className = "" }) {
   ]);
 }
 
-// Updated BillboardLayout with E-Ra IoT integration
+// Updated BillboardLayout with E-Ra IoT integration and full-width Weather Alert Banner
 function BillboardLayout() {
   const [eraIotService, setEraIotService] = React.useState(null);
+  const [weatherData, setWeatherData] = React.useState(null);
+  const [showWeatherAlert, setShowWeatherAlert] = React.useState(false);
 
   console.log("BillboardLayout: Component initialized");
 
@@ -1766,6 +1756,26 @@ function BillboardLayout() {
     };
   }, []);
 
+  // Subscribe to weather data updates for alert banner
+  React.useEffect(() => {
+    const unsubscribe = GlobalWeatherServiceManager.subscribe((data) => {
+      setWeatherData(data);
+      
+      // Determine if we should show weather alert
+      if (data) {
+        const shouldShowAlert = data.rainProbability > 60 || // Lower threshold for testing
+                               data.weatherCondition?.includes("mưa to") || 
+                               data.weatherCondition?.includes("dông");
+        setShowWeatherAlert(shouldShowAlert);
+        console.log("BillboardLayout: Weather alert status:", shouldShowAlert, "Rain probability:", data.rainProbability);
+      } else {
+        setShowWeatherAlert(false);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
   return React.createElement("div", {
     style: {
       width: "384px",
@@ -1775,20 +1785,83 @@ function BillboardLayout() {
       fontFamily: "Arial, sans-serif",
       margin: 0,
       padding: 0,
+      position: "relative",
     }
   }, [
     React.createElement("div", {
       key: "top-row",
       style: {
-        flex: 3,
+        height: showWeatherAlert ? "248px" : "288px", // Reduce height when alert is shown
         display: "flex",
         width: "100%",
+        position: "relative",
       }
     }, [
       React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" }),
       React.createElement(IoTPanel, { key: "iot", eraIotService: eraIotService, className: "unified" })
     ]),
-    React.createElement(CompanyLogo, { key: "logo" })
+    
+    // Weather Alert Banner - positioned to span across both panels
+    showWeatherAlert && React.createElement("div", { 
+      key: "global-weather-alert",
+      style: { 
+        height: "40px",
+        width: "384px",
+        background: "linear-gradient(135deg, #dc2626, #b91c1c)",
+        color: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "12px",
+        padding: "0 16px",
+        fontWeight: "bold",
+        textTransform: "uppercase",
+        letterSpacing: "1px",
+        boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)",
+        zIndex: 100
+      }
+    }, [
+      React.createElement("div", {
+        key: "alert-icon",
+        style: {
+          background: "#fbbf24",
+          color: "#dc2626",
+          width: "24px",
+          height: "24px",
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "16px",
+          fontWeight: "bold",
+          flexShrink: 0
+        }
+      }, "!"),
+      React.createElement("div", {
+        key: "alert-text",
+        style: {
+          fontSize: "16px",
+          textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
+          flex: 1,
+          textAlign: "center"
+        }
+      }, "CẢNH BÁO MƯA LỚN")
+    ]),
+    
+    React.createElement("div", {
+      key: "logo-section",
+      style: {
+        height: showWeatherAlert ? "56px" : "96px", // Reduce height when alert is shown
+        width: "100%",
+        backgroundColor: "#ff6b35",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "8px",
+        position: "relative",
+        overflow: "hidden",
+      }
+    }, React.createElement(CompanyLogo, { key: "logo" }))
   ]);
 }
 

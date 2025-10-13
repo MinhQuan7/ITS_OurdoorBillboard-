@@ -25,4 +25,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("update-era-iot-config", config),
   onEraIotConfigUpdated: (callback) =>
     ipcRenderer.on("era-iot-config-updated", callback),
+
+  // Authentication handlers
+  updateAuthToken: (token) => ipcRenderer.invoke("update-auth-token", token),
+  onAuthTokenUpdated: (callback) =>
+    ipcRenderer.on("auth-token-updated", callback),
 });

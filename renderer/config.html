@@ -316,6 +316,110 @@
         align-items: center;
       }
 
+      /* Login Styles */
+      .login-status {
+        margin-bottom: 25px;
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+      }
+
+      .status-indicator.online {
+        color: #28a745;
+      }
+
+      .status-indicator.offline {
+        color: #6c757d;
+      }
+
+      .status-indicator.connecting {
+        color: #ff6b35;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+        background: currentColor;
+      }
+
+      .login-form {
+        margin-bottom: 20px;
+      }
+
+      .btn-loader {
+        animation: spin 1s linear infinite;
+        display: none;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .login-info {
+        padding: 15px;
+        background: #fff5f2;
+        border: 1px solid #ffd6cc;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+
+      .info-text {
+        color: #6c757d;
+        font-size: 14px;
+        margin: 0;
+      }
+
+      .token-display {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .token-value {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        flex: 1;
+      }
+
+      .token-text {
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        color: #495057;
+        word-break: break-all;
+        flex: 1;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .btn-loader-visible {
+        display: inline !important;
+      }
+
+      .logout-btn-visible {
+        display: inline-block !important;
+      }
+
       /* Responsive */
       @media (max-width: 768px) {
         .config-container {
@@ -329,6 +433,11 @@
 
         .main-content {
           padding: 20px;
+        }
+
+        .token-value {
+          flex-direction: column;
+          align-items: stretch;
         }
       }
     </style>
@@ -344,7 +453,10 @@
 
         <ul class="nav-menu">
           <li class="nav-item">
-            <a href="#" class="nav-link active" data-tab="company-logo">
+            <a href="#" class="nav-link active" data-tab="era-login"> Login </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" data-tab="company-logo">
               Company Logo
             </a>
           </li>
@@ -369,8 +481,96 @@
 
       <!-- Main Content -->
       <div class="main-content">
+        <!-- E-Ra Login Tab -->
+        <div id="era-login" class="tab-content active">
+          <div class="content-header">
+            <h2 class="content-title">E-Ra IoT Platform Login</h2>
+            <p class="content-subtitle">
+              Authenticate with your E-Ra account to access IoT data
+            </p>
+          </div>
+
+          <div class="config-card">
+            <h3 class="card-title">
+              <span class="card-icon">🔐</span>
+              Account Authentication
+            </h3>
+
+            <div class="login-status" id="login-status">
+              <div class="status-indicator offline" id="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Not logged in</span>
+              </div>
+            </div>
+
+            <form id="era-login-form" class="login-form">
+              <div class="form-group">
+                <label class="form-label" for="era-username"
+                  >Username/Email:</label
+                >
+                <input
+                  type="text"
+                  id="era-username"
+                  class="form-control"
+                  placeholder="Enter your E-Ra username or email"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="era-password">Password:</label>
+                <input
+                  type="password"
+                  id="era-password"
+                  class="form-control"
+                  placeholder="Enter your E-Ra password"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                  <span class="btn-text">Login to E-Ra</span>
+                  <span class="btn-loader" style="display: none">⟳</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  id="logout-btn"
+                  style="display: none; margin-left: 10px"
+                >
+                  Logout
+                </button>
+              </div>
+            </form>
+
+            <div class="login-info">
+              <p class="info-text">
+                After successful login, your authentication token will be
+                automatically configured for IoT data access.
+              </p>
+            </div>
+          </div>
+
+          <div class="config-card" id="token-info" style="display: none">
+            <h3 class="card-title">
+              <span class="card-icon">🔑</span>
+              Authentication Token
+            </h3>
+            <div class="token-display">
+              <label class="form-label">Current Token:</label>
+              <div class="token-value" id="token-display">
+                <span class="token-text">Token not available</span>
+                <button class="btn btn-outline" id="copy-token-btn">
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Company Logo Tab -->
-        <div id="company-logo" class="tab-content active">
+        <div id="company-logo" class="tab-content">
           <div class="content-header">
             <h2 class="content-title">Company Logo Management</h2>
             <p class="content-subtitle">
@@ -636,6 +836,7 @@
       </div>
     </div>
 
+    <script src="services/eraAuthService.js"></script>
     <script src="config.js"></script>
   </body>
 </html>

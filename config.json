@@ -40,6 +40,7 @@
     "enabled": true,
     "authToken": "Token 78072b06a81e166b8b900d95f4c2ba1234272955",
     "baseUrl": "https://backend.eoh.io",
+    "mqttApiKey": "your_mqtt_api_key_here",
     "sensorConfigs": {
       "temperature": 138997,
       "humidity": 138998,

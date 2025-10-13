@@ -13,6 +13,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
   const [config, setConfig] = useState<EraIotConfig>({
     authToken: "Token 78072b06a81e166b8b900d95f4c2ba1234272955", // User must enter their real AUTHTOKEN from E-Ra Platform
     baseUrl: "https://backend.eoh.io",
+    mqttApiKey: "your_mqtt_api_key_here", // User must enter their MQTT API key
     sensorConfigs: {
       temperature: 138997,
       humidity: 138998,
@@ -204,6 +205,18 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
               className="era-config-input"
             />
             <small>Lấy từ Profile → AUTHTOKEN trên app.e-ra.io</small>
+          </div>
+
+          <div className="era-config-section">
+            <label>MQTT API Key *</label>
+            <input
+              type="password"
+              value={config.mqttApiKey || ""}
+              onChange={(e) => handleInputChange("mqttApiKey", e.target.value)}
+              placeholder="Nhập MQTT API Key từ E-Ra Platform"
+              className="era-config-input"
+            />
+            <small>Cần thiết để kết nối MQTT với E-Ra Platform</small>
           </div>
 
           <div className="era-config-section">

@@ -302,3 +302,52 @@ ipcMain.handle("update-era-iot-config", async (event, eraIotConfig) => {
     return { success: false, error: error.message };
   }
 });
+
+// Handle authentication token updates from login
+ipcMain.handle("update-auth-token", async (event, authToken) => {
+  try {
+    let currentConfig = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        const configData = fs.readFileSync(configPath, "utf8");
+        currentConfig = JSON.parse(configData);
+      } catch (error) {
+        console.warn("Could not load existing config, using defaults");
+      }
+    }
+
+    // Ensure E-Ra IoT config exists
+    if (!currentConfig.eraIot) {
+      currentConfig.eraIot = {
+        enabled: true,
+        baseUrl: "https://backend.eoh.io",
+        sensorConfigs: {
+          temperature: 138997,
+          humidity: 138998,
+          pm25: 138999,
+          pm10: 139000,
+        },
+        updateInterval: 5,
+        timeout: 15000,
+        retryAttempts: 3,
+        retryDelay: 2000,
+      };
+    }
+
+    // Update auth token
+    currentConfig.eraIot.authToken = authToken;
+
+    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
+    console.log("Authentication token updated successfully");
+
+    // Notify main window of token update
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("auth-token-updated", authToken);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating auth token:", error);
+    return { success: false, error: error.message };
+  }
+});
