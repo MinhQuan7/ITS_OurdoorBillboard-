@@ -8,8 +8,14 @@
       "type": "image/*"
     },
     {
-      "name": "EoH_ERa_Web-Banner_1920x800-1.png",
-      "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\EoH_ERa_Web-Banner_1920x800-1.png",
+      "name": "background4.jpg",
+      "path": "C:\\Users\\lemin\\Downloads\\background4.jpg",
+      "size": 0,
+      "type": "image/*"
+    },
+    {
+      "name": "background1.jpg",
+      "path": "C:\\Users\\lemin\\Downloads\\background1.jpg",
       "size": 0,
       "type": "image/*"
     }

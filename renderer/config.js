@@ -219,19 +219,68 @@ class BillboardConfigManager {
       return;
     }
 
-    this.authService.logout();
-    this.showNotification("Logged out successfully", "success");
+    // Show confirmation dialog
+    const confirmLogout = confirm(
+      "Are you sure you want to logout?\n\nThis will clear your current authentication and allow you to login with a different E-Ra account."
+    );
 
-    // Clear form fields
-    document.getElementById("era-username").value = "";
-    document.getElementById("era-password").value = "";
+    if (!confirmLogout) {
+      return;
+    }
+
+    // Perform logout
+    this.authService.logout();
+    this.showNotification(
+      "Logged out successfully! You can now login with a different account.",
+      "success"
+    );
+
+    // Clear form fields to prepare for new login
+    const usernameInput = document.getElementById("era-username");
+    const passwordInput = document.getElementById("era-password");
+
+    if (usernameInput) usernameInput.value = "";
+    if (passwordInput) passwordInput.value = "";
+
+    // Clear any cached config data
+    if (this.eraConfigService) {
+      this.eraConfigService.clearCache();
+    }
+
+    // Hide config sections that require authentication
+    const sectionsToHide = [
+      "era-chips-section",
+      "era-datastreams-section",
+      "era-mapping-section",
+      "era-current-mapping",
+    ];
+
+    sectionsToHide.forEach((sectionId) => {
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.style.display = "none";
+      }
+    });
+
+    // Reset era config status
+    const statusDiv = document.getElementById("era-config-status");
+    if (statusDiv) {
+      statusDiv.style.display = "none";
+    }
+
+    // Focus on username field for easy re-login
+    setTimeout(() => {
+      if (usernameInput) {
+        usernameInput.focus();
+      }
+    }, 100);
   }
 
   updateLoginUI(authState) {
     const statusIndicator = document.getElementById("status-indicator");
     const statusText = statusIndicator?.querySelector(".status-text");
     const loginForm = document.getElementById("era-login-form");
-    const logoutBtn = document.getElementById("logout-btn");
+    const logoutSection = document.getElementById("logout-section");
     const tokenInfo = document.getElementById("token-info");
     const tokenDisplay = document.getElementById("token-display");
 
@@ -244,8 +293,9 @@ class BillboardConfigManager {
         authState.user?.username || "User"
       }`;
 
+      // Hide login form and show logout section
       if (loginForm) loginForm.style.display = "none";
-      if (logoutBtn) logoutBtn.classList.add("logout-btn-visible");
+      if (logoutSection) logoutSection.style.display = "block";
       if (tokenInfo) tokenInfo.style.display = "block";
 
       // Update token display
@@ -260,8 +310,9 @@ class BillboardConfigManager {
       statusIndicator.className = "status-indicator offline";
       statusText.textContent = "Not logged in";
 
+      // Show login form and hide logout section
       if (loginForm) loginForm.style.display = "block";
-      if (logoutBtn) logoutBtn.classList.remove("logout-btn-visible");
+      if (logoutSection) logoutSection.style.display = "none";
       if (tokenInfo) tokenInfo.style.display = "none";
     }
   }

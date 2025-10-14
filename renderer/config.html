@@ -420,6 +420,83 @@
         display: inline-block !important;
       }
 
+      /* Logout Section Styles */
+      .logout-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: linear-gradient(135deg, #fff5f2 0%, #ffe5e1 100%);
+        border: 2px solid #ffd6cc;
+        border-radius: 12px;
+      }
+
+      .logout-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .logout-info {
+        text-align: center;
+      }
+
+      .logout-message {
+        margin: 0;
+        font-size: 14px;
+        color: #28a745;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .logout-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background: #28a745;
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .logout-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-logout {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-logout:hover {
+        background: #c82333;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+      }
+
+      .logout-help {
+        font-size: 12px;
+        color: #6c757d;
+        font-style: italic;
+      }
+
       /* E-Ra Config Styles */
       .chip-item {
         padding: 15px;
@@ -590,16 +667,37 @@
                   <span class="btn-text">Login to E-Ra</span>
                   <span class="btn-loader" style="display: none">⟳</span>
                 </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  id="logout-btn"
-                  style="display: none; margin-left: 10px"
-                >
-                  Logout
-                </button>
               </div>
             </form>
+
+            <!-- Logout Section - Visible when logged in -->
+            <div
+              id="logout-section"
+              class="logout-section"
+              style="display: none"
+            >
+              <div class="logout-container">
+                <div class="logout-info">
+                  <p class="logout-message">
+                    <span class="logout-icon">✓</span>
+                    You are currently logged in. Click logout to sign in with a
+                    different account.
+                  </p>
+                </div>
+                <div class="logout-actions">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-logout"
+                    id="logout-btn"
+                  >
+                    <span class="logout-text">🚪 Logout</span>
+                  </button>
+                  <span class="logout-help"
+                    >Switch to a different E-Ra account</span
+                  >
+                </div>
+              </div>
+            </div>
 
             <div class="login-info">
               <p class="info-text">
