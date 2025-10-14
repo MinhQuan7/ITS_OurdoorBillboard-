@@ -64,52 +64,10 @@
   margin: 0;
 }
 
-/* Weather Alert Banner - positioned between top and bottom rows */
-.weather-alert-banner {
-  position: absolute;
-  bottom: 0px;
-  left: 0;
-  right: 0;
-  width: 384px;
-  height: 100%;
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 16px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-  animation: alertPulse 2s infinite;
-  z-index: 100;
-}
+/* Weather Alert Banner - CSS removed as built version uses inline styles to prevent conflicts */
+/* The banner is now handled entirely by the built JavaScript with proper positioning */
 
-.alert-icon-warning {
-  background: #fbbf24;
-  color: #dc2626;
-  width: 36px;
-  height: 36px;
-  border-radius: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  font-weight: bold;
-  text-shadow: none;
-  flex-shrink: 0;
-  border: 2px solid #dc2626;
-}
-
-.alert-text-large {
-  font-size: 20px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  flex: 1;
-  text-align: center;
-  letter-spacing: 2px;
-}
+/* Alert styling removed - handled by inline styles in built version */
 
 @keyframes alertPulse {
   0%,

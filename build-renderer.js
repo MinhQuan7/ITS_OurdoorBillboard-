@@ -1026,7 +1026,7 @@ function WeatherPanel({ className = "" }) {
         textTransform: "uppercase",
         letterSpacing: "1px",
         boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)",
-        zIndex: 3
+        zIndex: 999
       }
     }, [
       React.createElement("div", {
@@ -1045,15 +1045,6 @@ function WeatherPanel({ className = "" }) {
           flexShrink: 0
         }
       }, "!"),
-      React.createElement("div", {
-        key: "alert-text",
-        style: {
-          fontSize: "16px",
-          textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
-          flex: 1,
-          textAlign: "center"
-        }
-      }, "CẢNH BÁO MƯA LỚN")
     ]),
 
     // Loading overlay for refresh
@@ -1799,21 +1790,23 @@ function BillboardLayout() {
     React.createElement("div", {
       key: "top-row",
       style: {
-        height: showWeatherAlert ? "248px" : "288px", // Reduce height when alert is shown
+        height: "288px", // Fixed height - LED specification requirement
         display: "flex",
         width: "100%",
-        position: "relative",
       }
     }, [
       React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" }),
       React.createElement(IoTPanel, { key: "iot", eraIotService: eraIotService, className: "unified" })
     ]),
     
-    // Weather Alert Banner - positioned to span across both panels
+    // Weather Alert Banner - OVERLAY positioning to maintain LED panel dimensions
     showWeatherAlert && React.createElement("div", { 
       key: "global-weather-alert",
       style: { 
-        height: "40px",
+        position: "absolute",
+        bottom: "96px", // Position above logo section (96px height)
+        left: "0",
+        height: "48px", // Fixed banner height
         width: "384px",
         background: "linear-gradient(135deg, #dc2626, #b91c1c)",
         color: "#ffffff",
@@ -1826,7 +1819,8 @@ function BillboardLayout() {
         textTransform: "uppercase",
         letterSpacing: "1px",
         boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)",
-        zIndex: 100
+        zIndex: 10000000,
+        boxSizing: "border-box",
       }
     }, [
       React.createElement("div", {
@@ -1859,7 +1853,7 @@ function BillboardLayout() {
     React.createElement("div", {
       key: "logo-section",
       style: {
-        height: showWeatherAlert ? "56px" : "96px", // Reduce height when alert is shown
+        height: "96px", // Fixed height - LED specification requirement
         width: "100%",
         backgroundColor: "#ff6b35",
         display: "flex",
