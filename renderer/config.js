@@ -279,8 +279,13 @@ class BillboardConfigManager {
       if (window.electronAPI) {
         const result = await window.electronAPI.updateAuthToken(token);
         if (result.success) {
-          console.log("Authentication token saved successfully with auto hot-reload");
-          this.showNotification("Authentication updated and applied instantly!", "success");
+          console.log(
+            "Authentication token saved successfully with auto hot-reload"
+          );
+          this.showNotification(
+            "Authentication updated and applied instantly!",
+            "success"
+          );
         } else {
           console.error("Failed to save authentication token:", result.error);
         }
@@ -306,7 +311,9 @@ class BillboardConfigManager {
 
       this.config.eraIot.authToken = token;
 
-      console.log("E-Ra IoT configuration updated with new token - hot-reload active");
+      console.log(
+        "E-Ra IoT configuration updated with new token - hot-reload active"
+      );
     } catch (error) {
       console.error("Failed to update E-Ra IoT config:", error);
     }
