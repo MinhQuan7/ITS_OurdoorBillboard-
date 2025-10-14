@@ -15,10 +15,10 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
     baseUrl: "https://backend.eoh.io",
     mqttApiKey: "your_mqtt_api_key_here", // User must enter their MQTT API key
     sensorConfigs: {
-      temperature: 138997,
-      humidity: 138998,
-      pm25: 138999,
-      pm10: 139000,
+      temperature: null,
+      humidity: null,
+      pm25: null,
+      pm10: null,
     },
     updateInterval: 5,
     timeout: 15000,
@@ -247,7 +247,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                   }
                   className="era-config-input small"
                   title="Config ID cho cảm biến nhiệt độ"
-                  placeholder="138997"
+                  placeholder="Enter config ID"
                 />
               </div>
               <div>
@@ -263,7 +263,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                   }
                   className="era-config-input small"
                   title="Config ID cho cảm biến độ ẩm"
-                  placeholder="138998"
+                  placeholder="Enter config ID"
                 />
               </div>
               <div>
@@ -279,7 +279,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                   }
                   className="era-config-input small"
                   title="Config ID cho cảm biến PM2.5"
-                  placeholder="138999"
+                  placeholder="Enter config ID"
                 />
               </div>
               <div>
@@ -295,7 +295,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                   }
                   className="era-config-input small"
                   title="Config ID cho cảm biến PM10"
-                  placeholder="139000"
+                  placeholder="Enter config ID"
                 />
               </div>
             </div>

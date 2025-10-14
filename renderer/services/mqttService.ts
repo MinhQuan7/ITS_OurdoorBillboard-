@@ -25,10 +25,10 @@ export interface MqttConfig {
   mqttApiKey: string;
   authToken?: string; // Full auth token with "Token " prefix
   sensorConfigs: {
-    temperature: number;
-    humidity: number;
-    pm25: number;
-    pm10: number;
+    temperature: number | null;
+    humidity: number | null;
+    pm25: number | null;
+    pm10: number | null;
   };
   options: {
     keepalive: number;
@@ -219,10 +219,11 @@ class MqttService {
 
     // Subscribe to individual sensor topics if they follow a pattern
     const sensorTopics = [
-      `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.temperature}`,
-      `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.humidity}`,
-      `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.pm25}`,
-      `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.pm10}`,
+      // Only subscribe to sensors that have been configured
+      ...(this.config.sensorConfigs.temperature ? [`eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.temperature}`] : []),
+      ...(this.config.sensorConfigs.humidity ? [`eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.humidity}`] : []),
+      ...(this.config.sensorConfigs.pm25 ? [`eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.pm25}`] : []),
+      ...(this.config.sensorConfigs.pm10 ? [`eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.pm10}`] : []),
       // Alternative topic patterns
       `eoh/chip/${this.config.gatewayToken}/data/temperature`,
       `eoh/chip/${this.config.gatewayToken}/data/humidity`,
@@ -317,26 +318,26 @@ class MqttService {
   ): keyof Omit<MqttSensorData, "timestamp"> | null {
     // Check for sensor config IDs in topic
     if (
-      topic.includes(this.config.sensorConfigs.temperature.toString()) ||
+      (this.config.sensorConfigs.temperature && topic.includes(this.config.sensorConfigs.temperature.toString())) ||
       topic.includes("temperature")
     ) {
       return "temperature";
     }
     if (
-      topic.includes(this.config.sensorConfigs.humidity.toString()) ||
+      (this.config.sensorConfigs.humidity && topic.includes(this.config.sensorConfigs.humidity.toString())) ||
       topic.includes("humidity")
     ) {
       return "humidity";
     }
     if (
-      topic.includes(this.config.sensorConfigs.pm25.toString()) ||
+      (this.config.sensorConfigs.pm25 && topic.includes(this.config.sensorConfigs.pm25.toString())) ||
       topic.includes("pm25") ||
       topic.includes("pm2.5")
     ) {
       return "pm25";
     }
     if (
-      topic.includes(this.config.sensorConfigs.pm10.toString()) ||
+      (this.config.sensorConfigs.pm10 && topic.includes(this.config.sensorConfigs.pm10.toString())) ||
       topic.includes("pm10")
     ) {
       return "pm10";

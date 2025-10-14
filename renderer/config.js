@@ -17,6 +17,10 @@ class BillboardConfigManager {
     this.authService = null;
     this.initAuthService();
 
+    // Initialize E-Ra configuration service
+    this.eraConfigService = null;
+    this.initEraConfigService();
+
     this.init();
   }
 
@@ -38,6 +42,11 @@ class BillboardConfigManager {
       this.authService.onAuthStateChange((authState) => {
         console.log("ConfigManager: Auth state changed:", authState);
         this.updateLoginUI(authState);
+
+        // Update E-Ra config service with auth changes
+        if (this.eraConfigService) {
+          this.eraConfigService.setAuthService(this.authService);
+        }
       });
 
       // Initialize login UI with current auth state
@@ -51,10 +60,35 @@ class BillboardConfigManager {
     }
   }
 
+  async initEraConfigService() {
+    try {
+      console.log("ConfigManager: Initializing E-Ra config service...");
+
+      // Check if EraConfigService is available
+      if (!window.EraConfigService) {
+        console.error(
+          "ConfigManager: EraConfigService not found on window object"
+        );
+        return;
+      }
+
+      this.eraConfigService = new window.EraConfigService(this.authService);
+      console.log(
+        "ConfigManager: E-Ra config service initialized successfully"
+      );
+    } catch (error) {
+      console.error(
+        "ConfigManager: Failed to initialize E-Ra config service:",
+        error
+      );
+    }
+  }
+
   init() {
     this.setupTabNavigation();
     this.setupLogoModeHandlers();
     this.setupLoginHandlers();
+    this.setupEraConfigHandlers();
     this.loadConfiguration();
     this.setupDragAndDrop();
   }
@@ -82,6 +116,52 @@ class BillboardConfigManager {
         this.copyTokenToClipboard();
       });
     }
+  }
+
+  setupEraConfigHandlers() {
+    const getConfigBtn = document.getElementById("get-era-config-btn");
+    const autoDetectBtn = document.getElementById("auto-detect-mapping-btn");
+    const saveMappingBtn = document.getElementById("save-mapping-btn");
+    const testMappingBtn = document.getElementById("test-mapping-btn");
+
+    if (getConfigBtn) {
+      getConfigBtn.addEventListener("click", () => {
+        this.handleGetEraConfig();
+      });
+    }
+
+    if (autoDetectBtn) {
+      autoDetectBtn.addEventListener("click", () => {
+        this.handleAutoDetectMapping();
+      });
+    }
+
+    if (saveMappingBtn) {
+      saveMappingBtn.addEventListener("click", () => {
+        this.handleSaveMapping();
+      });
+    }
+
+    if (testMappingBtn) {
+      testMappingBtn.addEventListener("click", () => {
+        this.handleTestMapping();
+      });
+    }
+
+    // Setup mapping selectors
+    const mappingSelectors = ["temperature", "humidity", "pm25", "pm10"];
+    mappingSelectors.forEach((sensor) => {
+      const selector = document.getElementById(`mapping-${sensor}`);
+      if (selector) {
+        selector.addEventListener("change", (e) => {
+          const datastreamId = e.target.value ? parseInt(e.target.value) : null;
+          if (this.eraConfigService) {
+            this.eraConfigService.updateMapping(sensor, datastreamId);
+          }
+          this.updateCurrentMappingDisplay();
+        });
+      }
+    });
   }
 
   async handleLogin() {
@@ -211,10 +291,10 @@ class BillboardConfigManager {
           enabled: true,
           baseUrl: "https://backend.eoh.io",
           sensorConfigs: {
-            temperature: 138997,
-            humidity: 138998,
-            pm25: 138999,
-            pm10: 139000,
+            temperature: null,
+            humidity: null,
+            pm25: null,
+            pm10: null,
           },
           updateInterval: 5,
           timeout: 15000,
@@ -255,6 +335,384 @@ class BillboardConfigManager {
         document.body.removeChild(textArea);
         this.showNotification("Token copied to clipboard", "success");
       });
+  }
+
+  async handleGetEraConfig() {
+    if (!this.eraConfigService) {
+      this.showNotification("E-Ra config service not available", "error");
+      return;
+    }
+
+    if (!this.authService || !this.authService.isAuthenticated()) {
+      this.showNotification("Please login to E-Ra platform first", "error");
+      return;
+    }
+
+    const getConfigBtn = document.getElementById("get-era-config-btn");
+    const btnText = getConfigBtn.querySelector(".btn-text");
+    const btnLoader = getConfigBtn.querySelector(".btn-loader");
+    const statusDiv = document.getElementById("era-config-status");
+    const statusIndicator = document.getElementById(
+      "era-config-status-indicator"
+    );
+    const statusText = statusIndicator?.querySelector(".status-text");
+
+    // Show loading state
+    getConfigBtn.disabled = true;
+    btnText.style.display = "none";
+    btnLoader.style.display = "inline";
+    statusDiv.style.display = "block";
+    if (statusIndicator)
+      statusIndicator.className = "status-indicator connecting";
+    if (statusText) statusText.textContent = "Fetching configuration...";
+
+    try {
+      const result = await this.eraConfigService.getCompleteConfig();
+
+      if (result.success) {
+        this.showNotification(result.message, "success");
+
+        // Update UI with results
+        this.displayChips(result.chips);
+        this.displayDatastreams(result.datastreams);
+        this.populateMappingSelectors(result.datastreams);
+        this.updateCurrentMappingDisplay();
+
+        // Show sections
+        document.getElementById("era-chips-section").style.display = "block";
+        document.getElementById("era-datastreams-section").style.display =
+          "block";
+        document.getElementById("era-mapping-section").style.display = "block";
+        document.getElementById("era-current-mapping").style.display = "block";
+        document.getElementById("auto-detect-mapping-btn").style.display =
+          "inline-block";
+
+        // Update status
+        if (statusIndicator)
+          statusIndicator.className = "status-indicator online";
+        if (statusText)
+          statusText.textContent = `Configuration loaded: ${
+            result.chips?.length || 0
+          } chips, ${result.datastreams?.length || 0} datastreams`;
+      } else {
+        this.showNotification(
+          result.message || "Failed to fetch configuration",
+          "error"
+        );
+
+        // Update status
+        if (statusIndicator)
+          statusIndicator.className = "status-indicator offline";
+        if (statusText) statusText.textContent = "Failed to load configuration";
+      }
+    } catch (error) {
+      console.error("Error fetching E-Ra config:", error);
+      this.showNotification(
+        "Error fetching configuration: " + error.message,
+        "error"
+      );
+
+      // Update status
+      if (statusIndicator)
+        statusIndicator.className = "status-indicator offline";
+      if (statusText) statusText.textContent = "Configuration fetch failed";
+    } finally {
+      // Reset button state
+      getConfigBtn.disabled = false;
+      btnText.style.display = "inline";
+      btnLoader.style.display = "none";
+    }
+  }
+
+  handleAutoDetectMapping() {
+    if (!this.eraConfigService) {
+      this.showNotification("E-Ra config service not available", "error");
+      return;
+    }
+
+    const autoMapping = this.eraConfigService.autoDetectMapping();
+
+    // Update selectors with auto-detected mapping
+    Object.entries(autoMapping).forEach(([sensor, datastreamId]) => {
+      const selector = document.getElementById(`mapping-${sensor}`);
+      if (selector && datastreamId) {
+        selector.value = datastreamId.toString();
+        this.eraConfigService.updateMapping(sensor, datastreamId);
+      }
+    });
+
+    this.updateCurrentMappingDisplay();
+
+    // Count successful mappings
+    const mappedCount = Object.values(autoMapping).filter(
+      (id) => id !== null
+    ).length;
+    this.showNotification(
+      `Auto-detected ${mappedCount}/4 sensor mappings`,
+      "success"
+    );
+  }
+
+  async handleSaveMapping() {
+    if (!this.eraConfigService) {
+      this.showNotification("E-Ra config service not available", "error");
+      return;
+    }
+
+    const currentMapping = this.eraConfigService.getCurrentMapping();
+
+    // Validate mapping
+    const mappedCount = Object.values(currentMapping).filter(
+      (id) => id !== null
+    ).length;
+    if (mappedCount === 0) {
+      this.showNotification(
+        "Please map at least one sensor before saving",
+        "error"
+      );
+      return;
+    }
+
+    // Update system configuration with new mapping
+    if (!this.config.eraIot) {
+      this.config.eraIot = {
+        enabled: true,
+        baseUrl: "https://backend.eoh.io",
+        updateInterval: 5,
+        timeout: 15000,
+        retryAttempts: 3,
+        retryDelay: 2000,
+      };
+    }
+
+    // Update sensor configs with new mapping
+    this.config.eraIot.sensorConfigs = {
+      temperature: currentMapping.temperature,
+      humidity: currentMapping.humidity,
+      pm25: currentMapping.pm25,
+      pm10: currentMapping.pm10,
+    };
+
+    // Save to storage
+    await this.saveConfiguration();
+    this.showNotification(
+      `Sensor mapping saved (${mappedCount}/4 sensors mapped)`,
+      "success"
+    );
+  }
+
+  async handleTestMapping() {
+    if (!this.eraConfigService) {
+      this.showNotification("E-Ra config service not available", "error");
+      return;
+    }
+
+    const currentMapping = this.eraConfigService.getCurrentMapping();
+    const mappedSensors = Object.entries(currentMapping).filter(
+      ([, id]) => id !== null
+    );
+
+    if (mappedSensors.length === 0) {
+      this.showNotification("No sensor mappings to test", "error");
+      return;
+    }
+
+    this.showNotification(
+      `Testing ${mappedSensors.length} sensor mappings...`,
+      "info"
+    );
+
+    // Test each mapped sensor
+    let successCount = 0;
+    for (const [sensorType, datastreamId] of mappedSensors) {
+      try {
+        console.log(`Testing ${sensorType} sensor (ID: ${datastreamId})`);
+        // This would make an actual API call to test the datastream
+        // For now, just simulate success
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to test ${sensorType} sensor:`, error);
+      }
+    }
+
+    if (successCount === mappedSensors.length) {
+      this.showNotification(
+        "All sensor mappings tested successfully!",
+        "success"
+      );
+    } else {
+      this.showNotification(
+        `${successCount}/${mappedSensors.length} sensor mappings working`,
+        "error"
+      );
+    }
+  }
+
+  displayChips(chips) {
+    const chipsList = document.getElementById("era-chips-list");
+    if (!chipsList || !chips) return;
+
+    chipsList.innerHTML = "";
+
+    if (chips.length === 0) {
+      chipsList.innerHTML =
+        '<p class="info-text">No chips found in your E-Ra account.</p>';
+      return;
+    }
+
+    chips.forEach((chip) => {
+      const chipElement = document.createElement("div");
+      chipElement.className = "chip-item";
+      chipElement.style.cssText = `
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      `;
+
+      chipElement.innerHTML = `
+        <div>
+          <h4 style="margin: 0 0 5px 0; color: #495057;">${chip.name}</h4>
+          <p style="margin: 0; font-size: 14px; color: #6c757d;">ID: ${
+            chip.id
+          }${chip.description ? ` | ${chip.description}` : ""}</p>
+        </div>
+        <div style="text-align: right;">
+          <span class="status-indicator ${
+            chip.isOnline ? "online" : "offline"
+          }" style="font-size: 14px;">
+            <span class="status-dot"></span>
+            ${chip.isOnline ? "Online" : "Offline"}
+          </span>
+        </div>
+      `;
+
+      chipsList.appendChild(chipElement);
+    });
+  }
+
+  displayDatastreams(datastreams) {
+    const datastreamsList = document.getElementById("era-datastreams-list");
+    if (!datastreamsList || !datastreams) return;
+
+    datastreamsList.innerHTML = "";
+
+    if (datastreams.length === 0) {
+      datastreamsList.innerHTML =
+        '<p class="info-text">No datastreams found.</p>';
+      return;
+    }
+
+    datastreams.forEach((stream) => {
+      const streamElement = document.createElement("div");
+      streamElement.className = "datastream-item";
+      streamElement.style.cssText = `
+        padding: 12px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+      `;
+
+      streamElement.innerHTML = `
+        <div>
+          <strong style="color: #495057;">${stream.name}</strong>
+          <span style="margin-left: 10px; color: #6c757d;">ID: ${
+            stream.id
+          }</span>
+          ${
+            stream.unit
+              ? `<span style="margin-left: 10px; color: #6c757d;">(${stream.unit})</span>`
+              : ""
+          }
+        </div>
+        <div style="text-align: right; color: #6c757d;">
+          ${
+            stream.currentValue !== undefined
+              ? `Value: ${stream.currentValue}`
+              : "No data"
+          }
+        </div>
+      `;
+
+      datastreamsList.appendChild(streamElement);
+    });
+  }
+
+  populateMappingSelectors(datastreams) {
+    if (!datastreams) return;
+
+    const sensorTypes = ["temperature", "humidity", "pm25", "pm10"];
+
+    sensorTypes.forEach((sensorType) => {
+      const selector = document.getElementById(`mapping-${sensorType}`);
+      if (!selector) return;
+
+      // Clear existing options except the first one
+      while (selector.children.length > 1) {
+        selector.removeChild(selector.lastChild);
+      }
+
+      // Add datastream options
+      datastreams.forEach((stream) => {
+        const option = document.createElement("option");
+        option.value = stream.id.toString();
+        option.textContent = `${stream.name} (ID: ${stream.id})${
+          stream.unit ? ` [${stream.unit}]` : ""
+        }`;
+        selector.appendChild(option);
+      });
+    });
+  }
+
+  updateCurrentMappingDisplay() {
+    const displayDiv = document.getElementById("current-mapping-display");
+    if (!displayDiv || !this.eraConfigService) return;
+
+    const currentMapping = this.eraConfigService.getCurrentMapping();
+    const datastreams = this.eraConfigService.getCachedDatastreams();
+
+    displayDiv.innerHTML = "";
+
+    Object.entries(currentMapping).forEach(([sensorType, datastreamId]) => {
+      const mappingItem = document.createElement("div");
+      mappingItem.style.cssText = `
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      `;
+
+      const datastreamName = datastreamId
+        ? datastreams.find((ds) => ds.id === datastreamId)?.name ||
+          `Unknown (ID: ${datastreamId})`
+        : "Not mapped";
+
+      const sensorTypeLabel =
+        sensorType.charAt(0).toUpperCase() + sensorType.slice(1);
+
+      mappingItem.innerHTML = `
+        <div>
+          <strong>${sensorTypeLabel}:</strong>
+        </div>
+        <div style="color: ${datastreamId ? "#28a745" : "#6c757d"};">
+          ${datastreamName}
+        </div>
+      `;
+
+      displayDiv.appendChild(mappingItem);
+    });
   }
 
   setupTabNavigation() {

@@ -40,10 +40,10 @@ export interface EraIotConfig {
   baseUrl: string; // Used to derive MQTT broker URL
   mqttApiKey?: string; // MQTT API key for authentication
   sensorConfigs: {
-    temperature: number;
-    humidity: number;
-    pm25: number;
-    pm10: number;
+    temperature: number | null;
+    humidity: number | null;
+    pm25: number | null;
+    pm10: number | null;
   };
   updateInterval: number; // minutes (for compatibility, not used in MQTT)
   timeout: number; // milliseconds (connection timeout)

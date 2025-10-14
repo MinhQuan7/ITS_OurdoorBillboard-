@@ -420,6 +420,60 @@
         display: inline-block !important;
       }
 
+      /* E-Ra Config Styles */
+      .chip-item {
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .datastream-item {
+        padding: 12px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+      }
+
+      .mapping-item {
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .status-indicator.connecting {
+        color: #ff6b35;
+      }
+
+      .status-indicator.connecting .status-dot {
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
       /* Responsive */
       @media (max-width: 768px) {
         .config-container {
@@ -454,6 +508,9 @@
         <ul class="nav-menu">
           <li class="nav-item">
             <a href="#" class="nav-link active" data-tab="era-login"> Login </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" data-tab="era-config"> E-Ra Config </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link" data-tab="company-logo">
@@ -565,6 +622,128 @@
                   Copy
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- E-Ra Config Tab -->
+        <div id="era-config" class="tab-content">
+          <div class="content-header">
+            <h2 class="content-title">E-Ra IoT Configuration</h2>
+            <p class="content-subtitle">
+              Manage your E-Ra chip and sensor datastream mappings
+            </p>
+          </div>
+
+          <div class="config-card">
+            <h3 class="card-title">Configuration Management</h3>
+
+            <div class="form-group">
+              <button id="get-era-config-btn" class="btn btn-primary">
+                <span class="btn-text">Get E-Ra Configuration</span>
+                <span class="btn-loader" style="display: none">⟳</span>
+              </button>
+              <button
+                id="auto-detect-mapping-btn"
+                class="btn btn-outline"
+                style="margin-left: 10px; display: none"
+              >
+                Auto-Detect Mapping
+              </button>
+            </div>
+
+            <div
+              id="era-config-status"
+              class="login-status"
+              style="display: none"
+            >
+              <div class="status-indicator" id="era-config-status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Ready to fetch configuration</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="config-card" id="era-chips-section" style="display: none">
+            <h3 class="card-title">Available Chips</h3>
+            <div id="era-chips-list">
+              <!-- Chips will be populated here -->
+            </div>
+          </div>
+
+          <div
+            class="config-card"
+            id="era-mapping-section"
+            style="display: none"
+          >
+            <h3 class="card-title">Sensor Mapping Configuration</h3>
+
+            <p class="info-text" style="margin-bottom: 20px">
+              Map your E-Ra datastreams to the application sensor types. This
+              replaces the hardcoded sensor IDs with dynamic configuration.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label">Temperature Sensor:</label>
+              <select id="mapping-temperature" class="form-control">
+                <option value="">Select temperature datastream...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Humidity Sensor:</label>
+              <select id="mapping-humidity" class="form-control">
+                <option value="">Select humidity datastream...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">PM2.5 Sensor:</label>
+              <select id="mapping-pm25" class="form-control">
+                <option value="">Select PM2.5 datastream...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">PM10 Sensor:</label>
+              <select id="mapping-pm10" class="form-control">
+                <option value="">Select PM10 datastream...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <button id="save-mapping-btn" class="btn btn-primary">
+                Save Sensor Mapping
+              </button>
+              <button
+                id="test-mapping-btn"
+                class="btn btn-secondary"
+                style="margin-left: 10px"
+              >
+                Test Configuration
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="config-card"
+            id="era-datastreams-section"
+            style="display: none"
+          >
+            <h3 class="card-title">Available Datastreams</h3>
+            <div id="era-datastreams-list">
+              <!-- Datastreams will be populated here -->
+            </div>
+          </div>
+
+          <div
+            class="config-card"
+            id="era-current-mapping"
+            style="display: none"
+          >
+            <h3 class="card-title">Current System Mapping</h3>
+            <div id="current-mapping-display">
+              <!-- Current mapping will be displayed here -->
             </div>
           </div>
         </div>
@@ -836,6 +1015,7 @@
       </div>
     </div>
     <script src="services/eraAuthService.js"></script>
+    <script src="services/eraConfigService.js"></script>
     <script src="config.js"></script>
   </body>
 </html>
