@@ -154,7 +154,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
     }
   };
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const handleInputChange = (field: string, value: string | number | null) => {
     if (field.includes(".")) {
       // Handle nested fields like sensorConfigs.temperature
       const [parent, child] = field.split(".");
@@ -238,11 +238,11 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                 <label>Nhiệt độ</label>
                 <input
                   type="number"
-                  value={config.sensorConfigs.temperature}
+                  value={config.sensorConfigs.temperature || ""}
                   onChange={(e) =>
                     handleInputChange(
                       "sensorConfigs.temperature",
-                      parseInt(e.target.value)
+                      parseInt(e.target.value) || null
                     )
                   }
                   className="era-config-input small"
@@ -254,11 +254,11 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                 <label>Độ ẩm</label>
                 <input
                   type="number"
-                  value={config.sensorConfigs.humidity}
+                  value={config.sensorConfigs.humidity || ""}
                   onChange={(e) =>
                     handleInputChange(
                       "sensorConfigs.humidity",
-                      parseInt(e.target.value)
+                      parseInt(e.target.value) || null
                     )
                   }
                   className="era-config-input small"
@@ -270,11 +270,11 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                 <label>PM2.5</label>
                 <input
                   type="number"
-                  value={config.sensorConfigs.pm25}
+                  value={config.sensorConfigs.pm25 || ""}
                   onChange={(e) =>
                     handleInputChange(
                       "sensorConfigs.pm25",
-                      parseInt(e.target.value)
+                      parseInt(e.target.value) || null
                     )
                   }
                   className="era-config-input small"
@@ -286,11 +286,11 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                 <label>PM10</label>
                 <input
                   type="number"
-                  value={config.sensorConfigs.pm10}
+                  value={config.sensorConfigs.pm10 || ""}
                   onChange={(e) =>
                     handleInputChange(
                       "sensorConfigs.pm10",
-                      parseInt(e.target.value)
+                      parseInt(e.target.value) || null
                     )
                   }
                   className="era-config-input small"
@@ -323,7 +323,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                 testResult.success ? "success" : "error"
               }`}
             >
-              {testResult.success ? "✓" : "✗"} {testResult.message}
+              {testResult.success ? "[SUCCESS]" : "[ERROR]"} {testResult.message}
             </div>
           )}
         </div>
