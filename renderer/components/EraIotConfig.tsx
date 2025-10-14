@@ -33,6 +33,10 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
     message: string;
   } | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveResult, setSaveResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   // Load configuration on component mount
   useEffect(() => {
@@ -114,14 +118,32 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
         });
       }
 
-      // Notify parent component
+      console.log("EraIotConfig: Configuration saved successfully");
+
+      // Show success message
+      setSaveResult({
+        success: true,
+        message: "Cấu hình đã được lưu và áp dụng thành công!",
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSaveResult(null), 3000);
+
+      // Notify parent component immediately to trigger service reload
       if (onConfigUpdated) {
         onConfigUpdated(config);
       }
-
-      console.log("EraIotConfig: Configuration saved successfully");
     } catch (error) {
       console.error("EraIotConfig: Failed to save configuration:", error);
+      setSaveResult({
+        success: false,
+        message: `Lỗi khi lưu cấu hình: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
+
+      // Clear error message after 5 seconds
+      setTimeout(() => setSaveResult(null), 5000);
     } finally {
       setIsSaving(false);
     }
@@ -323,7 +345,19 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                 testResult.success ? "success" : "error"
               }`}
             >
-              {testResult.success ? "[SUCCESS]" : "[ERROR]"} {testResult.message}
+              {testResult.success ? "[SUCCESS]" : "[ERROR]"}{" "}
+              {testResult.message}
+            </div>
+          )}
+
+          {saveResult && (
+            <div
+              className={`era-config-test-result ${
+                saveResult.success ? "success" : "error"
+              }`}
+            >
+              {saveResult.success ? "[SAVED]" : "[SAVE ERROR]"}{" "}
+              {saveResult.message}
             </div>
           )}
         </div>

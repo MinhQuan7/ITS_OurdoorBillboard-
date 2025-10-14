@@ -12,7 +12,13 @@ import "./BillboardLayout.css";
  * - Top row: 2 columns (Weather + IoT) - takes 75% height
  * - Bottom row: Company Logo - takes 25% height
  */
-const BillboardLayout: React.FC = () => {
+interface BillboardLayoutProps {
+  configUpdateTrigger?: number;
+}
+
+const BillboardLayout: React.FC<BillboardLayoutProps> = ({
+  configUpdateTrigger = 0,
+}) => {
   const [eraIotService, setEraIotService] = useState<EraIotService | null>(
     null
   );
@@ -38,7 +44,10 @@ const BillboardLayout: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log("BillboardLayout: useEffect triggered");
+    console.log(
+      "BillboardLayout: useEffect triggered, configUpdateTrigger:",
+      configUpdateTrigger
+    );
     // Load E-Ra IoT configuration and initialize service
     const initializeEraIot = async () => {
       try {
@@ -120,7 +129,7 @@ const BillboardLayout: React.FC = () => {
         eraIotService.destroy();
       }
     };
-  }, []);
+  }, [configUpdateTrigger]);
 
   // Load E-Ra IoT configuration
   const loadEraIotConfig = async (): Promise<EraIotConfig | null> => {

@@ -591,7 +591,6 @@ function WeatherPanel({ className = "" }) {
         fontWeight: "bold",
         textAlign: "center",
         marginBottom: "12px", 
-        background: "rgba(0, 0, 0, 0.3)",
         padding: "8px 12px",
         position: "relative",
         zIndex: 2,
@@ -717,7 +716,6 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(0, 0, 0, 0.35)",
                 padding: "8px"
               }
             }, [
@@ -747,7 +745,6 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(0, 0, 0, 0.35)",
                 padding: "8px"
               }
             }, [
@@ -777,7 +774,6 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(0, 0, 0, 0.35)",
                 padding: "8px"
               }
             }, [
@@ -807,7 +803,6 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(0, 0, 0, 0.35)",
                 padding: "8px"
               }
             }, [

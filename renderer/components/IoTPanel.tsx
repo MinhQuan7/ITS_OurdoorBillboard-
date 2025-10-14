@@ -148,28 +148,28 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
           data.temperature !== null ? `${data.temperature.toFixed(1)}` : "--",
         unit: "°C",
         status: getSensorStatus(data.temperature, "temperature"),
-        icon: "🌡️",
+        icon: "T",
       },
       {
         label: "Độ ẩm",
         value: data.humidity !== null ? `${data.humidity.toFixed(1)}` : "--",
         unit: "%",
         status: getSensorStatus(data.humidity, "humidity"),
-        icon: "💧",
+        icon: "H",
       },
       {
         label: "PM2.5",
         value: data.pm25 !== null ? `${data.pm25.toFixed(1)}` : "--",
         unit: "μg/m³",
         status: getSensorStatus(data.pm25, "pm25"),
-        icon: "🌫️",
+        icon: "P2",
       },
       {
         label: "PM10",
         value: data.pm10 !== null ? `${data.pm10.toFixed(1)}` : "--",
         unit: "μg/m³",
         status: getSensorStatus(data.pm10, "pm10"),
-        icon: "💨",
+        icon: "P10",
       },
     ];
   };
@@ -199,7 +199,7 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
           <div className="iot-subtitle">E-Ra IoT Platform</div>
         </div>
         <div className="iot-error">
-          <div className="error-icon">⚠</div>
+          <div className="error-icon">!</div>
           <div className="error-text">
             {!eraIotService ? "Chưa cấu hình" : "Lỗi kết nối"}
           </div>
@@ -222,7 +222,7 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
           <div className="iot-subtitle">E-Ra IoT Platform</div>
         </div>
         <div className="iot-offline">
-          <div className="offline-icon">📡</div>
+          <div className="offline-icon">X</div>
           <div className="offline-text">Không có dữ liệu</div>
           <button className="retry-button" onClick={handleRefresh}>
             Kết nối lại
@@ -250,8 +250,8 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
       {sensorData.status !== "success" && (
         <div className={`status-banner ${sensorData.status}`}>
           {sensorData.status === "partial"
-            ? "⚡ Một số cảm biến offline"
-            : "❌ Lỗi kết nối cảm biến"}
+            ? "! Một số cảm biến offline"
+            : "X Lỗi kết nối cảm biến"}
         </div>
       )}
 
@@ -279,7 +279,7 @@ const IoTPanel: React.FC<IoTPanelProps> = ({
         </div>
         {sensorData.errorMessage && (
           <div className="error-message-small" title={sensorData.errorMessage}>
-            ⚠ {sensorData.errorMessage.substring(0, 50)}...
+            ! {sensorData.errorMessage.substring(0, 50)}...
           </div>
         )}
       </div>
