@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Billboard Configuration System</title>
+    <title>Hệ Thống Cấu Hình Bảng Hiệu</title>
     <style>
       * {
         margin: 0;
@@ -578,37 +578,41 @@
       <!-- Sidebar Navigation -->
       <div class="sidebar">
         <div class="logo-header">
-          <h1>Billboard Config</h1>
-          <p>Display Management Ver 0.1</p>
+          <h1>Cấu Hình Bảng Hiệu</h1>
+          <p>Quản Lý Hiển Thị Ver 0.1</p>
         </div>
 
         <ul class="nav-menu">
           <li class="nav-item">
-            <a href="#" class="nav-link active" data-tab="era-login"> Login </a>
+            <a href="#" class="nav-link active" data-tab="era-login">
+              Đăng Nhập
+            </a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link" data-tab="era-config"> E-Ra Config </a>
+            <a href="#" class="nav-link" data-tab="era-config">
+              Cấu Hình E-Ra
+            </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link" data-tab="company-logo">
-              Company Logo
+              Logo Công Ty
             </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link" data-tab="layout-config">
-              Layout Configuration
+              Cấu Hình Bố Cục
             </a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link" data-tab="scheduling"> Scheduling </a>
+            <a href="#" class="nav-link" data-tab="scheduling"> Lập Lịch </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link" data-tab="display-settings">
-              Display Settings
+              Cài Đặt Hiển Thị
             </a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link" data-tab="preview"> Live Preview </a>
+            <a href="#" class="nav-link" data-tab="preview"> Xem Trước </a>
           </li>
         </ul>
       </div>
@@ -618,53 +622,53 @@
         <!-- E-Ra Login Tab -->
         <div id="era-login" class="tab-content active">
           <div class="content-header">
-            <h2 class="content-title">E-Ra IoT Platform Login</h2>
+            <h2 class="content-title">Đăng Nhập Nền Tảng E-Ra IoT</h2>
             <p class="content-subtitle">
-              Authenticate with your E-Ra account to access IoT data
+              Xác thực với tài khoản E-Ra của bạn để truy cập dữ liệu IoT
             </p>
           </div>
 
           <div class="config-card">
             <h3 class="card-title">
               <span class="card-icon">🔐</span>
-              Account Authentication
+              Xác Thực Tài Khoản
             </h3>
 
             <div class="login-status" id="login-status">
               <div class="status-indicator offline" id="status-indicator">
                 <span class="status-dot"></span>
-                <span class="status-text">Not logged in</span>
+                <span class="status-text">Chưa đăng nhập</span>
               </div>
             </div>
 
             <form id="era-login-form" class="login-form">
               <div class="form-group">
                 <label class="form-label" for="era-username"
-                  >Username/Email:</label
+                  >Tên đăng nhập/Email:</label
                 >
                 <input
                   type="text"
                   id="era-username"
                   class="form-control"
-                  placeholder="Enter your E-Ra username or email"
+                  placeholder="Nhập tên đăng nhập hoặc email E-Ra của bạn"
                   required
                 />
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="era-password">Password:</label>
+                <label class="form-label" for="era-password">Mật khẩu:</label>
                 <input
                   type="password"
                   id="era-password"
                   class="form-control"
-                  placeholder="Enter your E-Ra password"
+                  placeholder="Nhập mật khẩu E-Ra của bạn"
                   required
                 />
               </div>
 
               <div class="form-group">
                 <button type="submit" class="btn btn-primary" id="login-btn">
-                  <span class="btn-text">Login to E-Ra</span>
+                  <span class="btn-text">Đăng Nhập E-Ra</span>
                   <span class="btn-loader" style="display: none">⟳</span>
                 </button>
               </div>
@@ -680,8 +684,8 @@
                 <div class="logout-info">
                   <p class="logout-message">
                     <span class="logout-icon">✓</span>
-                    You are currently logged in. Click logout to sign in with a
-                    different account.
+                    Bạn hiện đang đăng nhập. Nhấn đăng xuất để đăng nhập bằng
+                    tài khoản khác.
                   </p>
                 </div>
                 <div class="logout-actions">
@@ -690,10 +694,10 @@
                     class="btn btn-secondary btn-logout"
                     id="logout-btn"
                   >
-                    <span class="logout-text">🚪 Logout</span>
+                    <span class="logout-text">Đăng Xuất</span>
                   </button>
                   <span class="logout-help"
-                    >Switch to a different E-Ra account</span
+                    >Chuyển sang tài khoản E-Ra khác</span
                   >
                 </div>
               </div>
@@ -701,8 +705,8 @@
 
             <div class="login-info">
               <p class="info-text">
-                After successful login, your authentication token will be
-                automatically configured for IoT data access.
+                Sau khi đăng nhập thành công, mã xác thực của bạn sẽ được tự
+                động cấu hình để truy cập dữ liệu IoT.
               </p>
             </div>
           </div>
@@ -710,14 +714,14 @@
           <div class="config-card" id="token-info" style="display: none">
             <h3 class="card-title">
               <span class="card-icon">🔑</span>
-              Authentication Token
+              Mã Xác Thực
             </h3>
             <div class="token-display">
-              <label class="form-label">Current Token:</label>
+              <label class="form-label">Mã hiện tại:</label>
               <div class="token-value" id="token-display">
-                <span class="token-text">Token not available</span>
+                <span class="token-text">Mã không khả dụng</span>
                 <button class="btn btn-outline" id="copy-token-btn">
-                  Copy
+                  Sao Chép
                 </button>
               </div>
             </div>
@@ -727,18 +731,18 @@
         <!-- E-Ra Config Tab -->
         <div id="era-config" class="tab-content">
           <div class="content-header">
-            <h2 class="content-title">E-Ra IoT Configuration</h2>
+            <h2 class="content-title">Cấu Hình E-Ra IoT</h2>
             <p class="content-subtitle">
-              Manage your E-Ra chip and sensor datastream mappings
+              Quản lý chip E-Ra và ánh xạ luồng dữ liệu cảm biến của bạn
             </p>
           </div>
 
           <div class="config-card">
-            <h3 class="card-title">Configuration Management</h3>
+            <h3 class="card-title">Quản Lý Cấu Hình</h3>
 
             <div class="form-group">
               <button id="get-era-config-btn" class="btn btn-primary">
-                <span class="btn-text">Get E-Ra Configuration</span>
+                <span class="btn-text">Lấy Cấu Hình E-Ra</span>
                 <span class="btn-loader" style="display: none">⟳</span>
               </button>
               <button
@@ -746,7 +750,7 @@
                 class="btn btn-outline"
                 style="margin-left: 10px; display: none"
               >
-                Auto-Detect Mapping
+                Tự Động Phát Hiện Ánh Xạ
               </button>
             </div>
 
@@ -757,13 +761,13 @@
             >
               <div class="status-indicator" id="era-config-status-indicator">
                 <span class="status-dot"></span>
-                <span class="status-text">Ready to fetch configuration</span>
+                <span class="status-text">Sẵn sàng lấy cấu hình</span>
               </div>
             </div>
           </div>
 
           <div class="config-card" id="era-chips-section" style="display: none">
-            <h3 class="card-title">Available Chips</h3>
+            <h3 class="card-title">Chip Khả Dụng</h3>
             <div id="era-chips-list">
               <!-- Chips will be populated here -->
             </div>
@@ -774,51 +778,51 @@
             id="era-mapping-section"
             style="display: none"
           >
-            <h3 class="card-title">Sensor Mapping Configuration</h3>
+            <h3 class="card-title">Cấu Hình Ánh Xạ Cảm Biến</h3>
 
             <p class="info-text" style="margin-bottom: 20px">
-              Map your E-Ra datastreams to the application sensor types. This
-              replaces the hardcoded sensor IDs with dynamic configuration.
+              Ánh xạ luồng dữ liệu E-Ra của bạn đến các loại cảm biến ứng dụng.
+              Điều này thay thế các ID cảm biến cố định bằng cấu hình động.
             </p>
 
             <div class="form-group">
-              <label class="form-label">Temperature Sensor:</label>
+              <label class="form-label">Cảm Biến Nhiệt Độ:</label>
               <select id="mapping-temperature" class="form-control">
-                <option value="">Select temperature datastream...</option>
+                <option value="">Chọn luồng dữ liệu nhiệt độ...</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Humidity Sensor:</label>
+              <label class="form-label">Cảm Biến Độ Ẩm:</label>
               <select id="mapping-humidity" class="form-control">
-                <option value="">Select humidity datastream...</option>
+                <option value="">Chọn luồng dữ liệu độ ẩm...</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">PM2.5 Sensor:</label>
+              <label class="form-label">Cảm Biến PM2.5:</label>
               <select id="mapping-pm25" class="form-control">
-                <option value="">Select PM2.5 datastream...</option>
+                <option value="">Chọn luồng dữ liệu PM2.5...</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">PM10 Sensor:</label>
+              <label class="form-label">Cảm Biến PM10:</label>
               <select id="mapping-pm10" class="form-control">
-                <option value="">Select PM10 datastream...</option>
+                <option value="">Chọn luồng dữ liệu PM10...</option>
               </select>
             </div>
 
             <div class="form-group">
               <button id="save-mapping-btn" class="btn btn-primary">
-                Save Sensor Mapping
+                Lưu Ánh Xạ Cảm Biến
               </button>
               <button
                 id="test-mapping-btn"
                 class="btn btn-secondary"
                 style="margin-left: 10px"
               >
-                Test Configuration
+                Kiểm Tra Cấu Hình
               </button>
             </div>
           </div>
@@ -828,7 +832,7 @@
             id="era-datastreams-section"
             style="display: none"
           >
-            <h3 class="card-title">Available Datastreams</h3>
+            <h3 class="card-title">Luồng Dữ Liệu Khả Dụng</h3>
             <div id="era-datastreams-list">
               <!-- Datastreams will be populated here -->
             </div>
@@ -839,7 +843,7 @@
             id="era-current-mapping"
             style="display: none"
           >
-            <h3 class="card-title">Current System Mapping</h3>
+            <h3 class="card-title">Ánh Xạ Hệ Thống Hiện Tại</h3>
             <div id="current-mapping-display">
               <!-- Current mapping will be displayed here -->
             </div>
@@ -849,18 +853,16 @@
         <!-- Company Logo Tab -->
         <div id="company-logo" class="tab-content">
           <div class="content-header">
-            <h2 class="content-title">Company Logo Management</h2>
+            <h2 class="content-title">Quản Lý Logo Công Ty</h2>
             <p class="content-subtitle">
-              Configure logo display options for your billboard
+              Cấu hình tùy chọn hiển thị logo cho bảng hiệu của bạn
             </p>
           </div>
 
           <div class="config-card">
-            <h3 class="card-title">Display Mode</h3>
+            <h3 class="card-title">Chế Độ Hiển Thị</h3>
             <div class="form-group">
-              <label class="form-label"
-                >Select how logos should be displayed:</label
-              >
+              <label class="form-label">Chọn cách hiển thị logo:</label>
               <div class="form-radio-group">
                 <div class="form-radio">
                   <input
@@ -870,7 +872,7 @@
                     value="fixed"
                     checked
                   />
-                  <label for="mode-fixed">Fixed Single Logo</label>
+                  <label for="mode-fixed">Logo Cố Định</label>
                 </div>
                 <div class="form-radio">
                   <input
@@ -879,7 +881,7 @@
                     name="logoMode"
                     value="loop"
                   />
-                  <label for="mode-loop">Loop Multiple Logos</label>
+                  <label for="mode-loop">Vòng Lặp Nhiều Logo</label>
                 </div>
                 <div class="form-radio">
                   <input
@@ -888,20 +890,20 @@
                     name="logoMode"
                     value="scheduled"
                   />
-                  <label for="mode-scheduled">Scheduled Display</label>
+                  <label for="mode-scheduled">Hiển Thị Theo Lịch</label>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="config-card">
-            <h3 class="card-title">Logo Images</h3>
+            <h3 class="card-title">Hình Ảnh Logo</h3>
             <div class="logo-upload-area" onclick="selectLogoFiles()">
               <p style="margin-bottom: 10px; font-size: 18px">📤</p>
-              <p><strong>Click to upload logo images</strong></p>
+              <p><strong>Nhấp để tải lên hình ảnh logo</strong></p>
               <p style="font-size: 14px; color: #6c757d; margin-top: 8px">
-                Supported formats: PNG, JPG, SVG<br />
-                Recommended size: 400x100px
+                Định dạng hỗ trợ: PNG, JPG, SVG<br />
+                Kích thước đề xuất: 400x100px
               </p>
             </div>
             <div id="logo-grid" class="logo-grid">
@@ -912,11 +914,11 @@
           <div class="config-card" id="loop-settings" style="display: none">
             <h3 class="card-title">
               <span class="card-icon">🔄</span>
-              Loop Settings
+              Cài Đặt Vòng Lặp
             </h3>
             <div class="form-group">
               <label class="form-label" for="loop-duration"
-                >Display Duration (seconds):</label
+                >Thời Gian Hiển Thị (giây):</label
               >
               <input
                 type="number"
@@ -932,15 +934,15 @@
           <div class="config-card" id="schedule-settings" style="display: none">
             <h3 class="card-title">
               <span class="card-icon">📅</span>
-              Schedule Settings
+              Cài Đặt Lịch Trình
             </h3>
             <div class="form-group">
-              <label class="form-label">Schedule Rules:</label>
+              <label class="form-label">Quy Tắc Lịch Trình:</label>
               <div id="schedule-rules">
                 <!-- Schedule rules will be populated here -->
               </div>
               <button class="btn btn-outline" onclick="addScheduleRule()">
-                + Add Schedule Rule
+                + Thêm Quy Tắc Lịch Trình
               </button>
             </div>
           </div>
@@ -949,20 +951,20 @@
         <!-- Layout Configuration Tab -->
         <div id="layout-config" class="tab-content">
           <div class="content-header">
-            <h2 class="content-title">Layout Configuration</h2>
+            <h2 class="content-title">Cấu Hình Bố Cục</h2>
             <p class="content-subtitle">
-              Customize positions and sizes of display elements
+              Tùy chỉnh vị trí và kích thước của các thành phần hiển thị
             </p>
           </div>
 
           <div class="config-card">
             <h3 class="card-title">
               <span class="card-icon">📐</span>
-              LED Module Configuration
+              Cấu Hình Module LED
             </h3>
             <p style="margin-bottom: 20px; color: #6c757d">
-              Your display consists of 3 LED modules: 320x160mm each (64×32
-              pixels)
+              Màn hình của bạn bao gồm 3 module LED: mỗi module 320x160mm (64×32
+              pixel)
             </p>
 
             <div class="preview-container">
@@ -993,7 +995,7 @@
                       font-size: 12px;
                     "
                   >
-                    Weather Panel
+                    Bảng Thời Tiết
                   </div>
                 </div>
                 <div
@@ -1023,7 +1025,7 @@
                       font-size: 12px;
                     "
                   >
-                    IoT Panel
+                    Bảng IoT
                   </div>
                 </div>
                 <div
@@ -1047,7 +1049,7 @@
                       font-size: 12px;
                     "
                   >
-                    Company Logo
+                    Logo Công Ty
                   </div>
                 </div>
               </div>
@@ -1056,30 +1058,34 @@
         </div>
 
         <!-- Other tabs will be implemented similarly -->
+        <!-- Other tabs will be implemented similarly -->
         <div id="scheduling" class="tab-content">
           <div class="content-header">
-            <h2 class="content-title">Scheduling System</h2>
-            <p class="content-subtitle">Manage time-based content display</p>
+            <h2 class="content-title">Hệ Thống Lập Lịch</h2>
+            <p class="content-subtitle">
+              Quản lý hiển thị nội dung theo thời gian
+            </p>
           </div>
           <div class="config-card">
-            <p>Scheduling system will be implemented here...</p>
+            <p>Hệ thống lập lịch sẽ được triển khai tại đây...</p>
           </div>
         </div>
-
         <div id="display-settings" class="tab-content">
           <div class="content-header">
-            <h2 class="content-title">Display Settings</h2>
-            <p class="content-subtitle">Configure display parameters</p>
+            <h2 class="content-title">Cấu hình hiển thị</h2>
+            <p class="content-subtitle">Cấu hình các thông số hiển thị</p>
           </div>
           <div class="config-card">
-            <p>Display settings will be implemented here...</p>
+            <p>Cài đặt hiển thị sẽ được thực hiện ở đây..</p>
           </div>
         </div>
 
         <div id="preview" class="tab-content">
           <div class="content-header">
-            <h2 class="content-title">Live Preview</h2>
-            <p class="content-subtitle">See how your billboard will look</p>
+            <h2 class="content-title">Xem Trước Trực Tiếp</h2>
+            <p class="content-subtitle">
+              Xem biển quảng cáo của bạn sẽ trông như thế nào
+            </p>
           </div>
           <div class="config-card">
             <div class="preview-container">
@@ -1096,7 +1102,7 @@
     <div class="action-bar">
       <div>
         <span style="color: #6c757d"
-          >Press F1 to return to billboard display</span
+          >Nhấn F1 để trở về màn hình biển quảng cáo</span
         >
       </div>
       <div>
@@ -1105,10 +1111,10 @@
           onclick="exitConfig()"
           style="margin-right: 10px"
         >
-          Cancel
+          Hủy
         </button>
         <button class="btn btn-primary" onclick="saveAndApply()">
-          Save & Apply
+          Lưu & Áp Dụng
         </button>
       </div>
     </div>

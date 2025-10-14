@@ -20,7 +20,7 @@
       "type": "image/*"
     }
   ],
-  "logoLoopDuration": 5,
+  "logoLoopDuration": 100,
   "layoutPositions": {
     "weather": {
       "x": 0,
@@ -48,9 +48,9 @@
     "baseUrl": "https://backend.eoh.io",
     "mqttApiKey": "your_mqtt_api_key_here",
     "sensorConfigs": {
-      "temperature": 45106,
-      "humidity": 45106,
-      "pm25": 45201,
+      "temperature": 138997,
+      "humidity": 138998,
+      "pm25": 138999,
       "pm10": 139000
     },
     "updateInterval": 5,

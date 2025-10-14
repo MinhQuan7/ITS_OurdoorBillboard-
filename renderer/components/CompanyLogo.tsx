@@ -39,7 +39,11 @@ const CompanyLogo: React.FC = () => {
     if (window.electronAPI) {
       window.electronAPI.onConfigUpdated(
         (_event: any, updatedConfig: LogoConfig) => {
-          console.log("Logo config updated:", updatedConfig);
+          console.log("Logo config updated with loop duration:", {
+            mode: updatedConfig.logoMode,
+            duration: updatedConfig.logoLoopDuration,
+            imageCount: updatedConfig.logoImages.length
+          });
           setConfig(updatedConfig);
         }
       );
@@ -59,15 +63,30 @@ const CompanyLogo: React.FC = () => {
       config.logoMode !== "loop" ||
       config.logoImages.length <= 1
     ) {
+      console.log("Logo rotation disabled:", {
+        hasConfig: !!config,
+        mode: config?.logoMode,
+        imageCount: config?.logoImages.length
+      });
       return;
     }
 
+    const duration = config.logoLoopDuration * 1000;
+    console.log(`Setting up logo rotation: ${config.logoLoopDuration} seconds (${duration}ms)`);
+    
     const interval = setInterval(() => {
-      setCurrentLogoIndex((prev) => (prev + 1) % config.logoImages.length);
-    }, config.logoLoopDuration * 1000);
+      setCurrentLogoIndex((prev) => {
+        const nextIndex = (prev + 1) % config.logoImages.length;
+        console.log(`Logo rotation: ${prev} -> ${nextIndex} (duration: ${config.logoLoopDuration}s)`);
+        return nextIndex;
+      });
+    }, duration);
 
-    return () => clearInterval(interval);
-  }, [config]);
+    return () => {
+      console.log("Cleaning up logo rotation interval");
+      clearInterval(interval);
+    };
+  }, [config?.logoMode, config?.logoImages.length, config?.logoLoopDuration]);
 
   const loadConfig = async () => {
     try {

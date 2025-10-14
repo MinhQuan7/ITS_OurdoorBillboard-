@@ -116,6 +116,47 @@ class BillboardConfigManager {
         this.copyTokenToClipboard();
       });
     }
+
+    // Initialize form fields to ensure they're enabled
+    this.initializeLoginForm();
+  }
+
+  initializeLoginForm() {
+    const usernameInput = document.getElementById("era-username");
+    const passwordInput = document.getElementById("era-password");
+    const loginBtn = document.getElementById("login-btn");
+    const loginForm = document.getElementById("era-login-form");
+
+    // Ensure all form elements are enabled and interactive
+    if (loginForm) {
+      loginForm.style.pointerEvents = "auto";
+      loginForm.style.opacity = "1";
+    }
+
+    if (usernameInput) {
+      usernameInput.disabled = false;
+      usernameInput.removeAttribute("readonly");
+      usernameInput.style.pointerEvents = "auto";
+      usernameInput.style.opacity = "1";
+      usernameInput.setAttribute("tabindex", "0");
+    }
+
+    if (passwordInput) {
+      passwordInput.disabled = false;
+      passwordInput.removeAttribute("readonly");
+      passwordInput.style.pointerEvents = "auto";
+      passwordInput.style.opacity = "1";
+      passwordInput.setAttribute("tabindex", "0");
+    }
+
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.style.pointerEvents = "auto";
+      loginBtn.style.opacity = "1";
+      loginBtn.setAttribute("tabindex", "0");
+    }
+
+    console.log("Login form initialized - all fields should be interactive");
   }
 
   setupEraConfigHandlers() {
@@ -184,10 +225,14 @@ class BillboardConfigManager {
       return;
     }
 
-    // Show loading state
+    // Show loading state - only disable the button, not the input fields
     loginBtn.disabled = true;
     btnText.style.display = "none";
     btnLoader.style.display = "inline";
+
+    // Keep input fields enabled during login process
+    usernameInput.disabled = false;
+    passwordInput.disabled = false;
 
     try {
       const result = await this.authService.login({ username, password });
@@ -235,12 +280,36 @@ class BillboardConfigManager {
       "success"
     );
 
-    // Clear form fields to prepare for new login
+    // Clear form fields and ensure they are enabled
     const usernameInput = document.getElementById("era-username");
     const passwordInput = document.getElementById("era-password");
+    const loginBtn = document.getElementById("login-btn");
 
-    if (usernameInput) usernameInput.value = "";
-    if (passwordInput) passwordInput.value = "";
+    if (usernameInput) {
+      usernameInput.value = "";
+      usernameInput.disabled = false;
+      usernameInput.removeAttribute("readonly");
+      usernameInput.style.pointerEvents = "auto";
+      usernameInput.style.opacity = "1";
+    }
+    if (passwordInput) {
+      passwordInput.value = "";
+      passwordInput.disabled = false;
+      passwordInput.removeAttribute("readonly");
+      passwordInput.style.pointerEvents = "auto";
+      passwordInput.style.opacity = "1";
+    }
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.style.pointerEvents = "auto";
+      loginBtn.style.opacity = "1";
+
+      // Reset button loading state
+      const btnText = loginBtn.querySelector(".btn-text");
+      const btnLoader = loginBtn.querySelector(".btn-loader");
+      if (btnText) btnText.style.display = "inline";
+      if (btnLoader) btnLoader.style.display = "none";
+    }
 
     // Clear any cached config data
     if (this.eraConfigService) {
@@ -268,10 +337,28 @@ class BillboardConfigManager {
       statusDiv.style.display = "none";
     }
 
-    // Focus on username field for easy re-login
+    // Force re-enable form and focus on username field
     setTimeout(() => {
+      const loginForm = document.getElementById("era-login-form");
+      if (loginForm) {
+        // Make sure form is enabled
+        loginForm.style.pointerEvents = "auto";
+        loginForm.style.opacity = "1";
+
+        // Re-enable all form controls
+        const formControls = loginForm.querySelectorAll(
+          ".form-control, button"
+        );
+        formControls.forEach((control) => {
+          control.disabled = false;
+          control.style.pointerEvents = "auto";
+          control.style.opacity = "1";
+        });
+      }
+
       if (usernameInput) {
         usernameInput.focus();
+        usernameInput.click(); // Ensure click events work
       }
     }, 100);
   }
@@ -283,13 +370,16 @@ class BillboardConfigManager {
     const logoutSection = document.getElementById("logout-section");
     const tokenInfo = document.getElementById("token-info");
     const tokenDisplay = document.getElementById("token-display");
+    const usernameInput = document.getElementById("era-username");
+    const passwordInput = document.getElementById("era-password");
+    const loginBtn = document.getElementById("login-btn");
 
     if (!statusIndicator || !statusText) return;
 
     if (authState.isAuthenticated) {
       // Logged in state
       statusIndicator.className = "status-indicator online";
-      statusText.textContent = `Logged in as ${
+      statusText.textContent = `Đăng nhập với ${
         authState.user?.username || "User"
       }`;
 
@@ -314,6 +404,31 @@ class BillboardConfigManager {
       if (loginForm) loginForm.style.display = "block";
       if (logoutSection) logoutSection.style.display = "none";
       if (tokenInfo) tokenInfo.style.display = "none";
+
+      // Explicitly enable input fields and login button
+      if (usernameInput) {
+        usernameInput.disabled = false;
+        usernameInput.removeAttribute("readonly");
+        usernameInput.style.pointerEvents = "auto";
+        usernameInput.style.opacity = "1";
+      }
+      if (passwordInput) {
+        passwordInput.disabled = false;
+        passwordInput.removeAttribute("readonly");
+        passwordInput.style.pointerEvents = "auto";
+        passwordInput.style.opacity = "1";
+      }
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.style.pointerEvents = "auto";
+        loginBtn.style.opacity = "1";
+      }
+
+      // Reset any loading states
+      const btnText = loginBtn?.querySelector(".btn-text");
+      const btnLoader = loginBtn?.querySelector(".btn-loader");
+      if (btnText) btnText.style.display = "inline";
+      if (btnLoader) btnLoader.style.display = "none";
     }
   }
 
@@ -403,7 +518,7 @@ class BillboardConfigManager {
     }
 
     if (!this.authService || !this.authService.isAuthenticated()) {
-      this.showNotification("Please login to E-Ra platform first", "error");
+      this.showNotification("Hãy đăng nhập tài khoản E-Ra trước", "error");
       return;
     }
 
@@ -423,7 +538,7 @@ class BillboardConfigManager {
     statusDiv.style.display = "block";
     if (statusIndicator)
       statusIndicator.className = "status-indicator connecting";
-    if (statusText) statusText.textContent = "Fetching configuration...";
+    if (statusText) statusText.textContent = "Đang lấy cấu hình";
 
     try {
       const result = await this.eraConfigService.getCompleteConfig();
@@ -819,7 +934,15 @@ class BillboardConfigManager {
     // Loop duration handler
     const loopDurationInput = document.getElementById("loop-duration");
     loopDurationInput.addEventListener("change", (e) => {
-      this.config.logoLoopDuration = parseInt(e.target.value);
+      const newDuration = parseInt(e.target.value);
+      console.log(`Logo loop duration changed: ${this.config.logoLoopDuration} -> ${newDuration} seconds`);
+      this.config.logoLoopDuration = newDuration;
+    });
+
+    loopDurationInput.addEventListener("input", (e) => {
+      const newDuration = parseInt(e.target.value);
+      console.log(`Logo loop duration input: ${newDuration} seconds`);
+      this.config.logoLoopDuration = newDuration;
     });
   }
 
@@ -847,7 +970,10 @@ class BillboardConfigManager {
 
     // Update loop duration
     const loopDurationInput = document.getElementById("loop-duration");
-    loopDurationInput.value = this.config.logoLoopDuration;
+    if (loopDurationInput) {
+      loopDurationInput.value = this.config.logoLoopDuration;
+      console.log(`Updated UI with loop duration: ${this.config.logoLoopDuration} seconds`);
+    }
 
     // Update logo grid
     this.renderLogoGrid();
@@ -1088,17 +1214,26 @@ function addScheduleRule() {
 }
 
 async function saveAndApply() {
-  console.log("Saving configuration...", configManager.config);
+  console.log("Saving configuration with logo loop duration:", {
+    mode: configManager.config.logoMode,
+    duration: configManager.config.logoLoopDuration,
+    imageCount: configManager.config.logoImages.length
+  });
+  
   await configManager.saveConfiguration();
 
   // Show success message
   configManager.showNotification(
-    "Configuration saved and applied successfully! Changes are now active.",
+    `Configuration saved! Logo rotation: ${configManager.config.logoLoopDuration}s interval.`,
     "success"
   );
 
   // Log current config for debugging
-  console.log("Configuration applied:", configManager.config);
+  console.log("Configuration applied:", {
+    logoMode: configManager.config.logoMode,
+    logoLoopDuration: configManager.config.logoLoopDuration,
+    logoImages: configManager.config.logoImages.length
+  });
 
   // Optional: Close config window after save (uncomment if desired)
   // setTimeout(() => {
