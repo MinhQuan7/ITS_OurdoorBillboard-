@@ -20,6 +20,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onConfigUpdated: (callback) => ipcRenderer.on("config-updated", callback),
   removeConfigListener: () => ipcRenderer.removeAllListeners("config-updated"),
 
+  // Force service refresh handler for hot-reload
+  onForceRefreshServices: (callback) =>
+    ipcRenderer.on("force-refresh-services", callback),
+  removeForceRefreshListener: () =>
+    ipcRenderer.removeAllListeners("force-refresh-services"),
+
   // E-Ra IoT specific handlers
   updateEraIotConfig: (config) =>
     ipcRenderer.invoke("update-era-iot-config", config),

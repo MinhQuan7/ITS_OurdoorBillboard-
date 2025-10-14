@@ -42,10 +42,10 @@
     "baseUrl": "https://backend.eoh.io",
     "mqttApiKey": "your_mqtt_api_key_here",
     "sensorConfigs": {
-      "temperature": 138997,
-      "humidity": 138998,
-      "pm25": 45105,
-      "pm10": 45109
+      "temperature": 45106,
+      "humidity": 45106,
+      "pm25": 45201,
+      "pm10": 139000
     },
     "updateInterval": 5,
     "timeout": 15000,

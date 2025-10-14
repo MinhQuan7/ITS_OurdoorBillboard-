@@ -153,6 +153,33 @@ const { dialog } = require("electron");
 // Configuration file path
 const configPath = path.join(__dirname, "config.json");
 
+/**
+ * Broadcast configuration updates to all active windows
+ */
+function broadcastConfigUpdate(config) {
+  console.log("Broadcasting config update to all windows");
+
+  // Send to main window
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    console.log("Sending config-updated to main window");
+    mainWindow.webContents.send("config-updated", config);
+    mainWindow.webContents.send("force-refresh-services", config);
+  }
+
+  // Send to config window if open
+  if (configWindow && !configWindow.isDestroyed()) {
+    console.log("Sending config-updated to config window");
+    configWindow.webContents.send("config-updated", config);
+  }
+
+  // Send specific E-Ra IoT updates if applicable
+  if (config.eraIot) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("era-iot-config-updated", config.eraIot);
+    }
+  }
+}
+
 ipcMain.handle("get-config", async () => {
   try {
     if (fs.existsSync(configPath)) {
@@ -221,10 +248,8 @@ ipcMain.handle("save-config", async (event, config) => {
     fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
     console.log("Configuration saved successfully");
 
-    // Send config update to main window if it exists
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("config-updated", mergedConfig);
-    }
+    // Broadcast config update to all windows for hot-reload
+    broadcastConfigUpdate(mergedConfig);
 
     return { success: true };
   } catch (error) {
@@ -291,10 +316,8 @@ ipcMain.handle("update-era-iot-config", async (event, eraIotConfig) => {
     fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
     console.log("E-Ra IoT configuration updated successfully");
 
-    // Send config update to main window if it exists
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("era-iot-config-updated", eraIotConfig);
-    }
+    // Broadcast config update to all windows
+    broadcastConfigUpdate(currentConfig);
 
     return { success: true };
   } catch (error) {
@@ -340,10 +363,8 @@ ipcMain.handle("update-auth-token", async (event, authToken) => {
     fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
     console.log("Authentication token updated successfully");
 
-    // Notify main window of token update
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("auth-token-updated", authToken);
-    }
+    // Broadcast config update to all windows
+    broadcastConfigUpdate(currentConfig);
 
     return { success: true };
   } catch (error) {

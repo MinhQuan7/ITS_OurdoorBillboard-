@@ -1689,15 +1689,23 @@ function BillboardLayout() {
   const [eraIotService, setEraIotService] = React.useState(null);
   const [weatherData, setWeatherData] = React.useState(null);
   const [showWeatherAlert, setShowWeatherAlert] = React.useState(false);
+  const [configReloadTrigger, setConfigReloadTrigger] = React.useState(0);
 
   console.log("BillboardLayout: Component initialized");
 
   React.useEffect(() => {
-    console.log("BillboardLayout: useEffect triggered");
+    console.log("BillboardLayout: useEffect triggered - configReloadTrigger:", configReloadTrigger);
     
     const initializeEraIot = async () => {
       try {
         console.log("BillboardLayout: Loading E-Ra IoT configuration...");
+        
+        // Cleanup existing service first
+        if (eraIotService) {
+          console.log("BillboardLayout: Cleaning up existing E-Ra IoT service");
+          eraIotService.destroy();
+          setEraIotService(null);
+        }
         
         if (typeof window !== "undefined" && window.electronAPI) {
           console.log("BillboardLayout: electronAPI available, fetching config...");
@@ -1709,7 +1717,7 @@ function BillboardLayout() {
             hasAuthToken: !!config?.eraIot?.authToken,
           });
           
-          if (config?.eraIot?.authToken) {
+          if (config?.eraIot?.authToken && config.eraIot.authToken.trim() !== "") {
             console.log("BillboardLayout: Initializing E-Ra IoT service");
             
             const eraConfig = {
@@ -1730,8 +1738,10 @@ function BillboardLayout() {
             const service = new EraIotService(eraConfig);
             await service.startPeriodicUpdates();
             setEraIotService(service);
+            console.log("BillboardLayout: E-Ra IoT service initialized successfully");
           } else {
-            console.log("BillboardLayout: No valid E-Ra IoT AUTHTOKEN found");
+            console.log("BillboardLayout: No valid E-Ra IoT AUTHTOKEN found or empty token");
+            setEraIotService(null);
           }
         } else {
           console.log("BillboardLayout: electronAPI not available");
@@ -1748,6 +1758,33 @@ function BillboardLayout() {
         eraIotService.destroy();
       }
     };
+  }, [configReloadTrigger]); // Re-run when config changes
+
+  // Set up hot-reload listeners for configuration changes
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.electronAPI) {
+      console.log("BillboardLayout: Setting up config hot-reload listeners");
+      
+      const handleConfigUpdate = (event, newConfig) => {
+        console.log("BillboardLayout: Configuration hot-reload triggered", newConfig);
+        setConfigReloadTrigger(prev => prev + 1);
+      };
+      
+      const handleForceRefresh = (event, newConfig) => {
+        console.log("BillboardLayout: Force refresh services triggered", newConfig);
+        setConfigReloadTrigger(prev => prev + 1);
+      };
+      
+      // Set up listeners
+      window.electronAPI.onConfigUpdated(handleConfigUpdate);
+      window.electronAPI.onForceRefreshServices(handleForceRefresh);
+      
+      return () => {
+        console.log("BillboardLayout: Cleaning up config listeners");
+        window.electronAPI.removeConfigListener();
+        window.electronAPI.removeForceRefreshListener();
+      };
+    }
   }, []);
 
   // Subscribe to weather data updates for alert banner
