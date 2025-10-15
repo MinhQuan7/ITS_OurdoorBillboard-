@@ -20,6 +20,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onConfigUpdated: (callback) => ipcRenderer.on("config-updated", callback),
   removeConfigListener: () => ipcRenderer.removeAllListeners("config-updated"),
 
+  // Logo-specific config updates for immediate interval changes
+  onLogoConfigUpdated: (callback) =>
+    ipcRenderer.on("logo-config-updated", callback),
+  removeLogoConfigListener: () =>
+    ipcRenderer.removeAllListeners("logo-config-updated"),
+
   // Force service refresh handler for hot-reload
   onForceRefreshServices: (callback) =>
     ipcRenderer.on("force-refresh-services", callback),

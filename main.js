@@ -119,12 +119,16 @@ function toggleConfigMode() {
 app.whenReady().then(() => {
   createMainWindow();
 
+  // Setup config file watcher for hot-reload
+  setupConfigWatcher();
+
   // Register global F1 shortcut for config mode
   globalShortcut.register("F1", () => {
     toggleConfigMode();
   });
 
   console.log("Billboard app started - Press F1 for config mode");
+  console.log("Config hot-reload watcher active");
 });
 
 // Quit application when all windows are closed (except macOS)
@@ -141,9 +145,15 @@ app.on("activate", () => {
   }
 });
 
-// Cleanup shortcuts on quit
+// Cleanup shortcuts and watchers on quit
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+
+  if (configWatcher) {
+    fs.unwatchFile(configPath);
+    configWatcher = null;
+    console.log("Config watcher cleaned up");
+  }
 });
 
 // IPC handlers for config communication
@@ -153,17 +163,71 @@ const { dialog } = require("electron");
 // Configuration file path
 const configPath = path.join(__dirname, "config.json");
 
+// File system watcher for config.json hot-reload
+let configWatcher = null;
+
+function setupConfigWatcher() {
+  if (configWatcher) {
+    configWatcher.close();
+  }
+
+  try {
+    configWatcher = fs.watchFile(configPath, (curr, prev) => {
+      if (curr.mtime > prev.mtime) {
+        console.log("Config file changed externally, triggering hot-reload...");
+
+        try {
+          const configData = fs.readFileSync(configPath, "utf8");
+          const config = JSON.parse(configData);
+
+          console.log("External config change detected:", {
+            logoMode: config.logoMode,
+            logoLoopDuration: config.logoLoopDuration,
+            logoImages: config.logoImages?.length,
+          });
+
+          // Broadcast the updated config
+          broadcastConfigUpdate(config);
+        } catch (error) {
+          console.error("Error parsing externally changed config:", error);
+        }
+      }
+    });
+
+    console.log("Config file watcher established for hot-reload");
+  } catch (error) {
+    console.error("Failed to setup config watcher:", error);
+  }
+}
+
 /**
  * Broadcast configuration updates to all active windows
  */
 function broadcastConfigUpdate(config) {
-  console.log("Broadcasting config update to all windows");
+  console.log("Broadcasting config update to all windows", {
+    logoMode: config.logoMode,
+    logoLoopDuration: config.logoLoopDuration,
+    logoImages: config.logoImages?.length,
+    hasEraIot: !!config.eraIot,
+  });
 
-  // Send to main window
+  // Send to main window with immediate effect
   if (mainWindow && !mainWindow.isDestroyed()) {
-    console.log("Sending config-updated to main window");
+    console.log("Sending IMMEDIATE config-updated to main window");
     mainWindow.webContents.send("config-updated", config);
     mainWindow.webContents.send("force-refresh-services", config);
+
+    // Force reload for logo changes specifically
+    if (config.logoMode === "loop" && config.logoLoopDuration) {
+      console.log(
+        `Forcing logo loop interval update: ${config.logoLoopDuration}s`
+      );
+      mainWindow.webContents.send("logo-config-updated", {
+        logoMode: config.logoMode,
+        logoLoopDuration: config.logoLoopDuration,
+        logoImages: config.logoImages,
+      });
+    }
   }
 
   // Send to config window if open

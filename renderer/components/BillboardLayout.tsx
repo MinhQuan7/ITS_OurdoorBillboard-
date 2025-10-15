@@ -100,10 +100,18 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
     initializeEraIot();
 
     // Listen for configuration updates
-    const handleConfigUpdate = () => {
+    const handleConfigUpdate = (_event: any, updatedConfig: any) => {
       console.log(
-        "BillboardLayout: Configuration updated, reinitializing E-Ra IoT service"
+        "BillboardLayout: Configuration updated, reinitializing services",
+        {
+          hasLogoConfig: !!updatedConfig?.logoMode,
+          logoMode: updatedConfig?.logoMode,
+          logoLoopDuration: updatedConfig?.logoLoopDuration,
+          hasEraIot: !!updatedConfig?.eraIot,
+        }
       );
+
+      // Reinitialize E-Ra IoT service
       setTimeout(async () => {
         await initializeEraIot();
       }, 1000); // Small delay to ensure config is saved

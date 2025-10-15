@@ -20,7 +20,7 @@
       "type": "image/*"
     }
   ],
-  "logoLoopDuration": 100,
+  "logoLoopDuration": 10,
   "layoutPositions": {
     "weather": {
       "x": 0,

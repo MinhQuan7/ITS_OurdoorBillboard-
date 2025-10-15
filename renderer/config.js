@@ -935,7 +935,9 @@ class BillboardConfigManager {
     const loopDurationInput = document.getElementById("loop-duration");
     loopDurationInput.addEventListener("change", (e) => {
       const newDuration = parseInt(e.target.value);
-      console.log(`Logo loop duration changed: ${this.config.logoLoopDuration} -> ${newDuration} seconds`);
+      console.log(
+        `Logo loop duration changed: ${this.config.logoLoopDuration} -> ${newDuration} seconds`
+      );
       this.config.logoLoopDuration = newDuration;
     });
 
@@ -972,7 +974,9 @@ class BillboardConfigManager {
     const loopDurationInput = document.getElementById("loop-duration");
     if (loopDurationInput) {
       loopDurationInput.value = this.config.logoLoopDuration;
-      console.log(`Updated UI with loop duration: ${this.config.logoLoopDuration} seconds`);
+      console.log(
+        `Updated UI with loop duration: ${this.config.logoLoopDuration} seconds`
+      );
     }
 
     // Update logo grid
@@ -1217,9 +1221,9 @@ async function saveAndApply() {
   console.log("Saving configuration with logo loop duration:", {
     mode: configManager.config.logoMode,
     duration: configManager.config.logoLoopDuration,
-    imageCount: configManager.config.logoImages.length
+    imageCount: configManager.config.logoImages.length,
   });
-  
+
   await configManager.saveConfiguration();
 
   // Show success message
@@ -1232,7 +1236,7 @@ async function saveAndApply() {
   console.log("Configuration applied:", {
     logoMode: configManager.config.logoMode,
     logoLoopDuration: configManager.config.logoLoopDuration,
-    logoImages: configManager.config.logoImages.length
+    logoImages: configManager.config.logoImages.length,
   });
 
   // Optional: Close config window after save (uncomment if desired)
