@@ -100,9 +100,9 @@
   display: flex;
   flex-direction: row; /* Horizontal layout */
   align-items: center;
-  justify-content: space-between; /* Space between label and value */
+  justify-content: flex-start; /* Align to left with more space */
   text-align: left;
-  padding: 8px 12px; /* More padding for better appearance */
+  padding: 8px 8px; /* Reduced right padding to shift left */
   border-radius: 0; /* Remove rounded corners */
   width: 100%; /* Fill full width */
   box-sizing: border-box;
@@ -115,10 +115,11 @@
   display: flex;
   flex-direction: row; /* Horizontal layout */
   align-items: center;
-  justify-content: space-between; /* Space between label and value */
+  justify-content: flex-start; /* Align to left instead of space-between */
   width: 100%;
   background: none; /* Ensure no background */
   background-color: transparent; /* Explicitly transparent */
+  gap: 8px; /* Add gap between label and value for spacing */
 }
 
 .sensor-label {
@@ -127,14 +128,15 @@
   color: white;
   opacity: 0.9;
   white-space: nowrap; /* Prevent text wrapping */
-  flex: 1; /* Take available space on left */
+  flex: 0 0 auto; /* Don't grow or shrink, keep natural width */
   text-align: left;
+  margin-left: -4px; /* Shift slightly to the left for more space */
 }
 
 .sensor-value-container {
   display: flex;
   align-items: baseline;
-  justify-content: flex-end; /* Right align values */
+  justify-content: flex-start; /* Align left instead of right */
   flex-shrink: 0; /* Don't shrink */
 }
 

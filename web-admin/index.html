@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Billboard Banner Manager</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="background">
+      <div class="glass-container">
+        <header class="header">
+          <h1>🖼️ Billboard Manager</h1>
+          <div class="status-indicator">
+            <span id="connection-status" class="status offline">●</span>
+            <span id="status-text">Connecting...</span>
+          </div>
+        </header>
+
+        <main class="main-content">
+          <!-- Current Banner Section -->
+          <section class="current-banner-section">
+            <h2>📊 Current Banner</h2>
+            <div class="banner-preview">
+              <img id="current-banner" src="" alt="No banner uploaded yet" />
+              <div class="banner-info">
+                <p id="banner-filename">No banner selected</p>
+                <p id="banner-timestamp">-</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Upload Section -->
+          <section class="upload-section">
+            <h2>🔄 Upload New Banner</h2>
+            <div class="upload-area" id="upload-area">
+              <div class="upload-content">
+                <div class="upload-icon">📁</div>
+                <p>Drag & Drop banner image here</p>
+                <p class="upload-hint">or click to browse</p>
+                <input type="file" id="file-input" accept="image/*" hidden />
+              </div>
+            </div>
+
+            <div
+              class="upload-preview"
+              id="upload-preview"
+              style="display: none"
+            >
+              <img id="preview-image" src="" alt="Preview" />
+              <div class="upload-actions">
+                <button id="upload-btn" class="btn primary">
+                  Upload Banner
+                </button>
+                <button id="cancel-btn" class="btn secondary">Cancel</button>
+              </div>
+            </div>
+
+            <div
+              class="progress-section"
+              id="progress-section"
+              style="display: none"
+            >
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+              <p id="progress-text">Uploading... 0%</p>
+            </div>
+          </section>
+
+          <!-- Device Status Section -->
+          <section class="devices-section">
+            <h2>📡 Connected Devices</h2>
+            <div class="devices-list">
+              <div class="device-item" id="device-1">
+                <span class="device-name">Mini PC #1</span>
+                <span class="device-status updating">⏳ Updating...</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Upload History -->
+          <section class="history-section">
+            <h2>📋 Upload History</h2>
+            <div class="history-list" id="history-list">
+              <!-- History items will be populated by JS -->
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="era-config.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

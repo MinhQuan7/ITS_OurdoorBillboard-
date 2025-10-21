@@ -712,7 +712,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "6px 4px",
-                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+          
                 borderRadius: "3px",
                 border: "1px solid rgba(255, 255, 255, 0.05)",
                 minHeight: "35px"
@@ -753,7 +753,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "6px 4px",
-                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+
                 borderRadius: "3px",
                 border: "1px solid rgba(255, 255, 255, 0.05)",
                 minHeight: "35px"
@@ -794,7 +794,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "6px 4px",
-                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+  
                 borderRadius: "3px",
                 border: "1px solid rgba(255, 255, 255, 0.05)",
                 minHeight: "35px"
@@ -835,9 +835,7 @@ function WeatherPanel({ className = "" }) {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "6px 4px",
-                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
                 borderRadius: "3px",
-                border: "1px solid rgba(255, 255, 255, 0.05)",
                 minHeight: "35px"
               }
             }, [

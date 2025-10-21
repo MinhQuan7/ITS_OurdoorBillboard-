@@ -1,15 +1,15 @@
 {
-  "logoMode": "scheduled",
+  "logoMode": "loop",
   "logoImages": [
     {
-      "name": "background1.jpg",
-      "path": "C:\\Users\\lemin\\Downloads\\background1.jpg",
+      "name": "2fcce3ef-f877-4328-8cdb-266a794ca5c1-cover.png",
+      "path": "C:\\Users\\lemin\\Downloads\\2fcce3ef-f877-4328-8cdb-266a794ca5c1-cover.png",
       "size": 0,
       "type": "image/*"
     },
     {
-      "name": "z7085121758183_3cef29c288a9bfb27eecd7aeeb7a36c9.jpg",
-      "path": "C:\\Users\\lemin\\Downloads\\z7085121758183_3cef29c288a9bfb27eecd7aeeb7a36c9.jpg",
+      "name": "imagesFirebase.png",
+      "path": "C:\\Users\\lemin\\Downloads\\imagesFirebase.png",
       "size": 0,
       "type": "image/*"
     }
@@ -45,6 +45,11 @@
       "time": "14:55",
       "logoIndex": "0",
       "days": "weekdays"
+    },
+    {
+      "time": "",
+      "logoIndex": null,
+      "days": "daily"
     }
   ],
   "eraIot": {
