@@ -438,11 +438,7 @@ function WeatherPanel({ className = "" }) {
       style: {
         flex: "1",
         width: "100%",
-        backgroundColor: "#10263B",
-        backgroundImage: "none",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+        background: "linear-gradient(135deg, #142A3F 0%, #1e3a5f 50%, #1e3a5f 100%)",
         padding: "16px",
         border: "none",
         display: "flex",
@@ -493,11 +489,7 @@ function WeatherPanel({ className = "" }) {
       style: {
         flex: "1",
         width: "100%",
-        backgroundColor: "#10263B",
-        backgroundImage: "none",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+        background: "linear-gradient(135deg, #142A3F 0%, #1e3a5f 50%, #1e3a5f 100%)",
         padding: "16px",
         border: "none",
         display: "flex",
@@ -569,11 +561,7 @@ function WeatherPanel({ className = "" }) {
     onClick: handleRefresh,
     style: {
       flex: "1",
-      backgroundColor: "#10263B",
-      backgroundImage: "none",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
+      background: "linear-gradient(135deg, #142A3F 0%, #1e3a5f 50%, #1e3a5f 100%)",
       padding: "16px",
       border: "none",
       display: "flex",
@@ -1713,11 +1701,7 @@ function IoTPanel({ eraIotService, className = "" }) {
       padding: "8px",
       boxSizing: "border-box",
       fontSize: "14px",
-      backgroundImage: "none",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      position: "relative",
+     position: "relative",
     }
   }, [
     // Background overlay for better text readability
