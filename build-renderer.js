@@ -688,18 +688,22 @@ function WeatherPanel({ className = "" }) {
             }, \`\${weatherData.temperature}°\`)
           ]),
 
-          // Weather details grid directly beneath main temperature - removed feels like temp
+          // Weather details 2x2 grid - Hàng 1: Độ ẩm và UV, Hàng 2: Mưa và Gió
           React.createElement("div", { 
             key: "weather-details-grid",
             style: { 
               width: "100%",
               display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))", // Back to 2x2 grid for better readability
-              gap: "1px", // Very small gap between elements
-              marginBottom: "2px", // Minimal margin to bring rows closer
-              marginTop: "-8px" // Negative margin to bring elements directly close to main temperature
+              gridTemplateColumns: "1fr 1fr", // 2 columns
+              gridTemplateRows: "1fr 1fr", // 2 rows
+              gap: "4px", // Consistent gap between all items
+              marginBottom: "2px", // Minimal margin
+              marginTop: "-8px", // Negative margin to bring elements directly close to main temperature
+              paddingLeft: "4px", // Reduced left padding to shift left
+              paddingRight: "4px"
             }
           }, [
+            // First row, first column: Độ ẩm
             React.createElement("div", { 
               key: "humidity",
               style: { 
@@ -707,57 +711,40 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "2px 4px" // Reduced top/bottom padding to bring closer to temp-feels
+                padding: "6px 4px",
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                borderRadius: "3px",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                minHeight: "35px"
               }
             }, [
               React.createElement("div", { 
                 key: "label",
                 style: { 
-                  fontSize: "14px", 
-                  color: "#ffffff", 
+                  fontSize: "10px",
+                  color: "#cbd5e0", 
                   opacity: 0.9,
-                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
+                  marginBottom: "0px",
+                  fontWeight: "600",
+                  letterSpacing: "0.3px",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap"
                 }
               }, "Độ ẩm"),
               React.createElement("div", { 
                 key: "value",
                 style: { 
-                  fontSize: "16px", 
+                  fontSize: "14px",
                   fontWeight: "bold", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.8)",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap"
                 }
               }, weatherData.humidity + '%')
             ]),
-            React.createElement("div", { 
-              key: "rain",
-              style: { 
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "2px 4px" // Reduced top/bottom padding to bring closer to temp-feels
-              }
-            }, [
-              React.createElement("div", { 
-                key: "label",
-                style: { 
-                  fontSize: "14px", 
-                  color: "#ffffff", 
-                  opacity: 0.9,
-                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
-                }
-              }, "Mưa"),
-              React.createElement("div", { 
-                key: "value",
-                style: { 
-                  fontSize: "16px", 
-                  fontWeight: "bold", 
-                  color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
-                }
-              }, weatherData.rainProbability + '%')
-            ]),
+            // First row, second column: UV
             React.createElement("div", { 
               key: "uv",
               style: { 
@@ -765,28 +752,81 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "6px 4px" // Optimized padding for 2x2 layout
+                padding: "6px 4px",
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                borderRadius: "3px",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                minHeight: "35px"
               }
             }, [
               React.createElement("div", { 
                 key: "label",
                 style: { 
-                  fontSize: "14px", 
-                  color: "#ffffff", 
+                  fontSize: "10px",
+                  color: "#cbd5e0", 
                   opacity: 0.9,
-                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
+                  marginBottom: "0px",
+                  fontWeight: "600",
+                  letterSpacing: "0.3px",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap"
                 }
               }, "UV"),
               React.createElement("div", { 
                 key: "value",
                 style: { 
-                  fontSize: "16px", 
+                  fontSize: "14px",
                   fontWeight: "bold", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.8)",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap"
                 }
               }, getUVLevel(weatherData.uvIndex))
             ]),
+            // Second row, first column: Mưa
+            React.createElement("div", { 
+              key: "rain",
+              style: { 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "6px 4px",
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                borderRadius: "3px",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                minHeight: "35px"
+              }
+            }, [
+              React.createElement("div", { 
+                key: "label",
+                style: { 
+                  fontSize: "10px",
+                  color: "#cbd5e0", 
+                  opacity: 0.9,
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
+                  marginBottom: "0px",
+                  fontWeight: "600",
+                  letterSpacing: "0.3px",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap"
+                }
+              }, "Mưa"),
+              React.createElement("div", { 
+                key: "value",
+                style: { 
+                  fontSize: "14px",
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.8)",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap"
+                }
+              }, weatherData.rainProbability + '%')
+            ]),
+            // Second row, second column: Gió
             React.createElement("div", { 
               key: "wind",
               style: { 
@@ -794,25 +834,36 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "6px 4px" // Optimized padding for 2x2 layout
+                padding: "6px 4px",
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                borderRadius: "3px",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                minHeight: "35px"
               }
             }, [
               React.createElement("div", { 
                 key: "label",
                 style: { 
-                  fontSize: "14px", 
-                  color: "#ffffff", 
+                  fontSize: "10px",
+                  color: "#cbd5e0", 
                   opacity: 0.9,
-                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
+                  marginBottom: "0px",
+                  fontWeight: "600",
+                  letterSpacing: "0.3px",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap"
                 }
               }, "Gió"),
               React.createElement("div", { 
                 key: "value",
                 style: { 
-                  fontSize: "16px", 
+                  fontSize: "14px",
                   fontWeight: "bold", 
                   color: "#ffffff", 
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)"
+                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.8)",
+                  lineHeight: 1.1,
+                  whiteSpace: "nowrap"
                 }
               }, weatherData.windSpeed + ' km/h')
             ])

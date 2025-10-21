@@ -170,7 +170,7 @@
   margin-top: 2px;
 }
 
-/* Weather details grid - Professional 2x2 layout for optimal visibility */
+/* Weather details grid - Professional 2x2 layout: Hàng 1: Độ ẩm & UV, Hàng 2: Mưa & Gió */
 .weather-details-grid {
   display: grid;
   grid-template-columns: 1fr 1fr; /* 2 columns of equal width */
@@ -191,12 +191,7 @@
   box-sizing: border-box;
 }
 
-.detail-row {
-  /* Remove flex layout as we're using grid now */
-  display: contents; /* This makes the child elements participate in the grid */
-}
-
-.detail-item {
+.weather-details-grid .detail-item {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -213,7 +208,7 @@
   min-height: 35px; /* Ensure consistent height */
 }
 
-.detail-label {
+.weather-details-grid .detail-label {
   display: block;
   font-size: 10px;
   color: #cbd5e0;
@@ -223,15 +218,17 @@
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
+  white-space: nowrap; /* Prevent label wrapping */
 }
 
-.detail-value {
+.weather-details-grid .detail-value {
   display: block;
   font-size: 14px;
   font-weight: bold;
   color: #ffffff;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   line-height: 1.1;
+  white-space: nowrap; /* Prevent value wrapping */
 }
 
 /* New Air Quality Element - positioned directly below weather grid */
@@ -634,6 +631,26 @@
 
   .city-name {
     font-size: 12px;
+  }
+
+  /* Adjust single row layout for smaller screens */
+  .weather-details-single-row {
+    gap: 4px;
+    padding: 4px 2px;
+    margin: 0 2px 0 1px;
+  }
+
+  .weather-details-single-row .detail-item {
+    padding: 3px 2px;
+    min-height: 25px;
+  }
+
+  .weather-details-single-row .detail-label {
+    font-size: 8px;
+  }
+
+  .weather-details-single-row .detail-value {
+    font-size: 11px;
   }
 }
 

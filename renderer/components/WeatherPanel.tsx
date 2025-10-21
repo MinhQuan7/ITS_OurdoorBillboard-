@@ -381,30 +381,27 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({
         </div>
       </div>
 
-      {/* Weather details grid - Reorganized for optimal visibility */}
+      {/* Weather details 2x2 grid - Hàng 1: Độ ẩm và UV, Hàng 2: Mưa và Gió */}
       <div className="weather-details-grid">
-        {/* Top row - Primary weather metrics */}
-        <div className="detail-row top-row">
-          <div className="detail-item">
-            <span className="detail-label">Độ ẩm</span>
-            <span className="detail-value">{weatherData.humidity}%</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">Mưa</span>
-            <span className="detail-value">{weatherData.rainProbability}%</span>
-          </div>
+        {/* First row */}
+        <div className="detail-item">
+          <span className="detail-label">Độ ẩm</span>
+          <span className="detail-value">{weatherData.humidity}%</span>
         </div>
-
-        {/* Bottom row - Secondary weather metrics */}
-        <div className="detail-row bottom-row">
-          <div className="detail-item">
-            <span className="detail-label">UV</span>
-            <span className="detail-value">{weatherData.uvIndex}</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">Gió</span>
-            <span className="detail-value">{weatherData.windSpeed}</span>
-          </div>
+        <div className="detail-item">
+          <span className="detail-label">UV</span>
+          <span className="detail-value">
+            {getUVLevel(weatherData.uvIndex)}
+          </span>
+        </div>
+        {/* Second row */}
+        <div className="detail-item">
+          <span className="detail-label">Mưa</span>
+          <span className="detail-value">{weatherData.rainProbability}%</span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">Gió</span>
+          <span className="detail-value">{weatherData.windSpeed}</span>
         </div>
       </div>
 
