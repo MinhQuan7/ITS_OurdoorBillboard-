@@ -634,7 +634,7 @@ function WeatherPanel({ className = "" }) {
           key: "weather-left",
           style: { 
             flex: 1,
-            padding: "4px 16px", // Further reduced padding to move content higher
+            padding: "4px 0", // Removed right padding
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -691,15 +691,17 @@ function WeatherPanel({ className = "" }) {
               gap: "4px", // Consistent gap between all items
               marginBottom: "2px", // Minimal margin
               marginTop: "-8px", // Negative margin to bring elements directly close to main temperature
-              paddingLeft: "4px", // Reduced left padding to shift left
-              paddingRight: "4px"
+              paddingLeft: "0px", // Remove left padding to shift more left
+              paddingRight: "8px"
             }
           }, [
             // First row, first column: Độ ẩm
             React.createElement("div", { 
               key: "humidity",
               style: { 
+                display: "flex",
                 flexDirection: "row",
+                alignItems: "center",
                 justifyContent: "flex-start",
                 padding: "6px 4px",    
                 borderRadius: "3px",
@@ -709,22 +711,21 @@ function WeatherPanel({ className = "" }) {
               React.createElement("div", { 
                 key: "label",
                 style: { 
-                  fontSize: "10px",
+                  fontSize: "12px",
                   color: "#ffffffff", 
                   opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
+                  marginRight: "8px",
                   fontWeight: "600",
-                  letterSpacing: "0.3px",
-                  textTransform: "uppercase",
+                  letterSpacing: "0.2px",
+                  textTransform: "capitalize",
                   whiteSpace: "nowrap"
                 }
               }, "Độ ẩm"),
               React.createElement("div", { 
                 key: "value",
                 style: { 
-                                flexDirection: "row",
-                justifyContent: "flex-start",
                   fontSize: "14px",
                   fontWeight: "bold", 
                   color: "#ffffff", 
@@ -738,7 +739,9 @@ function WeatherPanel({ className = "" }) {
             React.createElement("div", { 
               key: "uv",
               style: { 
-                  flexDirection: "row",
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
                 justifyContent: "flex-start",
                 padding: "6px 4px",
                 borderRadius: "3px",
@@ -748,14 +751,15 @@ function WeatherPanel({ className = "" }) {
               React.createElement("div", { 
                 key: "label",
                 style: { 
-                  fontSize: "10px",
+                  fontSize: "12px",
                   color: "#ffffffff",
                   opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
+                  marginRight: "8px",
                   fontWeight: "600",
-                  letterSpacing: "0.3px",
-                  textTransform: "uppercase",
+                  letterSpacing: "0.2px",
+                  textTransform: "capitalize",
                   whiteSpace: "nowrap"
                 }
               }, "UV"),
@@ -776,9 +780,10 @@ function WeatherPanel({ className = "" }) {
               key: "rain",
               style: { 
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "flex-start",
                 padding: "6px 4px",
-  
                 borderRadius: "3px",
                 minHeight: "35px"
               }
@@ -786,14 +791,15 @@ function WeatherPanel({ className = "" }) {
               React.createElement("div", { 
                 key: "label",
                 style: { 
-                  fontSize: "10px",
+                  fontSize: "12px",
                   color: "#ffffffff",
                   opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
+                  marginRight: "8px",
                   fontWeight: "600",
-                  letterSpacing: "0.3px",
-                  textTransform: "uppercase",
+                  letterSpacing: "0.2px",
+                  textTransform: "capitalize",
                   whiteSpace: "nowrap"
                 }
               }, "Mưa"),
@@ -814,7 +820,9 @@ function WeatherPanel({ className = "" }) {
               key: "wind",
               style: { 
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "flex-start",
                 padding: "6px 4px",
                 borderRadius: "3px",
                 minHeight: "35px"
@@ -823,14 +831,15 @@ function WeatherPanel({ className = "" }) {
               React.createElement("div", { 
                 key: "label",
                 style: { 
-                  fontSize: "10px",
+                  fontSize: "12px",
                   color: "#ffffffff",
                   opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
+                  marginRight: "8px",
                   fontWeight: "600",
-                  letterSpacing: "0.3px",
-                  textTransform: "uppercase",
+                  letterSpacing: "0.2px",
+                  textTransform: "capitalize",
                   whiteSpace: "nowrap"
                 }
               }, "Gió"),
@@ -869,22 +878,24 @@ function WeatherPanel({ className = "" }) {
               React.createElement("span", { 
                 key: "air-quality-label",
                 style: { 
-                  fontSize: "11px",
+                  fontSize: "13px",
                   color: "#ffffffff",
                   opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   fontWeight: "600",
-                  letterSpacing: "0.3px"
+                  letterSpacing: "0.3px",
+                  whiteSpace: "nowrap"
                 }
               }, "Chất lượng không khí"),
               React.createElement("span", { 
                 key: "air-quality-status-value",
                 style: { 
-                  fontSize: "13px",
+                  fontSize: "15px",
                   fontWeight: "bold",
                   color: "#48bb78",
                   textShadow: "0 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(72, 187, 120, 0.3)",
-                  padding: "2px 8px"
+                  padding: "2px 8px",
+                  whiteSpace: "nowrap"
                 }
               }, "TỐT")
             ])
@@ -894,11 +905,12 @@ function WeatherPanel({ className = "" }) {
           React.createElement("div", { 
             key: "air-quality-status",
             style: { 
-              fontSize: "12px", 
-                  color: "#ffffffff",
-                  opacity: 1,
+              fontSize: "14px", 
+              color: "#ffffffff",
+              opacity: 1,
               textAlign: "center", 
-              textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
+              textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
+              whiteSpace: "nowrap"
             }
           }, `Chất lượng không khí: ${weatherData.airQuality}`)
         ]),
@@ -936,12 +948,12 @@ function WeatherPanel({ className = "" }) {
             }, "Nhiệt độ"),
             React.createElement("span", { 
               key: "value",
-              style: { 
-                fontSize: "16px", 
-                fontWeight: "bold", 
-                color: "#ffffff", 
-                textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
-              }
+                style: { 
+                  fontSize: "13px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
+                }
             }, `${weatherData.temperature}°`)
           ]),
 
@@ -962,12 +974,12 @@ function WeatherPanel({ className = "" }) {
             }, "Độ ẩm"),
             React.createElement("span", { 
               key: "value",
-              style: { 
-                fontSize: "16px", 
-                fontWeight: "bold", 
-                color: "#ffffff", 
-                textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
-              }
+                style: { 
+                  fontSize: "13px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
+                }
             }, `${weatherData.humidity}%`)
           ]),
 
@@ -988,17 +1000,17 @@ function WeatherPanel({ className = "" }) {
             }, "PM2.5"),
             React.createElement("span", { 
               key: "value",
-              style: { 
-                fontSize: "16px", 
-                fontWeight: "bold", 
-                color: "#ffffff", 
-                textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
-              }
+                style: { 
+                  fontSize: "13px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
+                }
             }, [
               "2,06",
               React.createElement("span", { 
                 key: "unit",
-                style: { fontSize: "10px", fontWeight: "normal", opacity: 0.8, marginLeft: "2px" }
+                  style: { fontSize: "9px", fontWeight: "normal", opacity: 0.8, marginLeft: "2px" }
               }, "μg/m³")
             ])
           ]),
@@ -1020,17 +1032,17 @@ function WeatherPanel({ className = "" }) {
             }, "PM10"),
             React.createElement("span", { 
               key: "value",
-              style: { 
-                fontSize: "16px", 
-                fontWeight: "bold", 
-                color: "#ffffff", 
-                textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
-              }
+                style: { 
+                  fontSize: "13px", 
+                  fontWeight: "bold", 
+                  color: "#ffffff", 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
+                }
             }, [
               "2,4",
               React.createElement("span", { 
                 key: "unit",
-                style: { fontSize: "10px", fontWeight: "normal", opacity: 0.8, marginLeft: "2px" }
+                  style: { fontSize: "9px", fontWeight: "normal", opacity: 0.8, marginLeft: "2px" }
               }, "μg/m³")
             ])
           ]),
@@ -1043,9 +1055,9 @@ function WeatherPanel({ className = "" }) {
               fontSize: "12px",
               fontWeight: "bold",
               textAlign: "center",
-              padding: "6px 12px",
+              padding: "4px 8px",
               borderRadius: "6px",
-              marginTop: "auto",
+              marginTop: "8px",
               textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
               boxShadow: "0 2px 4px rgba(74, 222, 128, 0.3)"
             }
