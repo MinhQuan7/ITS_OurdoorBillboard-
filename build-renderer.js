@@ -716,7 +716,9 @@ function WeatherPanel({ className = "" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "8px"
+                padding: "2px 2px", // Reduced padding for tighter layout
+                minWidth: "0", // Allow shrinking
+                overflow: "hidden" // Prevent overflow
               }
             }, [
               React.createElement("div", { 
