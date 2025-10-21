@@ -845,13 +845,13 @@ function WeatherPanel({ className = "" }) {
             ])
           ]),
 
-          // New Air Quality Element - positioned directly below weather grid
+          // New Air Quality Element - positioned higher to avoid alert banner
           React.createElement("div", { 
             key: "weather-air-quality",
             style: { 
               width: "100%",
               padding: "6px 8px",
-              margin: "4px 0"
+              margin: "-16px 0 4px 0" // Increased negative top margin to push even higher
             }
           }, [
             React.createElement("div", { 
@@ -1045,7 +1045,7 @@ function WeatherPanel({ className = "" }) {
               textAlign: "center",
               padding: "4px 8px",
               borderRadius: "6px",
-              marginTop: "8px",
+              marginTop: "-4px", // Further reduced to negative margin to move even higher
               textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
               boxShadow: "0 2px 4px rgba(74, 222, 128, 0.3)"
             }
@@ -1056,46 +1056,6 @@ function WeatherPanel({ className = "" }) {
 
 
           ]),
-
-    // Weather Alert Banner
-    React.createElement("div", { 
-      key: "alert",
-      style: { 
-        display: (weatherData.rainProbability > 70 || weatherData.weatherCondition.includes("mưa to") || weatherData.weatherCondition.includes("dông")) ? "flex" : "none",
-        position: "absolute",
-        bottom: "0px",
-        left: 0,
-        right: 0,
-        background: "linear-gradient(135deg, #dc2626, #b91c1c)",
-        color: "#ffffff",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "12px",
-        padding: "12px 16px",
-        fontWeight: "bold",
-        textTransform: "uppercase",
-        letterSpacing: "1px",
-        boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)",
-        zIndex: 999
-      }
-    }, [
-      React.createElement("div", {
-        key: "alert-icon",
-        style: {
-          background: "#fbbf24",
-          color: "#dc2626",
-          width: "24px",
-          height: "24px",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "16px",
-          fontWeight: "bold",
-          flexShrink: 0
-        }
-      }, "!"),
-    ]),
 
     // Loading overlay for refresh
     React.createElement("div", { 
@@ -1300,6 +1260,8 @@ class EraIotService {
     this.currentData = null;
     this.updateTimer = null;
     this.isUpdating = false;
+    this.dataUpdateCallbacks = [];
+    this.statusUpdateCallbacks = [];
     console.log("EraIotService: Initialized with config", {
       baseUrl: this.config.baseUrl,
       hasAuthToken: !!this.config.authToken,
@@ -1389,6 +1351,9 @@ class EraIotService {
         errorMessage: status === "error" ? "Connection failed" : undefined,
       };
 
+      // Notify all data update callbacks
+      this.notifyDataUpdateCallbacks();
+
       console.log("EraIotService: Data update completed", {
         status,
         successCount: `${successCount}/4`,
@@ -1455,6 +1420,10 @@ class EraIotService {
       status: "error",
       errorMessage: `Connection failed: ${error.message || "Unknown error"}`,
     };
+    
+    // Notify callbacks about fallback data
+    this.notifyDataUpdateCallbacks();
+    
     console.log("EraIotService: Using fallback sensor data");
   }
 
@@ -1470,7 +1439,68 @@ class EraIotService {
   destroy() {
     this.stopPeriodicUpdates();
     this.currentData = null;
+    this.dataUpdateCallbacks = [];
+    this.statusUpdateCallbacks = [];
     console.log("EraIotService: Destroyed");
+  }
+
+  // Notify all data update callbacks with current data
+  notifyDataUpdateCallbacks() {
+    if (!this.currentData) return;
+
+    this.dataUpdateCallbacks.forEach((callback) => {
+      try {
+        callback(this.currentData);
+      } catch (error) {
+        console.error("EraIotService: Error in data update callback:", error);
+      }
+    });
+  }
+
+  // Subscribe to real-time data updates
+  onDataUpdate(callback) {
+    this.dataUpdateCallbacks.push(callback);
+
+    // Immediately call with current data if available
+    if (this.currentData) {
+      try {
+        callback(this.currentData);
+      } catch (error) {
+        console.error("EraIotService: Error in initial data callback:", error);
+      }
+    }
+
+    return () => {
+      const index = this.dataUpdateCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.dataUpdateCallbacks.splice(index, 1);
+      }
+    };
+  }
+
+  // Subscribe to service status updates
+  onStatusUpdate(callback) {
+    this.statusUpdateCallbacks.push(callback);
+
+    // Immediately call with current status
+    try {
+      const status = {
+        isRunning: !!this.updateTimer,
+        lastUpdate: this.currentData?.lastUpdated || null,
+        retryCount: 0,
+        currentStatus: this.currentData?.status || "inactive",
+      };
+      callback(status);
+    } catch (error) {
+      console.error("EraIotService: Error in initial status callback:", error);
+    }
+
+    return () => {
+      const index = this.statusUpdateCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.statusUpdateCallbacks.splice(index, 1);
+      }
+    };
   }
 }
 
@@ -2030,15 +2060,16 @@ function BillboardLayout() {
       React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" })
     ]),
     
-    // Weather Alert Banner - OVERLAY positioning to maintain LED panel dimensions
+    // Weather Alert Banner - OVERLAY positioning with proper spacing from edges
     showWeatherAlert && React.createElement("div", { 
       key: "global-weather-alert",
       style: { 
         position: "absolute",
-        bottom: "96px", // Position above logo section (96px height)
-        left: "0",
+        bottom: "110px", // Position above logo with 14px spacing from logo section
+        left: "16px", // 16px margin from left edge
+        right: "16px", // 16px margin from right edge  
         height: "48px", // Fixed banner height
-        width: "384px",
+        width: "calc(100% - 32px)", // Full width minus left and right margins
         background: "linear-gradient(135deg, #dc2626, #b91c1c)",
         color: "#ffffff",
         display: "flex",
@@ -2052,6 +2083,7 @@ function BillboardLayout() {
         boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)",
         zIndex: 10000000,
         boxSizing: "border-box",
+        borderRadius: "4px", // Subtle rounding for modern look
       }
     }, [
       React.createElement("div", {

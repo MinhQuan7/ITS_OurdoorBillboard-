@@ -67,5 +67,16 @@
     "timeout": 15000,
     "retryAttempts": 3,
     "retryDelay": 2000
+  },
+  "bannerSync": {
+    "enabled": true,
+    "mqttBroker": "wss://broker.hivemq.com:8884/mqtt",
+    "topics": {
+      "bannerUpdate": "its/billboard/banner/update",
+      "bannerDelete": "its/billboard/banner/delete",
+      "bannerSync": "its/billboard/banner/sync"
+    },
+    "downloadPath": "./downloads",
+    "maxCacheSize": 100
   }
 }

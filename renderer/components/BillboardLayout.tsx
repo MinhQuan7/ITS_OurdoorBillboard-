@@ -4,6 +4,9 @@ import WeatherPanel from "./WeatherPanel";
 import IoTPanel from "./IoTPanel";
 import CompanyLogo from "./CompanyLogo";
 import EraIotService, { EraIotConfig } from "../services/eraIotService";
+import BannerSyncService, {
+  BannerSyncConfig,
+} from "../services/bannerSyncService";
 import "./BillboardLayout.css";
 
 /**
@@ -22,6 +25,8 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
   const [eraIotService, setEraIotService] = useState<EraIotService | null>(
     null
   );
+  const [bannerSyncService, setBannerSyncService] =
+    useState<BannerSyncService | null>(null);
   const [showWeatherAlert, setShowWeatherAlert] = useState<boolean>(false);
   const [weatherData, setWeatherData] = useState<any>(null);
   const [logoUpdateTrigger, setLogoUpdateTrigger] = useState<number>(0);
@@ -49,6 +54,7 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       "BillboardLayout: useEffect triggered, configUpdateTrigger:",
       configUpdateTrigger
     );
+
     // Load E-Ra IoT configuration and initialize service
     const initializeEraIot = async () => {
       try {
@@ -97,8 +103,49 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       }
     };
 
+    // Initialize Banner Sync Service
+    const initializeBannerSync = async () => {
+      try {
+        console.log("BillboardLayout: Initializing Banner Sync Service...");
+
+        // Get banner sync config
+        const config = await loadBannerSyncConfig();
+
+        if (config && config.enabled) {
+          // Cleanup existing service
+          if (bannerSyncService) {
+            bannerSyncService.destroy();
+          }
+
+          const service = new BannerSyncService(config);
+          const initialized = await service.initialize();
+
+          if (initialized) {
+            setBannerSyncService(service);
+            console.log(
+              "BillboardLayout: Banner Sync Service initialized successfully"
+            );
+          } else {
+            console.warn(
+              "BillboardLayout: Banner Sync Service failed to initialize"
+            );
+          }
+        } else {
+          console.log(
+            "BillboardLayout: Banner Sync Service disabled or not configured"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "BillboardLayout: Failed to initialize Banner Sync Service:",
+          error
+        );
+      }
+    };
+
     // Initial setup
     initializeEraIot();
+    initializeBannerSync();
 
     // Listen for configuration updates
     const handleConfigUpdate = (_event: any, updatedConfig: any) => {
@@ -166,6 +213,9 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       if (eraIotService) {
         eraIotService.destroy();
       }
+      if (bannerSyncService) {
+        bannerSyncService.destroy();
+      }
     };
   }, [configUpdateTrigger]);
 
@@ -226,6 +276,63 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       return null;
     } catch (error) {
       console.error("BillboardLayout: Failed to load E-Ra IoT config:", error);
+      return null;
+    }
+  };
+
+  // Load Banner Sync configuration
+  const loadBannerSyncConfig = async (): Promise<BannerSyncConfig | null> => {
+    try {
+      console.log("BillboardLayout: Loading Banner Sync configuration...");
+
+      // Try to access config from electron main process
+      if (typeof window !== "undefined" && (window as any).electronAPI) {
+        const config = await (window as any).electronAPI.getConfig?.();
+
+        // Check if banner sync is configured
+        if (config?.bannerSync) {
+          return {
+            enabled: config.bannerSync.enabled || false,
+            mqttBroker:
+              config.bannerSync.mqttBroker ||
+              "wss://broker.hivemq.com:8884/mqtt",
+            topics: {
+              bannerUpdate:
+                config.bannerSync.topics?.bannerUpdate ||
+                "its/billboard/banner/update",
+              bannerDelete:
+                config.bannerSync.topics?.bannerDelete ||
+                "its/billboard/banner/delete",
+              bannerSync:
+                config.bannerSync.topics?.bannerSync ||
+                "its/billboard/banner/sync",
+            },
+            downloadPath: config.bannerSync.downloadPath || "./downloads",
+            maxCacheSize: config.bannerSync.maxCacheSize || 100,
+          };
+        } else {
+          // Return default config for banner sync
+          return {
+            enabled: true, // Enable by default
+            mqttBroker: "wss://broker.hivemq.com:8884/mqtt",
+            topics: {
+              bannerUpdate: "its/billboard/banner/update",
+              bannerDelete: "its/billboard/banner/delete",
+              bannerSync: "its/billboard/banner/sync",
+            },
+            downloadPath: "./downloads",
+            maxCacheSize: 100,
+          };
+        }
+      }
+
+      console.log("BillboardLayout: electronAPI not available for banner sync");
+      return null;
+    } catch (error) {
+      console.error(
+        "BillboardLayout: Failed to load Banner Sync config:",
+        error
+      );
       return null;
     }
   };

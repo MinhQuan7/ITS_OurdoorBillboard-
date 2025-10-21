@@ -71,7 +71,9 @@ The alert banner was implemented inside `WeatherPanel.tsx` component with absolu
 │  │ 192x288   │ 192x288   │          │
 │  └───────────┴───────────┘          │
 ├─────────────────────────────────────┤
-│  ⚠ CẢNH BÁO MƯA LỚN (48px)         │  ← ALERT BANNER HERE
+│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │  ← 14px spacing
+├─ ⚠ CẢNH BÁO MƯA LỚN (48px) ────────┤  ← ALERT BANNER (16px margins)
+│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │  ← 14px spacing
 ├─────────────────────────────────────┤
 │   Company Logo (96px)               │
 └─────────────────────────────────────┘
@@ -80,11 +82,13 @@ The alert banner was implemented inside `WeatherPanel.tsx` component with absolu
 ### Alert Banner Positioning
 
 - **Position**: Absolute
-- **Bottom**: 96px (height of company logo section)
-- **Width**: 384px (full screen width)
+- **Bottom**: 110px (positioned above company logo with 14px spacing)
+- **Left/Right**: 16px margins from screen edges
+- **Width**: calc(100% - 32px) (full width minus left and right margins)
 - **Height**: 48px
-- **Z-index**: 100 (appears above all panels)
+- **Z-index**: 10000000 (appears above all panels)
 - **Background**: Red gradient (#dc2626 to #b91c1c)
+- **Border-radius**: 4px (subtle rounding for modern look)
 - **Animation**: Pulse effect for visibility
 
 ### Alert Icon Styling
@@ -107,13 +111,16 @@ The alert banner was implemented inside `WeatherPanel.tsx` component with absolu
 
 ## Design Compliance
 
-✅ Alert banner spans full width (384px)
-✅ Positioned between top row and bottom row
-✅ Visible across both Panel 1 and Panel 2
-✅ Red background with yellow warning triangle
+✅ Alert banner has proper 16px margins from left and right edges
+✅ Alert banner has 14px spacing above and below (from panels and logo)
+✅ Positioned between top row and bottom row with proper spacing
+✅ Visible across both Panel 1 and Panel 2 areas
+✅ Red background with yellow warning circle
 ✅ Bold uppercase text "CẢNH BÁO MƯA LỚN"
+✅ Subtle 4px border-radius for modern design
 ✅ Pulse animation for attention
 ✅ No icons or emojis used (text-based "!" symbol only)
+✅ Follows research.jpg design specifications
 
 ## Testing Checklist
 
