@@ -707,14 +707,10 @@ function WeatherPanel({ className = "" }) {
             React.createElement("div", { 
               key: "humidity",
               style: { 
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "6px 4px",
-          
+                flexDirection: "row",
+                justifyContent: "flex-start",
+                padding: "6px 4px",    
                 borderRadius: "3px",
-                border: "1px solid rgba(255, 255, 255, 0.05)",
                 minHeight: "35px"
               }
             }, [
@@ -722,8 +718,8 @@ function WeatherPanel({ className = "" }) {
                 key: "label",
                 style: { 
                   fontSize: "10px",
-                  color: "#cbd5e0", 
-                  opacity: 0.9,
+                  color: "#ffffffff", 
+                  opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
                   fontWeight: "600",
@@ -735,6 +731,8 @@ function WeatherPanel({ className = "" }) {
               React.createElement("div", { 
                 key: "value",
                 style: { 
+                                flexDirection: "row",
+                justifyContent: "flex-start",
                   fontSize: "14px",
                   fontWeight: "bold", 
                   color: "#ffffff", 
@@ -748,14 +746,10 @@ function WeatherPanel({ className = "" }) {
             React.createElement("div", { 
               key: "uv",
               style: { 
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
+                  flexDirection: "row",
+                justifyContent: "flex-start",
                 padding: "6px 4px",
-
                 borderRadius: "3px",
-                border: "1px solid rgba(255, 255, 255, 0.05)",
                 minHeight: "35px"
               }
             }, [
@@ -763,8 +757,8 @@ function WeatherPanel({ className = "" }) {
                 key: "label",
                 style: { 
                   fontSize: "10px",
-                  color: "#cbd5e0", 
-                  opacity: 0.9,
+                  color: "#ffffffff",
+                  opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
                   fontWeight: "600",
@@ -791,12 +785,9 @@ function WeatherPanel({ className = "" }) {
               style: { 
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
                 padding: "6px 4px",
   
                 borderRadius: "3px",
-                border: "1px solid rgba(255, 255, 255, 0.05)",
                 minHeight: "35px"
               }
             }, [
@@ -804,8 +795,8 @@ function WeatherPanel({ className = "" }) {
                 key: "label",
                 style: { 
                   fontSize: "10px",
-                  color: "#cbd5e0", 
-                  opacity: 0.9,
+                  color: "#ffffffff",
+                  opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
                   fontWeight: "600",
@@ -832,8 +823,6 @@ function WeatherPanel({ className = "" }) {
               style: { 
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
                 padding: "6px 4px",
                 borderRadius: "3px",
                 minHeight: "35px"
@@ -843,8 +832,8 @@ function WeatherPanel({ className = "" }) {
                 key: "label",
                 style: { 
                   fontSize: "10px",
-                  color: "#cbd5e0", 
-                  opacity: 0.9,
+                  color: "#ffffffff",
+                  opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   marginBottom: "0px",
                   fontWeight: "600",
@@ -889,8 +878,8 @@ function WeatherPanel({ className = "" }) {
                 key: "air-quality-label",
                 style: { 
                   fontSize: "11px",
-                  color: "#e2e8f0",
-                  opacity: 0.9,
+                  color: "#ffffffff",
+                  opacity: 1,
                   textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                   fontWeight: "600",
                   letterSpacing: "0.3px"
@@ -914,9 +903,9 @@ function WeatherPanel({ className = "" }) {
             key: "air-quality-status",
             style: { 
               fontSize: "12px", 
-              color: "#ffffff", 
+                  color: "#ffffffff",
+                  opacity: 1,
               textAlign: "center", 
-              opacity: 0.9,
               textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)"
             }
           }, \`Chất lượng không khí: \${weatherData.airQuality}\`)
