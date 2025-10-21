@@ -35,52 +35,63 @@ const CompanyLogo: React.FC = () => {
   // Function to clear existing interval
   const clearLogoInterval = useCallback(() => {
     if (intervalRef.current) {
-      console.log(`Clearing logo interval: ${intervalRef.current} at ${new Date().toLocaleTimeString()}`);
+      console.log(
+        `CLEARING logo interval: ${
+          intervalRef.current
+        } at ${new Date().toLocaleTimeString()}`
+      );
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }, []);
 
   // Function to start logo rotation with immediate effect
-  const startLogoRotation = useCallback((newConfig: LogoConfig) => {
-    // Clear any existing interval first
-    clearLogoInterval();
+  const startLogoRotation = useCallback(
+    (newConfig: LogoConfig) => {
+      // Clear any existing interval first
+      clearLogoInterval();
 
-    if (
-      newConfig.logoMode !== "loop" ||
-      newConfig.logoImages.length <= 1
-    ) {
-      console.log("Logo rotation disabled:", {
-        mode: newConfig.logoMode,
-        imageCount: newConfig.logoImages.length,
-      });
-      return;
-    }
+      if (
+        newConfig.logoMode !== "loop" ||
+        !newConfig.logoImages ||
+        newConfig.logoImages.length <= 1
+      ) {
+        console.log("Logo rotation disabled:", {
+          mode: newConfig.logoMode,
+          imageCount: newConfig.logoImages?.length,
+        });
+        return;
+      }
 
-    const duration = newConfig.logoLoopDuration * 1000;
-    console.log(
-      `Starting logo rotation: ${newConfig.logoLoopDuration} seconds (${duration}ms) - Reset index to 0`
-    );
+      const duration = newConfig.logoLoopDuration * 1000;
+      console.log(
+        `Starting NEW logo rotation: ${newConfig.logoLoopDuration} seconds (${duration}ms) - Reset index to 0`
+      );
 
-    // Reset current index when starting new rotation
-    setCurrentLogoIndex(0);
+      // Reset current index when starting new rotation
+      setCurrentLogoIndex(0);
 
-    intervalRef.current = setInterval(() => {
-      setCurrentLogoIndex((prev) => {
-        const nextIndex = (prev + 1) % newConfig.logoImages.length;
+      // Use a small delay to ensure state is updated before starting interval
+      setTimeout(() => {
+        intervalRef.current = setInterval(() => {
+          setCurrentLogoIndex((prev) => {
+            const nextIndex = (prev + 1) % newConfig.logoImages.length;
+            console.log(
+              `Logo rotation: ${prev} -> ${nextIndex} (duration: ${
+                newConfig.logoLoopDuration
+              }s) at ${new Date().toLocaleTimeString()}`
+            );
+            return nextIndex;
+          });
+        }, duration);
+
         console.log(
-          `Logo rotation: ${prev} -> ${nextIndex} (duration: ${
-            newConfig.logoLoopDuration
-          }s) at ${new Date().toLocaleTimeString()}`
+          `NEW Logo rotation interval created with ID: ${intervalRef.current} - Duration: ${duration}ms`
         );
-        return nextIndex;
-      });
-    }, duration);
-
-    console.log(
-      `Logo rotation interval created with ID: ${intervalRef.current} - Duration: ${duration}ms`
-    );
-  }, [clearLogoInterval]);
+      }, 100);
+    },
+    [clearLogoInterval]
+  );
 
   // Load configuration function
   const loadConfig = useCallback(async () => {
@@ -103,61 +114,103 @@ const CompanyLogo: React.FC = () => {
 
   // Load configuration on mount
   useEffect(() => {
+    console.log(
+      "CompanyLogo useEffect: Setting up configuration and event listeners"
+    );
     loadConfig();
 
     // Listen for general config updates
     if (window.electronAPI) {
-      window.electronAPI.onConfigUpdated(
-        (_event: any, updatedConfig: LogoConfig) => {
-          console.log("Logo config updated with loop duration:", {
-            mode: updatedConfig.logoMode,
-            duration: updatedConfig.logoLoopDuration,
-            imageCount: updatedConfig.logoImages.length,
-          });
-          setConfig(updatedConfig);
-          // Immediately restart logo rotation with new config
-          startLogoRotation(updatedConfig);
-        }
-      );
+      const configUpdateHandler = (_event: any, updatedConfig: LogoConfig) => {
+        console.log("CONFIG UPDATED EVENT RECEIVED:", {
+          mode: updatedConfig.logoMode,
+          duration: updatedConfig.logoLoopDuration,
+          imageCount: updatedConfig.logoImages?.length,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+
+        // Force clear any existing interval before updating config
+        clearLogoInterval();
+
+        setConfig(updatedConfig);
+        // Immediately restart logo rotation with new config
+        startLogoRotation(updatedConfig);
+      };
+
+      window.electronAPI.onConfigUpdated(configUpdateHandler);
 
       // Listen for logo-specific config updates for immediate interval changes
-      window.electronAPI.onLogoConfigUpdated &&
-        window.electronAPI.onLogoConfigUpdated(
-          (_event: any, logoConfig: Partial<LogoConfig>) => {
-            console.log("IMMEDIATE logo config update received:", {
-              mode: logoConfig.logoMode,
-              duration: logoConfig.logoLoopDuration,
-              imageCount: logoConfig.logoImages?.length,
-            });
+      if (window.electronAPI.onLogoConfigUpdated) {
+        const logoConfigHandler = (
+          _event: any,
+          logoConfig: Partial<LogoConfig>
+        ) => {
+          console.log("LOGO CONFIG UPDATED EVENT RECEIVED:", {
+            mode: logoConfig.logoMode,
+            duration: logoConfig.logoLoopDuration,
+            imageCount: logoConfig.logoImages?.length,
+            timestamp: new Date().toLocaleTimeString(),
+          });
 
-            // Update config state and immediately apply new rotation
-            setConfig((prevConfig) => {
-              const newConfig = {
-                logoMode:
-                  logoConfig.logoMode ?? prevConfig?.logoMode ?? "fixed",
-                logoImages:
-                  logoConfig.logoImages ?? prevConfig?.logoImages ?? [],
-                logoLoopDuration:
-                  logoConfig.logoLoopDuration ??
-                  prevConfig?.logoLoopDuration ??
-                  5,
-                schedules: logoConfig.schedules ?? prevConfig?.schedules ?? [],
-              };
-              
-              // Start rotation immediately with new config
+          // Force clear existing interval before updating
+          clearLogoInterval();
+
+          // Update config state and immediately apply new rotation
+          setConfig((prevConfig) => {
+            const newConfig = {
+              logoMode: logoConfig.logoMode ?? prevConfig?.logoMode ?? "fixed",
+              logoImages: logoConfig.logoImages ?? prevConfig?.logoImages ?? [],
+              logoLoopDuration:
+                logoConfig.logoLoopDuration ??
+                prevConfig?.logoLoopDuration ??
+                5,
+              schedules: logoConfig.schedules ?? prevConfig?.schedules ?? [],
+            };
+
+            console.log("Applying new logo config:", newConfig);
+
+            // Start rotation immediately with new config
+            setTimeout(() => {
               startLogoRotation(newConfig);
-              return newConfig;
-            });
-          }
-        );
-    }
+            }, 50);
 
+            return newConfig;
+          });
+        };
+
+        window.electronAPI.onLogoConfigUpdated(logoConfigHandler);
+      }
+
+      // Also listen for force refresh events
+      if (window.electronAPI.onForceRefreshServices) {
+        const forceRefreshHandler = (_event: any, config: LogoConfig) => {
+          console.log("FORCE REFRESH EVENT RECEIVED:", {
+            mode: config.logoMode,
+            duration: config.logoLoopDuration,
+            timestamp: new Date().toLocaleTimeString(),
+          });
+
+          clearLogoInterval();
+          setConfig(config);
+          startLogoRotation(config);
+        };
+
+        window.electronAPI.onForceRefreshServices(forceRefreshHandler);
+      }
+    }
     return () => {
+      console.log(
+        "CompanyLogo cleanup: Removing event listeners and clearing intervals"
+      );
       clearLogoInterval();
       if (window.electronAPI) {
         window.electronAPI.removeConfigListener();
-        window.electronAPI.removeLogoConfigListener &&
+        if (window.electronAPI.removeLogoConfigListener) {
           window.electronAPI.removeLogoConfigListener();
+        }
+        if (window.electronAPI.removeForceRefreshListener) {
+          window.electronAPI.removeForceRefreshListener();
+        }
       }
     };
   }, [loadConfig, startLogoRotation, clearLogoInterval]);

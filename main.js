@@ -47,6 +47,12 @@ function createMainWindow() {
     if (!isConfigMode) {
       mainWindow.show();
     }
+
+    // Add a delay to ensure the window is fully loaded before accepting config updates
+    setTimeout(() => {
+      console.log("Main window is fully ready for config updates");
+      mainWindow.isConfigReady = true;
+    }, 1000);
   });
 
   mainWindow.on("closed", () => {
@@ -209,25 +215,61 @@ function broadcastConfigUpdate(config) {
     logoLoopDuration: config.logoLoopDuration,
     logoImages: config.logoImages?.length,
     hasEraIot: !!config.eraIot,
+    timestamp: new Date().toLocaleTimeString(),
   });
 
   // Send to main window with immediate effect
-  if (mainWindow && !mainWindow.isDestroyed()) {
+  if (
+    mainWindow &&
+    !mainWindow.isDestroyed() &&
+    mainWindow.webContents.isLoading() === false
+  ) {
     console.log("Sending IMMEDIATE config-updated to main window");
+
+    // Send main config update
     mainWindow.webContents.send("config-updated", config);
+
+    // Send force refresh
     mainWindow.webContents.send("force-refresh-services", config);
 
-    // Force reload for logo changes specifically
-    if (config.logoMode === "loop" && config.logoLoopDuration) {
+    // Force reload for logo changes specifically - send multiple times to ensure delivery
+    if (config.logoMode && config.logoLoopDuration) {
       console.log(
         `Forcing logo loop interval update: ${config.logoLoopDuration}s`
       );
+
+      // Send immediately
       mainWindow.webContents.send("logo-config-updated", {
         logoMode: config.logoMode,
         logoLoopDuration: config.logoLoopDuration,
         logoImages: config.logoImages,
       });
+
+      // Send with delay to ensure delivery
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("logo-config-updated", {
+            logoMode: config.logoMode,
+            logoLoopDuration: config.logoLoopDuration,
+            logoImages: config.logoImages,
+          });
+          console.log("DELAYED logo-config-updated event sent");
+        }
+      }, 100);
+
+      // Send another one with longer delay
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("config-updated", config);
+          console.log("FINAL config-updated event sent");
+        }
+      }, 200);
     }
+  } else {
+    console.log(
+      "Main window not available for config broadcast - Window loading:",
+      mainWindow?.webContents.isLoading()
+    );
   }
 
   // Send to config window if open
@@ -312,8 +354,15 @@ ipcMain.handle("save-config", async (event, config) => {
     fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
     console.log("Configuration saved successfully");
 
-    // Broadcast config update to all windows for hot-reload
+    // IMMEDIATELY broadcast config update to all windows for instant effect (not waiting for file watcher)
+    console.log("IMMEDIATE CONFIG BROADCAST after save");
     broadcastConfigUpdate(mergedConfig);
+
+    // Also send with delay to ensure delivery
+    setTimeout(() => {
+      console.log("DELAYED CONFIG BROADCAST after save");
+      broadcastConfigUpdate(mergedConfig);
+    }, 150);
 
     return { success: true };
   } catch (error) {

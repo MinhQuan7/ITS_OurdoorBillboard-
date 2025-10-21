@@ -1,21 +1,15 @@
 {
-  "logoMode": "loop",
+  "logoMode": "scheduled",
   "logoImages": [
-    {
-      "name": "addSymbol_IndustrialDashboard.png",
-      "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\addSymbol_IndustrialDashboard.png",
-      "size": 0,
-      "type": "image/*"
-    },
-    {
-      "name": "background4.jpg",
-      "path": "C:\\Users\\lemin\\Downloads\\background4.jpg",
-      "size": 0,
-      "type": "image/*"
-    },
     {
       "name": "background1.jpg",
       "path": "C:\\Users\\lemin\\Downloads\\background1.jpg",
+      "size": 0,
+      "type": "image/*"
+    },
+    {
+      "name": "z7085121758183_3cef29c288a9bfb27eecd7aeeb7a36c9.jpg",
+      "path": "C:\\Users\\lemin\\Downloads\\z7085121758183_3cef29c288a9bfb27eecd7aeeb7a36c9.jpg",
       "size": 0,
       "type": "image/*"
     }
@@ -41,7 +35,18 @@
       "height": 96
     }
   },
-  "schedules": [],
+  "schedules": [
+    {
+      "time": "14:54",
+      "logoIndex": "0",
+      "days": "weekdays"
+    },
+    {
+      "time": "14:55",
+      "logoIndex": "0",
+      "days": "weekdays"
+    }
+  ],
   "eraIot": {
     "enabled": true,
     "authToken": "Token 78072b06a81e166b8b900d95f4c2ba1234272955",

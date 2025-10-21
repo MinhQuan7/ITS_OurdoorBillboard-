@@ -20,17 +20,17 @@
   gap: 0; /* No gap between panels */
 }
 
-/* Weather column */
+/* Weather column - 60% width as per design */
 .weather-column {
-  flex: 1; /* Takes 50% width */
-  width: 50%;
+  flex: 0 0 60%; /* Fixed 60% width */
+  width: 60%;
   height: 100%;
 }
 
-/* IoT column */
+/* IoT column - 40% width as per design */
 .iot-column {
-  flex: 1; /* Takes 50% width */
-  width: 50%;
+  flex: 0 0 40%; /* Fixed 40% width */
+  width: 40%;
   height: 100%;
 }
 
@@ -96,6 +96,7 @@
 .temperature-large {
   font-size: 32px;
   font-weight: bold;
+  background-color: #10263b;
 }
 
 .info-text {

@@ -355,7 +355,7 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({
 
   return (
     <div
-      className={`weather-panel unified ${weatherType} ${className}`}
+      className={`weather-panel professional ${weatherType} ${className}`}
       onClick={handleRefresh}
     >
       {/* Background overlay for better text readability */}
@@ -367,82 +367,94 @@ const WeatherPanel: React.FC<WeatherPanelProps> = ({
         <div className={`connection-indicator ${connectionStatus}`}></div>
       </div>
 
-      {/* Unified content layout - single integrated block */}
-      <div className="weather-unified-content">
-        {/* Main temperature and weather icon */}
-        <div className="weather-main-display">
-          <div className="weather-icon-large">
-            <div
-              className={`weather-icon-svg ${weatherType}`}
-              dangerouslySetInnerHTML={{ __html: weatherIcon }}
-            />
+      {/* Main weather display - Large temperature with 3D icon */}
+      <div className="weather-main-section">
+        <div className="weather-icon-container">
+          <div
+            className={`weather-icon-3d ${weatherType}`}
+            dangerouslySetInnerHTML={{ __html: weatherIcon }}
+          />
+        </div>
+        <div className="temperature-display">
+          <div className="temp-main">{weatherData.temperature}°</div>
+          <div className="temp-feels">- {weatherData.feelsLike}°</div>
+        </div>
+      </div>
+
+      {/* Weather details grid - Reorganized for optimal visibility */}
+      <div className="weather-details-grid">
+        {/* Top row - Primary weather metrics */}
+        <div className="detail-row top-row">
+          <div className="detail-item">
+            <span className="detail-label">Độ ẩm</span>
+            <span className="detail-value">{weatherData.humidity}%</span>
           </div>
-          <div className="temperature-main">
-            <div className="temp-value">{weatherData.temperature}°</div>
-            <div className="temp-feels">- {weatherData.feelsLike}°</div>
+          <div className="detail-item">
+            <span className="detail-label">Mưa</span>
+            <span className="detail-value">{weatherData.rainProbability}%</span>
           </div>
         </div>
 
-        {/* Integrated measurements grid */}
-        <div className="weather-measurements-grid">
-          <div className="measure-item">
-            <span className="measure-label">Độ ẩm</span>
-            <span className="measure-value">{weatherData.humidity}%</span>
+        {/* Bottom row - Secondary weather metrics */}
+        <div className="detail-row bottom-row">
+          <div className="detail-item">
+            <span className="detail-label">UV</span>
+            <span className="detail-value">{weatherData.uvIndex}</span>
           </div>
-          <div className="measure-item">
-            <span className="measure-label">Mưa</span>
-            <span className="measure-value">
-              {weatherData.rainProbability}%
-            </span>
-          </div>
-          <div className="measure-item">
-            <span className="measure-label">UV</span>
-            <span className="measure-value">
-              {getUVLevel(weatherData.uvIndex)}
-            </span>
-          </div>
-          <div className="measure-item">
-            <span className="measure-label">Gió</span>
-            <span className="measure-value">{weatherData.windSpeed} km/h</span>
+          <div className="detail-item">
+            <span className="detail-label">Gió</span>
+            <span className="detail-value">{weatherData.windSpeed}</span>
           </div>
         </div>
+      </div>
 
-        {/* Device measurements section */}
-        <div className="device-measurements">
-          <div className="device-section-title">THIẾT BỊ ĐO</div>
-          <div className="device-grid">
-            <div className="device-item">
-              <span className="device-label">Nhiệt độ</span>
-              <span className="device-value">{weatherData.temperature}°</span>
+      {/* New Air Quality Element - Positioned directly below weather grid */}
+      <div className="weather-air-quality">
+        <div className="air-quality-item">
+          <span className="air-quality-label">Chất lượng không khí</span>
+          <span className="air-quality-status-value">TỐT</span>
+        </div>
+      </div>
+
+      {/* Device measurements section - Optimized layout */}
+      <div className="device-measurements-section">
+        <div className="device-title">CẢM BIẾN IOT</div>
+        <div className="device-readings">
+          <div className="sensor-row">
+            <div className="sensor-item">
+              <span className="sensor-label">Nhiệt độ</span>
+              <span className="sensor-value">{weatherData.temperature}.0°</span>
             </div>
-            <div className="device-item">
-              <span className="device-label">Độ ẩm</span>
-              <span className="device-value">{weatherData.humidity}%</span>
+            <div className="sensor-item">
+              <span className="sensor-label">Độ ẩm</span>
+              <span className="sensor-value">{weatherData.humidity}.0</span>
             </div>
-            <div className="device-item">
-              <span className="device-label">PM2.5</span>
-              <span className="device-value">
+          </div>
+          <div className="sensor-row">
+            <div className="sensor-item pm-item">
+              <span className="sensor-label">PM₂.₅</span>
+              <span className="sensor-value pm-value">
                 {weatherData.pm25}
                 <span className="unit">μg/m³</span>
               </span>
             </div>
-            <div className="device-item">
-              <span className="device-label">PM10</span>
-              <span className="device-value">
+            <div className="sensor-item pm-item">
+              <span className="sensor-label">PM₁₀</span>
+              <span className="sensor-value pm-value">
                 {weatherData.pm10}
                 <span className="unit">μg/m³</span>
               </span>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Air quality status */}
-        <div className="air-quality-section">
-          <div className="air-quality-text">
-            Chất lượng không khí: {weatherData.airQuality}
-          </div>
-          <div className="air-quality-badge">TỐT</div>
+      {/* Air quality status - Professional styling */}
+      <div className="air-quality-status">
+        <div className="air-quality-text">
+          Chất lượng không khí: {weatherData.airQuality}
         </div>
+        <div className="air-quality-badge good">TỐT</div>
       </div>
 
       {/* Loading overlay for refresh */}

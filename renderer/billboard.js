@@ -398,7 +398,7 @@ class BillboardApp {
       const humidity = (70 + Math.random() * 30).toFixed(0);
 
       weatherPanel.innerHTML = `
-                <h3 style="font-size: 14px; margin-bottom: 8px; margin-top: 0;">TP. THỪA THIÊN HUẾ</h3>
+                <h3 style="font-size: 14px; margin-bottom: 8px; margin-top: 0;margin-left: 70px;">TP. THỪA THIÊN HUẾ</h3>
                 <div style="font-size: 32px; font-weight: bold;">${temp}°</div>
                 <div style="font-size: 14px;">Độ ẩm ${humidity}% | UV Thấp</div>
                 <div style="font-size: 12px;">Mưa ${Math.floor(

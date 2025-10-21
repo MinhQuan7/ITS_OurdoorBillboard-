@@ -24,6 +24,7 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
   );
   const [showWeatherAlert, setShowWeatherAlert] = useState<boolean>(false);
   const [weatherData, setWeatherData] = useState<any>(null);
+  const [logoUpdateTrigger, setLogoUpdateTrigger] = useState<number>(0);
 
   console.log("BillboardLayout: Component initialized");
 
@@ -111,6 +112,12 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
         }
       );
 
+      // Trigger logo update
+      if (updatedConfig?.logoMode || updatedConfig?.logoLoopDuration) {
+        console.log("BillboardLayout: Triggering logo update");
+        setLogoUpdateTrigger((prev) => prev + 1);
+      }
+
       // Reinitialize E-Ra IoT service
       setTimeout(async () => {
         await initializeEraIot();
@@ -123,6 +130,29 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       (window as any).electronAPI?.onEraIotConfigUpdated
     ) {
       (window as any).electronAPI.onEraIotConfigUpdated(handleConfigUpdate);
+    }
+
+    if (
+      typeof window !== "undefined" &&
+      (window as any).electronAPI?.onConfigUpdated
+    ) {
+      (window as any).electronAPI.onConfigUpdated(handleConfigUpdate);
+    }
+
+    // Also listen for general config updates
+    if (
+      typeof window !== "undefined" &&
+      (window as any).electronAPI?.onConfigUpdated
+    ) {
+      (window as any).electronAPI.onConfigUpdated(handleConfigUpdate);
+    }
+
+    // Listen for force refresh events
+    if (
+      typeof window !== "undefined" &&
+      (window as any).electronAPI?.onForceRefreshServices
+    ) {
+      (window as any).electronAPI.onForceRefreshServices(handleConfigUpdate);
     }
 
     if (
@@ -230,8 +260,9 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       )}
 
       {/* Bottom row: Company Logo */}
+      {/* Bottom row: Company Logo */}
       <div className="bottom-row">
-        <CompanyLogo />
+        <CompanyLogo key={logoUpdateTrigger} />
       </div>
     </div>
   );
