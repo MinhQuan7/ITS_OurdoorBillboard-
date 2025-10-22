@@ -1,8 +1,15 @@
 /**
  * E-Ra IoT Platform Integration Verification Test
  *
- * This comprehensive test validates the complete E-Ra IoT integration
- * with proper error handling and debugging information.
+ * This comprehensive test validates the E-Ra IoT MQTT integration
+ * replacing the previous REST API approach with real-time MQTT streaming.
+ *
+ * NEW APPROACH:
+ * - MQTT broker: mqtt1.eoh.io:1883
+ * - Topic: eoh/chip/{token}/config/+
+ * - Authentication: username={token}, password={token}
+ * - Payload: {"key": value}
+ * - Real-time updates instead of 5-minute polling
  *
  * Usage: node test-era-iot-verification.js
  */
@@ -57,10 +64,12 @@ class EraIotVerificationTest {
   }
 
   async runVerification() {
-    console.log("E-Ra IoT Platform Integration Verification");
-    console.log("=========================================");
-    console.log(`Base URL: ${this.config.baseUrl}`);
-    console.log(`Timeout: ${this.config.timeout}ms`);
+    console.log("E-Ra IoT Platform MQTT Integration Verification");
+    console.log("==============================================");
+    console.log(`MQTT Broker: mqtt1.eoh.io:1883`);
+    console.log(`Topic Pattern: eoh/chip/{token}/config/+`);
+    console.log(`Authentication: Gateway Token`);
+    console.log(`Data Format: Real-time MQTT streaming`);
     console.log();
 
     try {

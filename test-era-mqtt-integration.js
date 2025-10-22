@@ -1,11 +1,13 @@
 /**
  * E-Ra IoT MQTT Integration Test
  *
- * This script tests the new MQTT.js integration with E-Ra IoT Platform
- * replacing the REST API approach with real-time MQTT data streaming.
- *
- * NEW: The system now updates components every 1 second (1000ms) via
- * reactive callbacks instead of polling, ensuring true real-time responsiveness.
+ * Tests the new MQTT-based approach for getting sensor values
+ * instead of REST API polling. This validates:
+ * - MQTT connection to mqtt1.eoh.io:1883
+ * - Topic subscription: eoh/chip/{token}/config/+
+ * - Payload parsing: {"key": value}
+ * - Sensor mapping: configId -> sensor type
+ * - Authentication: username={token}, password={token}
  *
  * Usage: node test-era-mqtt-integration.js
  */
@@ -13,7 +15,63 @@
 const fs = require("fs");
 const path = require("path");
 
-// Mock mqtt module for Node.js testing environment
+// Load configuration from config.json
+let config = null;
+try {
+  const configPath = path.join(__dirname, 'config.json');
+  if (fs.existsSync(configPath)) {
+    const rawConfig = fs.readFileSync(configPath, 'utf-8');
+    config = JSON.parse(rawConfig);
+  }
+} catch (error) {
+  console.error('Could not load config.json:', error.message);
+  process.exit(1);
+}
+
+if (!config || !config.eraIot) {
+  console.error('E-RA IoT configuration not found in config.json');
+  process.exit(1);
+}
+
+// Extract gateway token from authToken
+function extractGatewayToken(authToken) {
+  const tokenMatch = authToken.match(/Token\s+(.+)/);
+  return tokenMatch ? tokenMatch[1] : null;
+}
+
+// Test configuration
+const gatewayToken = extractGatewayToken(config.eraIot.authToken);
+if (!gatewayToken) {
+  console.error('Could not extract gateway token from authToken');
+  process.exit(1);
+}
+
+const MQTT_CONFIG = {
+  broker: 'mqtt://mqtt1.eoh.io:1883',
+  username: gatewayToken,
+  password: gatewayToken,
+  topic: `eoh/chip/${gatewayToken}/config/+`,
+  lwtTopic: `eoh/chip/${gatewayToken}/lwt`,
+  sensorConfigs: config.eraIot.sensorConfigs,
+  clientId: `test_billboard_${gatewayToken}_${Date.now()}`,
+};
+
+console.log('E-Ra IoT MQTT Integration Test');
+console.log('==============================');
+console.log(`Broker: ${MQTT_CONFIG.broker}`);
+console.log(`Username: ${MQTT_CONFIG.username.substring(0, 10)}...`);
+console.log(`Topic Pattern: ${MQTT_CONFIG.topic}`);
+console.log(`Sensor Configs:`, MQTT_CONFIG.sensorConfigs);
+console.log('');
+
+// Use real MQTT if available, otherwise use mock for testing
+let mqtt;
+try {
+  mqtt = require('mqtt');
+  console.log('Using real MQTT.js library');
+} catch (error) {
+  console.log('MQTT.js not available, using mock implementation');
+  // Mock mqtt module for testing environment
 const mqtt = {
   connect: (brokerUrl, options) => {
     console.log(`Mock MQTT: Attempting to connect to ${brokerUrl}`);

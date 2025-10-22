@@ -1,10 +1,12 @@
 /**
  * E-Ra IoT Platform Service
- * Integrates with E-Ra IoT Platform using MQTT for real-time sensor data
+ * Uses MQTT for real-time sensor data (temperature, humidity, pm25, pm10)
+ * Maintains API-based authentication and config management
  *
  * Based on E-Ra MQTT documentation:
- * - MQTT broker connection with GATEWAY_TOKEN authentication
- * - Topic pattern: eoh/chip/GATEWAY_TOKEN/#
+ * - MQTT broker: mqtt1.eoh.io:1883
+ * - Topic pattern: eoh/chip/{token}/config/+
+ * - Authentication: username={token}, password={token}
  * - Real-time data streaming instead of polling API
  */
 
@@ -36,9 +38,8 @@ export interface EraIotData {
 
 export interface EraIotConfig {
   enabled?: boolean;
-  authToken: string; // Will extract GATEWAY_TOKEN from this
-  baseUrl: string; // Used to derive MQTT broker URL
-  mqttApiKey?: string; // MQTT API key for authentication
+  authToken: string; // E-RA authentication token for API calls
+  baseUrl: string; // E-RA API base URL (for config management only)
   sensorConfigs: {
     temperature: number | null;
     humidity: number | null;
@@ -66,7 +67,6 @@ class EraIotService {
     console.log("EraIotService: Initialized with MQTT config", {
       baseUrl: this.config.baseUrl,
       hasAuthToken: !!this.config.authToken,
-      hasMqttApiKey: !!this.config.mqttApiKey,
       sensorConfigs: this.config.sensorConfigs,
     });
   }
@@ -101,14 +101,10 @@ class EraIotService {
         return;
       }
 
-      // Derive MQTT broker URL from base URL
-      const brokerUrl = this.deriveMqttBrokerUrl(this.config.baseUrl);
-
       const mqttConfig: MqttConfig = {
         enabled: this.config.enabled,
-        brokerUrl,
         gatewayToken,
-        mqttApiKey: this.config.mqttApiKey || "default_api_key", // This should be provided by user
+        authToken: this.config.authToken, // Keep for compatibility
         sensorConfigs: this.config.sensorConfigs,
         options: {
           keepalive: 60,
@@ -142,15 +138,6 @@ class EraIotService {
     // AuthToken format: "Token 78072b06a81e166b8b900d95f4c2ba1234272955"
     const tokenMatch = authToken.match(/Token\s+(.+)/);
     return tokenMatch ? tokenMatch[1] : null;
-  }
-
-  /**
-   * Derive MQTT broker URL from base URL
-   */
-  private deriveMqttBrokerUrl(baseUrl: string): string {
-    // Convert https://backend.eoh.io to mqtt://backend.eoh.io:1883
-    const url = new URL(baseUrl);
-    return `mqtt://${url.hostname}:1883`;
   }
 
   /**
@@ -295,7 +282,7 @@ class EraIotService {
   public updateConfig(newConfig: Partial<EraIotConfig>): void {
     this.config = { ...this.config, ...newConfig };
 
-    if (newConfig.authToken || newConfig.baseUrl || newConfig.mqttApiKey) {
+    if (newConfig.authToken || newConfig.baseUrl) {
       // Reinitialize MQTT service with new config
       this.destroy();
       this.initializeMqttService();
@@ -378,7 +365,7 @@ class EraIotService {
     message: string;
   }> {
     try {
-      console.log("EraIotService: Testing MQTT connection...");
+      console.log("EraIotService: Testing E-RA MQTT connection...");
 
       // Validate AUTHTOKEN format
       if (
@@ -389,18 +376,6 @@ class EraIotService {
           success: false,
           message:
             "Invalid AUTHTOKEN - please use your real AUTHTOKEN from E-Ra platform",
-        };
-      }
-
-      // Validate MQTT API key
-      if (
-        !this.config.mqttApiKey ||
-        this.config.mqttApiKey === "default_api_key"
-      ) {
-        return {
-          success: false,
-          message:
-            "MQTT API key is required - please configure mqttApiKey in your config",
         };
       }
 

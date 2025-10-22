@@ -11,14 +11,13 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
   onConfigUpdated,
 }) => {
   const [config, setConfig] = useState<EraIotConfig>({
-    authToken: "Token 78072b06a81e166b8b900d95f4c2ba1234272955", // User must enter their real AUTHTOKEN from E-Ra Platform
+    authToken: "Token f7d2fe19-587d-471d-a7ff-273bb32c5d6a", // Real E-Ra AUTHTOKEN format
     baseUrl: "https://backend.eoh.io",
-    mqttApiKey: "your_mqtt_api_key_here", // User must enter their MQTT API key
     sensorConfigs: {
-      temperature: null,
-      humidity: null,
-      pm25: null,
-      pm10: null,
+      temperature: 138997,
+      humidity: 138998,
+      pm25: 138999,
+      pm10: 139000,
     },
     updateInterval: 5,
     timeout: 15000,
@@ -226,19 +225,10 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
               placeholder="Nhập AUTHTOKEN từ E-Ra Platform"
               className="era-config-input"
             />
-            <small>Lấy từ Profile → AUTHTOKEN trên app.e-ra.io</small>
-          </div>
-
-          <div className="era-config-section">
-            <label>MQTT API Key *</label>
-            <input
-              type="password"
-              value={config.mqttApiKey || ""}
-              onChange={(e) => handleInputChange("mqttApiKey", e.target.value)}
-              placeholder="Nhập MQTT API Key từ E-Ra Platform"
-              className="era-config-input"
-            />
-            <small>Cần thiết để kết nối MQTT với E-Ra Platform</small>
+            <small>
+              Lấy từ Profile → AUTHTOKEN trên app.e-ra.io (bao gồm "Token "
+              prefix)
+            </small>
           </div>
 
           <div className="era-config-section">
@@ -324,7 +314,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
           </div>
 
           <div className="era-config-section">
-            <label>Cập nhật (phút)</label>
+            <label>Update Interval (phút) - Legacy</label>
             <input
               type="number"
               value={config.updateInterval}
@@ -334,9 +324,12 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
               min="1"
               max="60"
               className="era-config-input small"
-              title="Thời gian cập nhật dữ liệu sensor (phút)"
+              title="Chỉ dùng cho compatibility - MQTT sử dụng real-time streaming"
               placeholder="5"
             />
+            <small>
+              MQTT sử dụng real-time updates, không cần polling interval
+            </small>
           </div>
 
           {testResult && (
@@ -381,7 +374,7 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
         </div>
 
         <div className="era-config-help">
-          <h4>Hướng dẫn:</h4>
+          <h4>Hướng dẫn cấu hình E-RA MQTT:</h4>
           <ol>
             <li>
               Đăng nhập vào{" "}
@@ -393,11 +386,15 @@ const EraIotConfigComponent: React.FC<EraIotConfigProps> = ({
                 app.e-ra.io
               </a>
             </li>
-            <li>Vào Profile và copy AUTHTOKEN</li>
+            <li>Vào Profile và copy AUTHTOKEN (bao gồm "Token " prefix)</li>
             <li>Paste vào trường AUTHTOKEN ở trên</li>
-            <li>Click "Test kết nối" để kiểm tra</li>
+            <li>Click "Test kết nối" để kiểm tra MQTT connection</li>
             <li>Click "Lưu cấu hình" để áp dụng</li>
           </ol>
+          <p>
+            <strong>MQTT Info:</strong> Hệ thống sử dụng mqtt1.eoh.io:1883 với
+            real-time streaming
+          </p>
           <p>Sensor Config IDs đã được cài đặt sẵn cho Device billboard 1</p>
         </div>
       </div>

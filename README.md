@@ -6,8 +6,8 @@
 
 ### ✨ Tính năng chính
 
+- 📊 **IoT Sensor Integration**: Real-time MQTT data từ E-RA IoT Platform
 - 🌤️ **Real-time Weather Display**: Hiển thị thời tiết real-time từ OpenMeteo API
-- 📊 **IoT Sensor Integration**: Theo dõi chất lượng không khí, nhiệt độ, độ ẩm
 - 🏢 **Company Logo Management**: Hỗ trợ logo rotation và scheduling
 - 🔧 **Configuration System**: Giao diện config dễ sử dụng (F1 key)
 - 📱 **Responsive Design**: Tối ưu cho màn hình 384x384px
@@ -113,15 +113,52 @@ React component hiển thị weather information:
 - Manual refresh capability
 - Error handling và loading states
 
-### 4. IoTPanel Component
+### 4. E-RA IoT MQTT Integration
 
-Hiển thị sensor data:
+**Location**: `renderer/services/eraIotService.ts`, `renderer/services/mqttService.ts`
 
-- PM2.5, PM10 air quality
-- Temperature và humidity sensors
+Real-time IoT sensor data từ E-RA IoT Platform:
+
+- **MQTT Broker**: `mqtt1.eoh.io:1883`
+- **Topic Pattern**: `eoh/chip/{token}/config/+`
+- **Authentication**: Gateway token (username/password)
+- **Data Format**: `{"key": value}`
+- **Real-time updates** thay vì API polling
+
+```javascript
+// Configuration trong config.json
+{
+  "eraIot": {
+    "enabled": true,
+    "authToken": "Token YOUR_ERA_TOKEN_HERE",
+    "baseUrl": "https://backend.eoh.io",
+    "sensorConfigs": {
+      "temperature": 138997,
+      "humidity": 138998,
+      "pm25": 138999,
+      "pm10": 139000
+    }
+  }
+}
+```
+
+**Performance Benefits**:
+
+- Giảm server load (không còn REST API polling)
+- Real-time updates (thay vì 5 phút/lần)
+- Single persistent MQTT connection
+- Instant data synchronization
+
+### 5. IoTPanel Component
+
+Hiển thị sensor data real-time:
+
+- PM2.5, PM10 air quality từ MQTT
+- Temperature và humidity sensors từ MQTT
 - Real-time status indicators
+- Connection status monitoring
 
-### 5. CompanyLogo Component
+### 6. CompanyLogo Component
 
 Logo management system:
 

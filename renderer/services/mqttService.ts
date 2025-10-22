@@ -3,9 +3,13 @@
  * Replaces REST API with MQTT.js integration for real-time data
  *
  * Based on E-Ra IoT MQTT documentation:
- * - Broker: mqtt://backend.eoh.io (assumed from API base URL)
- * - Topic pattern: eoh/chip/GATEWAY_TOKEN/#
- * - Authentication: username = GATEWAY_TOKEN, password = MQTT_API_KEY
+ * - Broker: mqtt1.eoh.io
+ * - Port: 1883
+ * - Topic pattern: eoh/chip/{token}/config/+/value
+ * - Authentication: username = {token}, password = {token}
+ * - Payload format: {"key": value}
+ * - QoS: 1 (At least once delivery)
+ * - Retained: true (Last message saved by broker)
  */
 
 import * as mqtt from "mqtt";
@@ -20,10 +24,8 @@ export interface MqttSensorData {
 
 export interface MqttConfig {
   enabled?: boolean;
-  brokerUrl: string;
-  gatewayToken: string;
-  mqttApiKey: string;
-  authToken?: string; // Full auth token with "Token " prefix
+  gatewayToken: string; // E-RA Gateway token (both username and password)
+  authToken?: string; // Full auth token with "Token " prefix (for compatibility)
   sensorConfigs: {
     temperature: number | null;
     humidity: number | null;
@@ -75,9 +77,7 @@ class MqttService {
     this.updateGatewayTokenFromAuth();
 
     console.log("MqttService: Initialized with config", {
-      brokerUrl: this.config.brokerUrl,
       gatewayToken: this.config.gatewayToken.substring(0, 10) + "...",
-      hasApiKey: !!this.config.mqttApiKey,
       hasAuthToken: !!this.config.authToken,
       sensorConfigs: this.config.sensorConfigs,
     });
@@ -103,23 +103,32 @@ class MqttService {
     }
 
     try {
+      // E-RA MQTT Configuration
+      const brokerUrl = "mqtt://mqtt1.eoh.io:1883";
+
       const clientOptions: mqtt.IClientOptions = {
-        username: this.config.gatewayToken,
-        password: this.config.mqttApiKey,
+        username: this.config.gatewayToken, // E-RA Gateway token as username
+        password: this.config.gatewayToken, // E-RA Gateway token as password
         keepalive: this.config.options.keepalive,
         connectTimeout: this.config.options.connectTimeout,
         reconnectPeriod: this.config.options.reconnectPeriod,
         clean: this.config.options.clean,
         clientId: `billboard_${this.config.gatewayToken}_${Date.now()}`,
+        will: {
+          topic: `eoh/chip/${this.config.gatewayToken}/lwt`,
+          payload: '{"ol":0}', // Gateway offline
+          qos: 1,
+          retain: true,
+        },
       };
 
-      console.log("MqttService: Connecting to broker...", {
-        url: this.config.brokerUrl,
+      console.log("MqttService: Connecting to E-RA MQTT broker...", {
+        url: brokerUrl,
         username: this.config.gatewayToken.substring(0, 10) + "...",
         clientId: clientOptions.clientId,
       });
 
-      this.client = mqtt.connect(this.config.brokerUrl, clientOptions);
+      this.client = mqtt.connect(brokerUrl, clientOptions);
 
       this.client.on("connect", () => {
         console.log("MqttService: Connected to MQTT broker");
@@ -214,49 +223,34 @@ class MqttService {
       return;
     }
 
-    // Main topic pattern for all sensor data
-    const mainTopic = `eoh/chip/${this.config.gatewayToken}/#`;
+    // E-RA Topic pattern: eoh/chip/{token}/config/+/value
+    // Subscribe to config updates for all sensor IDs
+    const configTopic = `eoh/chip/${this.config.gatewayToken}/config/+/value`;
 
-    // Subscribe to individual sensor topics if they follow a pattern
-    const sensorTopics = [
-      // Only subscribe to sensors that have been configured
-      ...(this.config.sensorConfigs.temperature
-        ? [
-            `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.temperature}`,
-          ]
-        : []),
-      ...(this.config.sensorConfigs.humidity
-        ? [
-            `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.humidity}`,
-          ]
-        : []),
-      ...(this.config.sensorConfigs.pm25
-        ? [
-            `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.pm25}`,
-          ]
-        : []),
-      ...(this.config.sensorConfigs.pm10
-        ? [
-            `eoh/chip/${this.config.gatewayToken}/sensor/${this.config.sensorConfigs.pm10}`,
-          ]
-        : []),
-      // Alternative topic patterns
-      `eoh/chip/${this.config.gatewayToken}/data/temperature`,
-      `eoh/chip/${this.config.gatewayToken}/data/humidity`,
-      `eoh/chip/${this.config.gatewayToken}/data/pm25`,
-      `eoh/chip/${this.config.gatewayToken}/data/pm10`,
-      // Wildcard subscription
-      mainTopic,
-    ];
+    console.log(`MqttService: Subscribing to E-RA topic: ${configTopic}`);
 
-    sensorTopics.forEach((topic) => {
-      this.client!.subscribe(topic, (err) => {
-        if (err) {
-          console.error(`MqttService: Failed to subscribe to ${topic}:`, err);
-        } else {
-          console.log(`MqttService: Subscribed to ${topic}`);
-        }
-      });
+    this.client.subscribe(configTopic, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(
+          `MqttService: Failed to subscribe to ${configTopic}:`,
+          err
+        );
+      } else {
+        console.log(`MqttService: Successfully subscribed to ${configTopic}`);
+      }
+    });
+
+    // Also subscribe to LWT (Last Will and Testament) topic to monitor gateway status
+    const lwtTopic = `eoh/chip/${this.config.gatewayToken}/lwt`;
+    this.client.subscribe(lwtTopic, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(
+          `MqttService: Failed to subscribe to LWT ${lwtTopic}:`,
+          err
+        );
+      } else {
+        console.log(`MqttService: Subscribed to LWT topic ${lwtTopic}`);
+      }
     });
   }
 
@@ -270,17 +264,35 @@ class MqttService {
 
       this.status.lastMessage = new Date();
 
-      // Parse message - could be JSON or plain value
+      // Handle LWT (Last Will and Testament) messages for gateway status
+      if (topic.endsWith("/lwt")) {
+        this.handleLwtMessage(messageStr);
+        return;
+      }
+
+      // Parse E-RA message format: {"key": value}
       let data: any;
       try {
         data = JSON.parse(messageStr);
       } catch {
-        // If not JSON, treat as plain number
-        data = parseFloat(messageStr);
+        console.warn("MqttService: Received non-JSON message:", messageStr);
+        return;
       }
 
-      // Map topic to sensor type and update data
-      this.updateSensorData(topic, data);
+      // Extract config ID from topic: eoh/chip/{token}/config/{configId}/value
+      const configIdMatch = topic.match(/\/config\/(\d+)\/value$/);
+      if (!configIdMatch) {
+        console.warn(
+          "MqttService: Could not extract config ID from topic:",
+          topic
+        );
+        return;
+      }
+
+      const configId = parseInt(configIdMatch[1]);
+
+      // Update sensor data based on config ID
+      this.updateSensorDataByConfigId(configId, data);
 
       // Notify data callbacks
       this.notifyDataCallbacks();
@@ -291,79 +303,173 @@ class MqttService {
   }
 
   /**
-   * Update sensor data based on topic and value
+   * Handle Last Will and Testament (LWT) messages
    */
-  private updateSensorData(topic: string, data: any): void {
+  private handleLwtMessage(messageStr: string): void {
+    try {
+      const lwtData = JSON.parse(messageStr);
+      if (lwtData.ol === 1) {
+        console.log("MqttService: Gateway is online");
+      } else if (lwtData.ol === 0) {
+        console.log("MqttService: Gateway is offline");
+      }
+    } catch (error) {
+      console.warn("MqttService: Could not parse LWT message:", messageStr);
+    }
+  }
+
+  /**
+   * Update sensor data based on E-RA config ID and value
+   */
+  private updateSensorDataByConfigId(configId: number, data: any): void {
+    // Extract value from E-RA message format: {"key": value}
+    // The value could be a direct number or nested in the object
     let value: number | null = null;
 
-    // Extract numeric value from different data formats
-    if (typeof data === "number" && !isNaN(data)) {
+    // Handle different E-RA message formats
+    if (typeof data === "object" && data !== null) {
+      // Try to extract the value from different possible keys
+      const possibleKeys = Object.keys(data);
+
+      // For E-RA, the value might be directly in the object
+      if (possibleKeys.length === 1) {
+        const singleKey = possibleKeys[0];
+        const potentialValue = data[singleKey];
+
+        // Handle string values that might contain "+"
+        if (typeof potentialValue === "string") {
+          value = this.parseEraValue(potentialValue);
+        } else if (
+          typeof potentialValue === "number" &&
+          !isNaN(potentialValue)
+        ) {
+          value = potentialValue;
+        }
+      }
+
+      // If no direct key-value found, try common field names
+      if (value === null) {
+        const commonValue =
+          data.value ?? data.current_value ?? data.data ?? null;
+        if (commonValue !== null) {
+          if (typeof commonValue === "string") {
+            value = this.parseEraValue(commonValue);
+          } else if (typeof commonValue === "number" && !isNaN(commonValue)) {
+            value = commonValue;
+          }
+        }
+      }
+    } else if (typeof data === "number" && !isNaN(data)) {
       value = data;
-    } else if (typeof data === "object" && data !== null) {
-      // Try different possible field names
-      value =
-        data.current_value_only ??
-        data.current_value ??
-        data.value ??
-        data.data ??
-        null;
+    } else if (typeof data === "string") {
+      value = this.parseEraValue(data);
     }
 
     if (value === null || isNaN(value)) {
       console.warn(
-        `MqttService: Could not extract numeric value from topic ${topic}:`,
+        `MqttService: Could not extract numeric value from config ID ${configId}:`,
         data
       );
       return;
     }
 
-    // Map topic to sensor type
-    const sensorType = this.mapTopicToSensorType(topic);
+    // Map config ID to sensor type
+    const sensorType = this.mapConfigIdToSensorType(configId);
     if (sensorType) {
-      console.log(`MqttService: Updating ${sensorType} = ${value}`);
+      console.log(
+        `MqttService: Updating ${sensorType} (ID: ${configId}) = ${value}`
+      );
       this.currentData[sensorType] = value;
       this.currentData.timestamp = new Date();
+    } else {
+      console.warn(`MqttService: Unknown config ID: ${configId}`);
     }
   }
 
   /**
-   * Map MQTT topic to sensor type
+   * Parse E-RA value that might contain "+" or other formatting
    */
-  private mapTopicToSensorType(
-    topic: string
+  private parseEraValue(valueStr: string): number | null {
+    try {
+      // E-RA might send values with "+" prefix or other formatting
+      // Try different parsing strategies
+
+      // Strategy 1: Remove "+" prefix if present
+      if (valueStr.startsWith("+")) {
+        const withoutPlus = valueStr.substring(1);
+        const parsed = parseFloat(withoutPlus);
+        if (!isNaN(parsed)) {
+          console.log(
+            `MqttService: Parsed E-RA value "${valueStr}" as ${parsed} (removed + prefix)`
+          );
+          return parsed;
+        }
+      }
+
+      // Strategy 2: Direct parse (handles most cases)
+      const directParse = parseFloat(valueStr);
+      if (!isNaN(directParse)) {
+        console.log(
+          `MqttService: Parsed E-RA value "${valueStr}" as ${directParse} (direct parse)`
+        );
+        return directParse;
+      }
+
+      // Strategy 3: Handle comma decimal separator (if E-RA uses European format)
+      if (valueStr.includes(",")) {
+        const withDot = valueStr.replace(",", ".");
+        const parsed = parseFloat(withDot);
+        if (!isNaN(parsed)) {
+          console.log(
+            `MqttService: Parsed E-RA value "${valueStr}" as ${parsed} (comma to dot)`
+          );
+          return parsed;
+        }
+      }
+
+      // Strategy 4: Extract first numeric part
+      const numericMatch = valueStr.match(/[-+]?\d*\.?\d+/);
+      if (numericMatch) {
+        const parsed = parseFloat(numericMatch[0]);
+        if (!isNaN(parsed)) {
+          console.log(
+            `MqttService: Parsed E-RA value "${valueStr}" as ${parsed} (regex extract)`
+          );
+          return parsed;
+        }
+      }
+
+      console.warn(`MqttService: Could not parse E-RA value: "${valueStr}"`);
+      return null;
+    } catch (error) {
+      console.error(
+        `MqttService: Error parsing E-RA value "${valueStr}":`,
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Map E-RA config ID to sensor type
+   */
+  private mapConfigIdToSensorType(
+    configId: number
   ): keyof Omit<MqttSensorData, "timestamp"> | null {
-    // Check for sensor config IDs in topic
-    if (
-      (this.config.sensorConfigs.temperature &&
-        topic.includes(this.config.sensorConfigs.temperature.toString())) ||
-      topic.includes("temperature")
-    ) {
+    // Check against configured sensor IDs
+    if (this.config.sensorConfigs.temperature === configId) {
       return "temperature";
     }
-    if (
-      (this.config.sensorConfigs.humidity &&
-        topic.includes(this.config.sensorConfigs.humidity.toString())) ||
-      topic.includes("humidity")
-    ) {
+    if (this.config.sensorConfigs.humidity === configId) {
       return "humidity";
     }
-    if (
-      (this.config.sensorConfigs.pm25 &&
-        topic.includes(this.config.sensorConfigs.pm25.toString())) ||
-      topic.includes("pm25") ||
-      topic.includes("pm2.5")
-    ) {
+    if (this.config.sensorConfigs.pm25 === configId) {
       return "pm25";
     }
-    if (
-      (this.config.sensorConfigs.pm10 &&
-        topic.includes(this.config.sensorConfigs.pm10.toString())) ||
-      topic.includes("pm10")
-    ) {
+    if (this.config.sensorConfigs.pm10 === configId) {
       return "pm10";
     }
 
-    console.warn(`MqttService: Could not map topic to sensor type: ${topic}`);
     return null;
   }
 
@@ -436,10 +542,8 @@ class MqttService {
     // Disconnect if connection parameters changed
     if (
       wasConnected &&
-      (newConfig.brokerUrl !== undefined ||
-        newConfig.gatewayToken !== undefined ||
-        newConfig.authToken !== undefined ||
-        newConfig.mqttApiKey !== undefined)
+      (newConfig.gatewayToken !== undefined ||
+        newConfig.authToken !== undefined)
     ) {
       this.disconnect();
     }
@@ -465,20 +569,13 @@ class MqttService {
     message: string;
   }> {
     try {
-      console.log("MqttService: Testing MQTT connection...");
+      console.log("MqttService: Testing E-RA MQTT connection...");
 
       // Validate configuration
       if (!this.config.gatewayToken) {
         return {
           success: false,
           message: "Gateway token is required",
-        };
-      }
-
-      if (!this.config.mqttApiKey) {
-        return {
-          success: false,
-          message: "MQTT API key is required",
         };
       }
 
@@ -491,7 +588,7 @@ class MqttService {
       if (this.status.connected) {
         return {
           success: true,
-          message: "MQTT connection successful",
+          message: "E-RA MQTT connection successful",
         };
       } else {
         return {

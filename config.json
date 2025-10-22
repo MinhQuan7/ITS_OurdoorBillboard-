@@ -54,9 +54,8 @@
   ],
   "eraIot": {
     "enabled": true,
-    "authToken": "Token 78072b06a81e166b8b900d95f4c2ba1234272955",
+    "authToken": "Token f7d2fe19-587d-471d-a7ff-273bb32c5d6a",
     "baseUrl": "https://backend.eoh.io",
-    "mqttApiKey": "your_mqtt_api_key_here",
     "sensorConfigs": {
       "temperature": 138997,
       "humidity": 138998,
