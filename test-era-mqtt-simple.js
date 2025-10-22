@@ -80,7 +80,9 @@ client.on("connect", () => {
       console.log("✅ Successfully subscribed to:", testTopic);
       console.log("");
       console.log("Waiting for messages... (Press Ctrl+C to stop)");
-      console.log("Expected topic format: eoh/chip/{token}/config/{configId}/value");
+      console.log(
+        "Expected topic format: eoh/chip/{token}/config/{configId}/value"
+      );
       console.log('Expected payload format: {"key": value}');
     }
   });
