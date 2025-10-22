@@ -303,11 +303,14 @@ class GlobalWeatherServiceManager {
 }
 
 // WeatherPanel Component with Real API Integration
-function WeatherPanel({ className = "" }) {
+function WeatherPanel({ className = "", eraIotService = null }) {
   const [weatherData, setWeatherData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState("offline");
   const [lastClickTime, setLastClickTime] = useState(0);
+  
+  // E-Ra IoT data state
+  const [eraIotData, setEraIotData] = useState(null);
 
   useEffect(() => {
     // Subscribe to global weather service
@@ -330,6 +333,26 @@ function WeatherPanel({ className = "" }) {
 
     return unsubscribe;
   }, []);
+
+  // Subscribe to E-Ra IoT data updates
+  useEffect(() => {
+    if (eraIotService) {
+      console.log("WeatherPanel: Setting up E-Ra IoT data subscription");
+      
+      const handleEraDataUpdate = (data) => {
+        console.log("WeatherPanel: Received E-Ra IoT data:", data);
+        setEraIotData(data);
+      };
+      
+      // Subscribe to data updates
+      eraIotService.onDataUpdate(handleEraDataUpdate);
+      
+      return () => {
+        console.log("WeatherPanel: Cleaning up E-Ra IoT subscription");
+        // Cleanup subscription if needed
+      };
+    }
+  }, [eraIotService]);
 
   // Handle manual refresh with intelligent caching and click throttling
   const handleRefresh = async () => {
@@ -950,7 +973,7 @@ function WeatherPanel({ className = "" }) {
                   color: "#ffffff", 
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
                 }
-            }, \`\${weatherData.temperature}°\`)
+            }, \`\${eraIotData ? eraIotData.temperature || 'N/A' : (weatherData ? weatherData.temperature : 'N/A')}°\`)
           ]),
 
           React.createElement("div", { 
@@ -976,7 +999,7 @@ function WeatherPanel({ className = "" }) {
                   color: "#ffffff", 
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
                 }
-            }, \`\${weatherData.humidity}%\`)
+            }, \`\${eraIotData ? eraIotData.humidity || 'N/A' : (weatherData ? weatherData.humidity : 'N/A')}%\`)
           ]),
 
           React.createElement("div", { 
@@ -1003,7 +1026,7 @@ function WeatherPanel({ className = "" }) {
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
                 }
             }, [
-              "2,06",
+              eraIotData ? (eraIotData.pm25 || 'N/A') : 'N/A',
               React.createElement("span", { 
                 key: "unit",
                   style: { fontSize: "9px", fontWeight: "normal", opacity: 0.8, marginLeft: "2px" }
@@ -1035,7 +1058,7 @@ function WeatherPanel({ className = "" }) {
                   textShadow: "0 1px 3px rgba(0, 0, 0, 0.8)" 
                 }
             }, [
-              "2,4",
+              eraIotData ? (eraIotData.pm10 || 'N/A') : 'N/A',
               React.createElement("span", { 
                 key: "unit",
                   style: { fontSize: "9px", fontWeight: "normal", opacity: 0.8, marginLeft: "2px" }
@@ -2025,7 +2048,7 @@ function BillboardLayout() {
         width: "100%",
       }
     }, [
-      React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" })
+      React.createElement(WeatherPanel, { key: "weather", className: "unified-weather", eraIotService: eraIotService })
     ]),
     
     // Weather Banner - Always visible with dynamic content
