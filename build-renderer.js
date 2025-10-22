@@ -1261,470 +1261,94 @@ function CompanyLogo() {
   }, currentLogo ? renderCustomLogo(currentLogo) : renderDefaultLogo());
 }
 
-// E-Ra IoT Service Integration
+// E-Ra IoT Service Integration (IPC-based)
 class EraIotService {
   constructor(config) {
     this.config = config;
     this.currentData = null;
-    this.mqttClient = null;
-    this.updateTimer = null;
-    this.isUpdating = false;
+    this.isInitialized = false;
     this.dataUpdateCallbacks = [];
     this.statusUpdateCallbacks = [];
     
-    console.log("EraIotService: Initializing with authToken", config.authToken);
-    
-    // Extract gateway token from authToken
-    this.gatewayToken = this.extractGatewayToken(config.authToken);
-    if (!this.gatewayToken) {
-      console.error("EraIotService: Could not extract GATEWAY_TOKEN from authToken");
-      return;
-    }
-    
-    console.log("EraIotService: Successfully extracted gateway token");
-    console.log("EraIotService: Creating MQTT service with config", {
+    console.log("EraIotService: Initializing with IPC-based communication");
+    console.log("EraIotService: Config:", {
       enabled: config.enabled,
-      gatewayToken: this.gatewayToken.substring(0, 10) + "...",
+      authToken: config.authToken ? config.authToken.substring(0, 20) + "..." : "none",
       sensorConfigs: config.sensorConfigs,
     });
-    
-    console.log("EraIotService: Initialized with config", config);
-  }
-
-  extractGatewayToken(authToken) {
-    // AuthToken format from test-era-mqtt-simple.js: "Token 78072b06a81e166b8b900d95f4c2ba1234272955"
-    const tokenMatch = authToken.match(/Token\\s+(.+)/);
-    const extractedToken = tokenMatch ? tokenMatch[1] : null;
-    console.log("EraIotService: Token extraction", {
-      originalToken: authToken.substring(0, 20) + "...",
-      extractedToken: extractedToken ? extractedToken.substring(0, 10) + "..." : null,
-      success: !!extractedToken
-    });
-    return extractedToken;
   }
 
   async startPeriodicUpdates() {
-    if (this.updateTimer) {
-      this.stopPeriodicUpdates();
-    }
-
-    console.log("EraIotService: Starting MQTT connection...");
+    console.log("EraIotService: Starting IPC-based connection...");
     
     try {
-      await this.connectMQTT();
-      console.log("EraIotService: Started MQTT-based sensor data service");
-      console.log("EraIotService: Started MQTT callback updates every 1 second for real-time UI responsiveness");
-    } catch (error) {
-      console.error("EraIotService: Failed to start MQTT connection:", error);
-    }
-  }
-
-  async connectMQTT() {
-    if (this.mqttClient) {
-      console.warn("EraIotService: Already connected or connecting");
-      return;
-    }
-
-    try {
-      // E-RA MQTT Configuration exactly like test-era-mqtt-simple.js
-      const brokerUrl = "mqtt://mqtt1.eoh.io:1883";
+      // Set up IPC listeners for data from main process
+      this.setupIpcListeners();
       
-      console.log("EraIotService: E-Ra MQTT Configuration Test");
-      console.log("EraIotService: ============================");
-      console.log("EraIotService: Broker: mqtt1.eoh.io:1883");
-      console.log("EraIotService: Username:", this.gatewayToken.substring(0, 10) + "...");
-      console.log("EraIotService: Password:", this.gatewayToken.substring(0, 10) + "...");
-      console.log("EraIotService: Topic:", \`eoh/chip/\${this.gatewayToken}/config/+/value\`);
-      console.log("EraIotService: Sensor configs:", this.config.sensorConfigs);
-      console.log("");
-
-      // Check if MQTT.js is available like in test file
-      if (typeof mqtt === 'undefined') {
-        console.log("EraIotService: ❌ MQTT.js library not found. Install with: npm install mqtt");
-        console.log("EraIotService:    For testing purposes, showing configuration only.");
-        this.useFallbackData({ message: "MQTT.js library not available" });
-        return;
-      } else {
-        console.log("EraIotService: ✅ MQTT.js library available");
-      }
-
-      console.log("EraIotService: Testing connection to E-Ra MQTT broker...");
-
-      // Use exact connection options from test-era-mqtt-simple.js
-      this.mqttClient = mqtt.connect(brokerUrl, {
-        username: this.gatewayToken,
-        password: this.gatewayToken,
-        clientId: \`test_\${this.gatewayToken}_\${Date.now()}\`,
-        keepalive: 60,
-        connectTimeout: 15000,
-        clean: true,
-      });
-
-      // Set connection timeout like in test file
-      let connectionTimer = setTimeout(() => {
-        console.log("EraIotService: ❌ Connection timeout");
-        this.mqttClient.end();
-        this.useFallbackData({ message: "Connection timeout" });
-      }, 20000);
-
-      this.mqttClient.on("connect", () => {
-        clearTimeout(connectionTimer);
-        console.log("EraIotService: ✅ Successfully connected to E-Ra MQTT broker!");
-        this.subscribeToTopics();
-        this.startPeriodicDataUpdates();
-      });
-
-      this.mqttClient.on("message", (topic, message) => {
-        this.handleMqttMessage(topic, message);
-      });
-
-      this.mqttClient.on("error", (error) => {
-        clearTimeout(connectionTimer);
-        console.log("EraIotService: ❌ Connection error:", error.message);
-        this.mqttClient.end();
-        this.useFallbackData(error);
-      });
-
-      this.mqttClient.on("close", () => {
-        console.log("EraIotService: Connection closed");
-      });
-
+      // Get initial data from main process
+      await this.fetchInitialData();
+      
+      console.log("EraIotService: Started IPC-based sensor data service");
+      console.log("EraIotService: Started IPC callback updates every 1 second for real-time UI responsiveness");
+      this.isInitialized = true;
+      
     } catch (error) {
-      console.error("EraIotService: Failed to connect:", error);
+      console.error("EraIotService: Failed to start IPC connection:", error);
       this.useFallbackData(error);
     }
   }
 
-  subscribeToTopics() {
-    if (!this.mqttClient || !this.mqttClient.connected) {
-      console.warn("EraIotService: Cannot subscribe - client not connected");
+  setupIpcListeners() {
+    if (!window.electronAPI) {
+      console.error("EraIotService: electronAPI not available");
       return;
     }
 
-    // E-RA Topic pattern exactly like test-era-mqtt-simple.js: eoh/chip/{token}/config/+/value
-    const testTopic = \`eoh/chip/\${this.gatewayToken}/config/+/value\`;
-    this.mqttClient.subscribe(testTopic, { qos: 1 }, (err) => {
-      if (err) {
-        console.log("EraIotService: ❌ Failed to subscribe:", err.message);
-      } else {
-        console.log("EraIotService: ✅ Successfully subscribed to:", testTopic);
-        console.log("");
-        console.log("EraIotService: Waiting for messages...");
-        console.log("EraIotService: Expected topic format: eoh/chip/{token}/config/{configId}/value");
-        console.log('EraIotService: Expected payload format: {"key": value}');
-      }
-    });
-  }
-
-  handleMqttMessage(topic, message) {
-    try {
-      const messageStr = message.toString();
-      console.log(\`EraIotService: [\${new Date().toLocaleTimeString()}] \${topic}: \${messageStr}\`);
-
-      // DEBUG: Show raw message details exactly like test file
-      console.log(\`EraIotService: Message Details:\`);
-      console.log(\`EraIotService: Raw Buffer: [\${Array.from(message).join(", ")}]\`);
-      console.log(\`EraIotService: String Length: \${messageStr.length}\`);
-      console.log(\`EraIotService: Hex: \${message.toString("hex")}\`);
-
-      // Try to parse E-RA format exactly like test file
-      try {
-        const data = JSON.parse(messageStr);
-        console.log("EraIotService: ✅ Parsed as JSON:", data);
-        console.log("EraIotService: 📊 Data type:", typeof data);
-        console.log("EraIotService: 🔑 Keys:", Object.keys(data));
-
-        // Check for "+" parsing requirement exactly like test file
-        if (typeof data === "object" && data !== null) {
-          Object.entries(data).forEach(([key, value]) => {
-            console.log(\`EraIotService:      \${key}: \${value} (type: \${typeof value})\`);
-
-            // Check if value contains "+" that needs parsing
-            if (typeof value === "string" && value.includes("+")) {
-              console.log(\`EraIotService:       🎯 Found "+" in value, needs parsing: \${value}\`);
-
-              // Try different parsing strategies exactly like test file
-              const strategies = [
-                () => parseFloat(value.replace("+", "")), // Remove +
-                () => parseFloat(value), // Direct parse
-                () => parseFloat(value.split("+")[0]), // Take before +
-                () => parseFloat(value.split("+")[1]), // Take after +
-                () => value.split("+").map((v) => parseFloat(v)), // Split and parse both
-              ];
-
-              strategies.forEach((strategy, index) => {
-                try {
-                  const result = strategy();
-                  console.log(\`EraIotService:         Strategy \${index + 1}: \${JSON.stringify(result)}\`);
-                } catch (error) {
-                  console.log(\`EraIotService:         Strategy \${index + 1}: Failed - \${error.message}\`);
-                }
-              });
-            }
-          });
-        }
-
-        // Extract config ID from topic exactly like test file
-        const configIdMatch = topic.match(/\\/config\\/(\\d+)\\/value$/);
-        if (configIdMatch) {
-          const configId = parseInt(configIdMatch[1]);
-          console.log(\`EraIotService:    🆔 Config ID: \${configId}\`);
-
-          // Map to sensor type
-          const sensorType = Object.entries(this.config.sensorConfigs).find(
-            ([, id]) => id === configId
-          )?.[0];
-
-          if (sensorType) {
-            console.log(\`EraIotService:    🌡️ Sensor: \${sensorType}\`);
-          }
-        }
-
-        this.updateSensorDataByConfigId(configId, data);
-
-      } catch (error) {
-        console.log("EraIotService:   ❌ Could not parse as JSON:", error.message);
-        console.log("EraIotService:   📝 Trying as plain text...");
-
-        // Try parsing as plain text with "+" handling exactly like test file
-        if (messageStr.includes("+")) {
-          console.log(\`EraIotService:   🎯 Found "+" in plain text: \${messageStr}\`);
-
-          const strategies = [
-            () => parseFloat(messageStr.replace("+", "")),
-            () => parseFloat(messageStr),
-            () => messageStr.split("+").map((v) => parseFloat(v.trim())),
-          ];
-
-          strategies.forEach((strategy, index) => {
-            try {
-              const result = strategy();
-              console.log(\`EraIotService:      Plain Strategy \${index + 1}: \${JSON.stringify(result)}\`);
-            } catch (error) {
-              console.log(\`EraIotService:      Plain Strategy \${index + 1}: Failed - \${error.message}\`);
-            }
-          });
-        }
-
-        // Try parsing as number exactly like test file
-        const numValue = parseFloat(messageStr);
-        if (!isNaN(numValue)) {
-          console.log(\`EraIotService:   📊 Parsed as number: \${numValue}\`);
-          
-          // Extract config ID from topic
-          const configIdMatch = topic.match(/\\/config\\/(\\d+)\\/value$/);
-          if (configIdMatch) {
-            const configId = parseInt(configIdMatch[1]);
-            this.updateSensorDataByConfigId(configId, { value: numValue });
-          }
-        }
-      }
-      console.log("");
-
-    } catch (error) {
-      console.error("EraIotService: Error processing message:", error);
-    }
-  }
-
-  updateSensorDataByConfigId(configId, data) {
-    // Extract value from E-RA message format exactly like test file processing
-    let value = null;
-
-    if (typeof data === "object" && data !== null) {
-      const possibleKeys = Object.keys(data);
-      if (possibleKeys.length === 1) {
-        const singleKey = possibleKeys[0];
-        const potentialValue = data[singleKey];
-
-        if (typeof potentialValue === "string") {
-          value = this.parseEraValue(potentialValue);
-        } else if (typeof potentialValue === "number" && !isNaN(potentialValue)) {
-          value = potentialValue;
-        }
-      }
-
-      if (value === null) {
-        const commonValue = data.value ?? data.current_value ?? data.data ?? null;
-        if (commonValue !== null) {
-          if (typeof commonValue === "string") {
-            value = this.parseEraValue(commonValue);
-          } else if (typeof commonValue === "number" && !isNaN(commonValue)) {
-            value = commonValue;
-          }
-        }
-      }
-    } else if (typeof data === "number" && !isNaN(data)) {
-      value = data;
-    } else if (typeof data === "string") {
-      value = this.parseEraValue(data);
-    }
-
-    if (value === null || isNaN(value)) {
-      console.warn(\`EraIotService: Could not extract numeric value from config ID \${configId}:\`, data);
-      return;
-    }
-
-    // Map config ID to sensor type
-    const sensorType = this.mapConfigIdToSensorType(configId);
-    if (sensorType) {
-      console.log(\`EraIotService: 🔄 Updating \${sensorType} (ID: \${configId}) = \${value}\`);
-      
-      if (!this.currentData) {
-        this.currentData = {
-          temperature: null,
-          humidity: null,
-          pm25: null,
-          pm10: null,
-          lastUpdated: new Date(),
-          status: "success",
-        };
-      }
-      
-      this.currentData[sensorType] = value;
-      this.currentData.lastUpdated = new Date();
+    // Listen for data updates from main process
+    window.electronAPI.onEraIotDataUpdate((event, data) => {
+      console.log("EraIotService: Received data update from main process:", data);
+      this.currentData = data;
       this.notifyDataUpdateCallbacks();
-    } else {
-      console.warn(\`EraIotService: ❓ Unknown config ID: \${configId}\`);
-    }
+    });
+
+    // Listen for status updates from main process
+    window.electronAPI.onEraIotStatusUpdate((event, status) => {
+      console.log("EraIotService: Received status update from main process:", status);
+      this.notifyStatusUpdateCallbacks(status);
+    });
+
+    console.log("EraIotService: IPC listeners established");
   }
 
-  parseEraValue(valueStr) {
+  async fetchInitialData() {
+    if (!window.electronAPI) {
+      throw new Error("electronAPI not available");
+    }
+
     try {
-      // Apply exact parsing strategies from test-era-mqtt-simple.js
-      if (valueStr.includes("+")) {
-        console.log(\`EraIotService: 🎯 Found "+" in value, needs parsing: \${valueStr}\`);
-
-        // Try different parsing strategies exactly like test file
-        const strategies = [
-          () => parseFloat(valueStr.replace("+", "")), // Remove +
-          () => parseFloat(valueStr), // Direct parse
-          () => parseFloat(valueStr.split("+")[0]), // Take before +
-          () => parseFloat(valueStr.split("+")[1]), // Take after +
-          () => valueStr.split("+").map((v) => parseFloat(v)), // Split and parse both
-        ];
-
-        strategies.forEach((strategy, index) => {
-          try {
-            const result = strategy();
-            console.log(\`EraIotService:         Strategy \${index + 1}: \${JSON.stringify(result)}\`);
-            
-            // Use first successful strategy that gives a valid number
-            if (index === 0 && !isNaN(result)) {
-              return result;
-            }
-          } catch (error) {
-            console.log(\`EraIotService:         Strategy \${index + 1}: Failed - \${error.message}\`);
-          }
-        });
-
-        // If strategies didn't work, try the remove + approach
-        const withoutPlus = valueStr.replace("+", "");
-        const parsed = parseFloat(withoutPlus);
-        if (!isNaN(parsed)) {
-          console.log(\`EraIotService: Parsed E-RA value "\${valueStr}" as \${parsed} (removed + prefix)\`);
-          return parsed;
-        }
-      }
-
-      const directParse = parseFloat(valueStr);
-      if (!isNaN(directParse)) {
-        console.log(\`EraIotService: Parsed E-RA value "\${valueStr}" as \${directParse} (direct parse)\`);
-        return directParse;
-      }
-
-      if (valueStr.includes(",")) {
-        const withDot = valueStr.replace(",", ".");
-        const parsed = parseFloat(withDot);
-        if (!isNaN(parsed)) {
-          console.log(\`EraIotService: Parsed E-RA value "\${valueStr}" as \${parsed} (comma to dot)\`);
-          return parsed;
-        }
-      }
-
-      const numericMatch = valueStr.match(/[-+]?\\d*\\.?\\d+/);
-      if (numericMatch) {
-        const parsed = parseFloat(numericMatch[0]);
-        if (!isNaN(parsed)) {
-          console.log(\`EraIotService: Parsed E-RA value "\${valueStr}" as \${parsed} (regex extract)\`);
-          return parsed;
-        }
-      }
-
-      console.warn(\`EraIotService: Could not parse E-RA value: "\${valueStr}"\`);
-      return null;
-    } catch (error) {
-      console.error(\`EraIotService: Error parsing E-RA value "\${valueStr}":\`, error);
-      return null;
-    }
-  }
-
-  mapConfigIdToSensorType(configId) {
-    if (this.config.sensorConfigs.temperature === configId) return "temperature";
-    if (this.config.sensorConfigs.humidity === configId) return "humidity";
-    if (this.config.sensorConfigs.pm25 === configId) return "pm25";
-    if (this.config.sensorConfigs.pm10 === configId) return "pm10";
-    return null;
-  }
-
-  handleLwtMessage(messageStr) {
-    try {
-      const lwtData = JSON.parse(messageStr);
-      if (lwtData.ol === 1) {
-        console.log("MqttService: Gateway is online");
-      } else if (lwtData.ol === 0) {
-        console.log("MqttService: Gateway is offline");
-      }
-    } catch (error) {
-      console.warn("MqttService: Could not parse LWT message:", messageStr);
-    }
-  }
-
-  startPeriodicDataUpdates() {
-    // Set up callback notifier every 1 second to ensure UI updates
-    this.updateTimer = setInterval(() => {
-      if (this.currentData) {
-        console.log("EraIotService: Periodic update triggered - data pushed to components");
+      const data = await window.electronAPI.getEraIotData();
+      if (data) {
+        console.log("EraIotService: Retrieved initial data from main process:", data);
+        this.currentData = data;
         this.notifyDataUpdateCallbacks();
+      } else {
+        console.log("EraIotService: No initial data available from main process");
       }
-    }, 1000); // 1000ms = 1 second
-
-    console.log("EraIotService: ✅ Started MQTT callback updates every 1 second for real-time UI responsiveness");
+    } catch (error) {
+      console.error("EraIotService: Failed to fetch initial data:", error);
+      throw error;
+    }
   }
 
   stopPeriodicUpdates() {
-    if (this.updateTimer) {
-      clearInterval(this.updateTimer);
-      this.updateTimer = null;
-      console.log("EraIotService: Stopped periodic updates");
+    // Remove IPC listeners
+    if (window.electronAPI) {
+      window.electronAPI.removeEraIotDataListener();
+      window.electronAPI.removeEraIotStatusListener();
     }
-  }
-
-  async fetchSensorData() {
-    // MQTT-based data fetching - removed API calls
-    // Data is now received through MQTT service automatically
-    console.log("EraIotService: Using MQTT-based data updates");
     
-    // Use current MQTT data or fallback values
-    if (this.currentData) {
-      this.notifyDataUpdateCallbacks();
-      console.log("EraIotService: MQTT data available, notifying callbacks");
-    } else {
-      this.useFallbackData({ message: "MQTT data not yet available" });
-    }
-  }
-
-  // fetchSensorValue method removed - now using MQTT-based data updates
-  // All HTTP API calls have been eliminated
-
-  extractValue(data) {
-    if (typeof data === "number") return data;
-    if (data?.current_value_only && typeof data.current_value_only === "number") return data.current_value_only;
-    if (data?.current_value && typeof data.current_value === "number") return data.current_value;
-    if (data?.value && typeof data.value === "number") return data.value;
-    if (Array.isArray(data) && data[0]?.current_value_only) return data[0].current_value_only;
-    if (Array.isArray(data) && data[0]?.current_value) return data[0].current_value;
-    if (Array.isArray(data) && data[0]?.value) return data[0].value;
-    return null;
+    this.isInitialized = false;
+    console.log("EraIotService: Stopped IPC-based updates");
   }
 
   useFallbackData(error) {
@@ -1735,7 +1359,7 @@ class EraIotService {
       pm10: 25.0,
       lastUpdated: new Date(),
       status: "error",
-      errorMessage: \`Connection failed: \${error.message || "Unknown error"}\`,
+      errorMessage: \`IPC Connection failed: \${error.message || "Unknown error"}\`,
     };
     
     // Notify callbacks about fallback data
@@ -1749,10 +1373,23 @@ class EraIotService {
   }
 
   async refreshData() {
-    console.log("EraIotService: Manual refresh requested - using MQTT data");
-    // In MQTT mode, just notify callbacks with current data
-    if (this.currentData) {
-      this.notifyDataUpdateCallbacks();
+    console.log("EraIotService: Manual refresh requested - triggering main process refresh");
+    
+    if (!window.electronAPI) {
+      console.error("EraIotService: electronAPI not available for refresh");
+      return;
+    }
+
+    try {
+      const result = await window.electronAPI.refreshEraIotConnection();
+      if (result.success) {
+        console.log("EraIotService: Main process refresh successful");
+        // Data will come through IPC listeners
+      } else {
+        console.error("EraIotService: Main process refresh failed:", result.message);
+      }
+    } catch (error) {
+      console.error("EraIotService: Failed to trigger main process refresh:", error);
     }
   }
 
@@ -1773,6 +1410,17 @@ class EraIotService {
         callback(this.currentData);
       } catch (error) {
         console.error("EraIotService: Error in data update callback:", error);
+      }
+    });
+  }
+
+  // Notify all status update callbacks
+  notifyStatusUpdateCallbacks(status) {
+    this.statusUpdateCallbacks.forEach((callback) => {
+      try {
+        callback(status);
+      } catch (error) {
+        console.error("EraIotService: Error in status update callback:", error);
       }
     });
   }
@@ -1805,7 +1453,7 @@ class EraIotService {
     // Immediately call with current status
     try {
       const status = {
-        isRunning: !!this.updateTimer,
+        isRunning: this.isInitialized,
         lastUpdate: this.currentData?.lastUpdated || null,
         retryCount: 0,
         currentStatus: this.currentData?.status || "inactive",

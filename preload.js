@@ -38,6 +38,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onEraIotConfigUpdated: (callback) =>
     ipcRenderer.on("era-iot-config-updated", callback),
 
+  // E-Ra IoT MQTT data handlers (NEW)
+  getEraIotData: () => ipcRenderer.invoke("get-era-iot-data"),
+  refreshEraIotConnection: () =>
+    ipcRenderer.invoke("refresh-era-iot-connection"),
+  onEraIotDataUpdate: (callback) =>
+    ipcRenderer.on("era-iot-data-update", callback),
+  onEraIotStatusUpdate: (callback) =>
+    ipcRenderer.on("era-iot-status-update", callback),
+  removeEraIotDataListener: () =>
+    ipcRenderer.removeAllListeners("era-iot-data-update"),
+  removeEraIotStatusListener: () =>
+    ipcRenderer.removeAllListeners("era-iot-status-update"),
+
   // Authentication handlers
   updateAuthToken: (token) => ipcRenderer.invoke("update-auth-token", token),
   onAuthTokenUpdated: (callback) =>
