@@ -485,3 +485,19 @@ ipcMain.handle("update-auth-token", async (event, authToken) => {
     return { success: false, error: error.message };
   }
 });
+
+// Provide parsed gateway token to renderer on demand
+ipcMain.handle("get-gateway-token", async () => {
+  try {
+    if (fs.existsSync(configPath)) {
+      const configData = fs.readFileSync(configPath, "utf8");
+      const cfg = JSON.parse(configData);
+      const auth = cfg?.eraIot?.authToken || "";
+      const match = auth.match(/Token\s+(.+)/);
+      return match ? match[1] : null;
+    }
+  } catch (error) {
+    console.error("get-gateway-token: failed to read config:", error);
+  }
+  return null;
+});

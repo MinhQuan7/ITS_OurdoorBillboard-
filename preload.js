@@ -42,4 +42,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   updateAuthToken: (token) => ipcRenderer.invoke("update-auth-token", token),
   onAuthTokenUpdated: (callback) =>
     ipcRenderer.on("auth-token-updated", callback),
+  // Convenience method: return parsed gateway token (without the "Token " prefix)
+  getGatewayToken: () => ipcRenderer.invoke("get-gateway-token"),
 });
