@@ -128,7 +128,11 @@ class MqttService {
         clientId: clientOptions.clientId,
       });
 
+      console.log("MqttService: Creating MQTT client...");
       this.client = mqtt.connect(brokerUrl, clientOptions);
+      console.log(
+        "MqttService: MQTT client created, setting up event handlers..."
+      );
 
       this.client.on("connect", () => {
         console.log("MqttService: Connected to MQTT broker");

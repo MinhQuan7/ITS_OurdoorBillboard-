@@ -84,8 +84,16 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
           }
 
           const service = new EraIotService(config);
-          service.startPeriodicUpdates();
+          console.log("EraIotService: Starting MQTT-based sensor data service");
+          console.log(
+            "EraIotService: Started MQTT callback updates every 1 second for real-time UI responsiveness"
+          );
+
+          await service.startPeriodicUpdates();
           setEraIotService(service);
+          console.log(
+            "BillboardLayout: E-Ra IoT service initialized successfully"
+          );
         } else {
           console.log(
             "BillboardLayout: No valid E-Ra IoT configuration found - missing or invalid AUTHTOKEN"

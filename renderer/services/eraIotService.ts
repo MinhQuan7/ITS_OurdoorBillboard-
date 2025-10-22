@@ -64,11 +64,7 @@ class EraIotService {
   constructor(config: EraIotConfig) {
     this.config = config;
     this.initializeMqttService();
-    console.log("EraIotService: Initialized with MQTT config", {
-      baseUrl: this.config.baseUrl,
-      hasAuthToken: !!this.config.authToken,
-      sensorConfigs: this.config.sensorConfigs,
-    });
+    console.log("EraIotService: Initialized with config", config);
   }
 
   /**
@@ -92,6 +88,11 @@ class EraIotService {
 
   private initializeMqttService(): void {
     try {
+      console.log(
+        "EraIotService: Initializing MQTT service with authToken",
+        this.config.authToken
+      );
+
       // Extract GATEWAY_TOKEN from authToken
       const gatewayToken = this.extractGatewayToken(this.config.authToken);
       if (!gatewayToken) {
@@ -100,6 +101,8 @@ class EraIotService {
         );
         return;
       }
+
+      console.log("EraIotService: Successfully extracted gateway token");
 
       const mqttConfig: MqttConfig = {
         enabled: this.config.enabled,
@@ -113,6 +116,12 @@ class EraIotService {
           clean: true,
         },
       };
+
+      console.log("EraIotService: Creating MQTT service with config", {
+        enabled: mqttConfig.enabled,
+        gatewayToken: gatewayToken.substring(0, 10) + "...",
+        sensorConfigs: mqttConfig.sensorConfigs,
+      });
 
       this.mqttService = new MqttService(mqttConfig);
 
@@ -137,7 +146,15 @@ class EraIotService {
   private extractGatewayToken(authToken: string): string | null {
     // AuthToken format: "Token 78072b06a81e166b8b900d95f4c2ba1234272955"
     const tokenMatch = authToken.match(/Token\s+(.+)/);
-    return tokenMatch ? tokenMatch[1] : null;
+    const extractedToken = tokenMatch ? tokenMatch[1] : null;
+    console.log("EraIotService: Token extraction", {
+      originalToken: authToken.substring(0, 20) + "...",
+      extractedToken: extractedToken
+        ? extractedToken.substring(0, 10) + "..."
+        : null,
+      success: !!extractedToken,
+    });
+    return extractedToken;
   }
 
   /**
@@ -223,9 +240,11 @@ class EraIotService {
     }
 
     try {
+      console.log("EraIotService: Starting MQTT connection...");
       await this.mqttService.connect();
+      console.log("EraIotService: Started MQTT-based sensor data service");
       console.log(
-        "EraIotService: Started MQTT connection for real-time updates"
+        "EraIotService: Started MQTT callback updates every 1 second for real-time UI responsiveness"
       );
     } catch (error) {
       console.error("EraIotService: Failed to start MQTT connection:", error);

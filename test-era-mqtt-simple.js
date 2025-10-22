@@ -69,15 +69,15 @@ let connectionTimer = setTimeout(() => {
 
 client.on("connect", () => {
   clearTimeout(connectionTimer);
-  console.log("✅ Successfully connected to E-Ra MQTT broker!");
+  console.log(" Successfully connected to E-Ra MQTT broker!");
 
   // Subscribe to test topic
   const testTopic = `eoh/chip/${gatewayToken}/config/+/value`;
   client.subscribe(testTopic, { qos: 1 }, (err) => {
     if (err) {
-      console.log("❌ Failed to subscribe:", err.message);
+      console.log(" Failed to subscribe:", err.message);
     } else {
-      console.log("✅ Successfully subscribed to:", testTopic);
+      console.log(" Successfully subscribed to:", testTopic);
       console.log("");
       console.log("Waiting for messages... (Press Ctrl+C to stop)");
       console.log(
@@ -90,12 +90,10 @@ client.on("connect", () => {
 
 client.on("message", (topic, message) => {
   const messageStr = message.toString();
-  console.log(
-    `📨 [${new Date().toLocaleTimeString()}] ${topic}: ${messageStr}`
-  );
+  console.log(` [${new Date().toLocaleTimeString()}] ${topic}: ${messageStr}`);
 
   // DEBUG: Show raw message details
-  console.log(`   📋 Message Details:`);
+  console.log(`      Message Details:`);
   console.log(`      Raw Buffer: [${Array.from(message).join(", ")}]`);
   console.log(`      String Length: ${messageStr.length}`);
   console.log(`      Hex: ${message.toString("hex")}`);
@@ -103,9 +101,9 @@ client.on("message", (topic, message) => {
   // Try to parse E-RA format
   try {
     const data = JSON.parse(messageStr);
-    console.log("   ✅ Parsed as JSON:", data);
-    console.log("   📊 Data type:", typeof data);
-    console.log("   🔑 Keys:", Object.keys(data));
+    console.log("    Parsed as JSON:", data);
+    console.log("   Data type:", typeof data);
+    console.log("    Keys:", Object.keys(data));
 
     // Check for "+" parsing requirement
     if (typeof data === "object" && data !== null) {
@@ -114,7 +112,7 @@ client.on("message", (topic, message) => {
 
         // Check if value contains "+" that needs parsing
         if (typeof value === "string" && value.includes("+")) {
-          console.log(`      🎯 Found "+" in value, needs parsing: ${value}`);
+          console.log(`       Found "+" in value, needs parsing: ${value}`);
 
           // Try different parsing strategies
           const strategies = [
@@ -145,7 +143,7 @@ client.on("message", (topic, message) => {
     const configIdMatch = topic.match(/\/config\/(\d+)\/value$/);
     if (configIdMatch) {
       const configId = parseInt(configIdMatch[1]);
-      console.log(`   🆔 Config ID: ${configId}`);
+      console.log(`    Config ID: ${configId}`);
 
       // Map to sensor type
       const sensorType = Object.entries(config.eraIot.sensorConfigs).find(
@@ -153,7 +151,7 @@ client.on("message", (topic, message) => {
       )?.[0];
 
       if (sensorType) {
-        console.log(`   🌡️ Sensor: ${sensorType}`);
+        console.log(`    Sensor: ${sensorType}`);
       }
     }
   } catch (error) {

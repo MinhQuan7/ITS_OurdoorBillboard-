@@ -1266,15 +1266,41 @@ class EraIotService {
   constructor(config) {
     this.config = config;
     this.currentData = null;
+    this.mqttClient = null;
     this.updateTimer = null;
     this.isUpdating = false;
     this.dataUpdateCallbacks = [];
     this.statusUpdateCallbacks = [];
-    console.log("EraIotService: Initialized with config", {
-      baseUrl: this.config.baseUrl,
-      hasAuthToken: !!this.config.authToken,
-      sensorConfigs: this.config.sensorConfigs,
+    
+    console.log("EraIotService: Initializing with authToken", config.authToken);
+    
+    // Extract gateway token from authToken
+    this.gatewayToken = this.extractGatewayToken(config.authToken);
+    if (!this.gatewayToken) {
+      console.error("EraIotService: Could not extract GATEWAY_TOKEN from authToken");
+      return;
+    }
+    
+    console.log("EraIotService: Successfully extracted gateway token");
+    console.log("EraIotService: Creating MQTT service with config", {
+      enabled: config.enabled,
+      gatewayToken: this.gatewayToken.substring(0, 10) + "...",
+      sensorConfigs: config.sensorConfigs,
     });
+    
+    console.log("EraIotService: Initialized with config", config);
+  }
+
+  extractGatewayToken(authToken) {
+    // AuthToken format from test-era-mqtt-simple.js: "Token 78072b06a81e166b8b900d95f4c2ba1234272955"
+    const tokenMatch = authToken.match(/Token\\s+(.+)/);
+    const extractedToken = tokenMatch ? tokenMatch[1] : null;
+    console.log("EraIotService: Token extraction", {
+      originalToken: authToken.substring(0, 20) + "...",
+      extractedToken: extractedToken ? extractedToken.substring(0, 10) + "..." : null,
+      success: !!extractedToken
+    });
+    return extractedToken;
   }
 
   async startPeriodicUpdates() {
@@ -1282,15 +1308,361 @@ class EraIotService {
       this.stopPeriodicUpdates();
     }
 
-    // Initial fetch
-    await this.fetchSensorData();
+    console.log("EraIotService: Starting MQTT connection...");
+    
+    try {
+      await this.connectMQTT();
+      console.log("EraIotService: Started MQTT-based sensor data service");
+      console.log("EraIotService: Started MQTT callback updates every 1 second for real-time UI responsiveness");
+    } catch (error) {
+      console.error("EraIotService: Failed to start MQTT connection:", error);
+    }
+  }
 
-    // Set up faster periodic updates - now every 1 second for real-time responsiveness
+  async connectMQTT() {
+    if (this.mqttClient) {
+      console.warn("MqttService: Already connected or connecting");
+      return;
+    }
+
+    try {
+      // E-RA MQTT Configuration - Browser WebSocket connection
+      // Browser environment requires WebSocket protocol
+      const brokerUrl = "ws://mqtt1.eoh.io:8083/mqtt";  // WebSocket port for E-RA
+      
+      console.log("MqttService: Connecting to E-RA MQTT broker...", {
+        url: brokerUrl,
+        username: this.gatewayToken.substring(0, 10) + "...",
+        clientId: \`billboard_\${this.gatewayToken}_\${Date.now()}\`,
+      });
+
+      // Check if MQTT.js is available like in test file
+      if (typeof mqtt === 'undefined') {
+        console.error("MqttService: MQTT.js library not available");
+        this.useFallbackData({ message: "MQTT.js library not available" });
+        return;
+      }
+
+      console.log("MqttService: Creating MQTT client...");
+      
+      // Use exact connection options from test-era-mqtt-simple.js adapted for browser
+      const clientOptions = {
+        username: this.gatewayToken,
+        password: this.gatewayToken,
+        clientId: \`billboard_\${this.gatewayToken}_\${Date.now()}\`,
+        keepalive: 60,
+        connectTimeout: 15000,
+        clean: true,
+      };
+
+      this.mqttClient = mqtt.connect(brokerUrl, clientOptions);
+      console.log("MqttService: MQTT client created, setting up event handlers...");
+
+      // Set connection timeout like in test file
+      let connectionTimer = setTimeout(() => {
+        console.log("MqttService: Connection timeout");
+        this.mqttClient.end();
+        this.useFallbackData({ message: "Connection timeout" });
+      }, 20000);
+
+      this.mqttClient.on("connect", () => {
+        clearTimeout(connectionTimer);
+        console.log("MqttService: Successfully connected to E-RA MQTT broker!");
+        this.subscribeToTopics();
+        this.startPeriodicDataUpdates();
+      });
+
+      this.mqttClient.on("message", (topic, message) => {
+        this.handleMqttMessage(topic, message);
+      });
+
+      this.mqttClient.on("error", (error) => {
+        clearTimeout(connectionTimer);
+        console.error("MqttService: Connection error:", error);
+        this.mqttClient.end();
+        this.useFallbackData(error);
+      });
+
+      this.mqttClient.on("close", () => {
+        console.log("MqttService: Connection closed");
+      });
+
+    } catch (error) {
+      console.error("MqttService: Failed to connect:", error);
+      this.useFallbackData(error);
+    }
+  }
+
+  subscribeToTopics() {
+    if (!this.mqttClient || !this.mqttClient.connected) {
+      console.warn("MqttService: Cannot subscribe - client not connected");
+      return;
+    }
+
+    // E-RA Topic pattern: eoh/chip/{token}/config/+/value
+    const configTopic = \`eoh/chip/\${this.gatewayToken}/config/+/value\`;
+    console.log(\`MqttService: Subscribing to E-RA topic: \${configTopic}\`);
+
+    this.mqttClient.subscribe(configTopic, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(\`MqttService: Failed to subscribe to \${configTopic}:\`, err);
+      } else {
+        console.log(\`MqttService: Successfully subscribed to \${configTopic}\`);
+      }
+    });
+
+    // Also subscribe to LWT topic
+    const lwtTopic = \`eoh/chip/\${this.gatewayToken}/lwt\`;
+    this.mqttClient.subscribe(lwtTopic, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(\`MqttService: Failed to subscribe to LWT \${lwtTopic}:\`, err);
+      } else {
+        console.log(\`MqttService: Subscribed to LWT topic \${lwtTopic}\`);
+      }
+    });
+  }
+
+  handleMqttMessage(topic, message) {
+    try {
+      const messageStr = message.toString();
+      console.log(\`MqttService: [\${new Date().toLocaleTimeString()}] \${topic}: \${messageStr}\`);
+
+      // DEBUG: Show raw message details like in test file
+      console.log(\`MqttService: Message Details:\`);
+      console.log(\`MqttService: Raw Buffer: [\${Array.from(message).join(", ")}]\`);
+      console.log(\`MqttService: String Length: \${messageStr.length}\`);
+      console.log(\`MqttService: Hex: \${message.toString("hex")}\`);
+
+      // Handle LWT messages
+      if (topic.endsWith("/lwt")) {
+        this.handleLwtMessage(messageStr);
+        return;
+      }
+
+      // Parse E-RA message format exactly like test file
+      let data;
+      try {
+        data = JSON.parse(messageStr);
+        console.log("MqttService: Parsed as JSON:", data);
+        console.log("MqttService: Data type:", typeof data);
+        console.log("MqttService: Keys:", Object.keys(data));
+      } catch {
+        console.log("MqttService: Could not parse as JSON:", messageStr);
+        console.log("MqttService: Trying as plain text...");
+
+        // Try parsing as plain text with "+" handling like in test file
+        if (messageStr.includes("+")) {
+          console.log(\`MqttService: Found "+" in plain text: \${messageStr}\`);
+
+          const strategies = [
+            () => parseFloat(messageStr.replace("+", "")),
+            () => parseFloat(messageStr),
+            () => messageStr.split("+").map((v) => parseFloat(v.trim())),
+          ];
+
+          strategies.forEach((strategy, index) => {
+            try {
+              const result = strategy();
+              console.log(\`MqttService: Plain Strategy \${index + 1}: \${JSON.stringify(result)}\`);
+            } catch (error) {
+              console.log(\`MqttService: Plain Strategy \${index + 1}: Failed - \${error.message}\`);
+            }
+          });
+        }
+
+        // Try parsing as number
+        const numValue = parseFloat(messageStr);
+        if (!isNaN(numValue)) {
+          console.log(\`MqttService: Parsed as number: \${numValue}\`);
+          data = { value: numValue };
+        } else {
+          console.warn("MqttService: Could not parse message:", messageStr);
+          return;
+        }
+      }
+
+      // Extract config ID from topic
+      const configIdMatch = topic.match(/\\/config\\/(\\d+)\\/value$/);
+      if (!configIdMatch) {
+        console.warn("MqttService: Could not extract config ID from topic:", topic);
+        return;
+      }
+
+      const configId = parseInt(configIdMatch[1]);
+      console.log(\`MqttService: Config ID: \${configId}\`);
+
+      // Check for "+" parsing requirement like in test file
+      if (typeof data === "object" && data !== null) {
+        Object.entries(data).forEach(([key, value]) => {
+          console.log(\`MqttService: \${key}: \${value} (type: \${typeof value})\`);
+
+          // Check if value contains "+" that needs parsing
+          if (typeof value === "string" && value.includes("+")) {
+            console.log(\`MqttService: Found "+" in value, needs parsing: \${value}\`);
+
+            // Try different parsing strategies like in test file
+            const strategies = [
+              () => parseFloat(value.replace("+", "")), // Remove +
+              () => parseFloat(value), // Direct parse
+              () => parseFloat(value.split("+")[0]), // Take before +
+              () => parseFloat(value.split("+")[1]), // Take after +
+              () => value.split("+").map((v) => parseFloat(v)), // Split and parse both
+            ];
+
+            strategies.forEach((strategy, index) => {
+              try {
+                const result = strategy();
+                console.log(\`MqttService: Strategy \${index + 1}: \${JSON.stringify(result)}\`);
+              } catch (error) {
+                console.log(\`MqttService: Strategy \${index + 1}: Failed - \${error.message}\`);
+              }
+            });
+          }
+        });
+      }
+
+      this.updateSensorDataByConfigId(configId, data);
+
+    } catch (error) {
+      console.error("MqttService: Error processing message:", error);
+    }
+  }
+
+  updateSensorDataByConfigId(configId, data) {
+    // Extract value from E-RA message format
+    let value = null;
+
+    if (typeof data === "object" && data !== null) {
+      const possibleKeys = Object.keys(data);
+      if (possibleKeys.length === 1) {
+        const singleKey = possibleKeys[0];
+        const potentialValue = data[singleKey];
+
+        if (typeof potentialValue === "string") {
+          value = this.parseEraValue(potentialValue);
+        } else if (typeof potentialValue === "number" && !isNaN(potentialValue)) {
+          value = potentialValue;
+        }
+      }
+
+      if (value === null) {
+        const commonValue = data.value ?? data.current_value ?? data.data ?? null;
+        if (commonValue !== null) {
+          if (typeof commonValue === "string") {
+            value = this.parseEraValue(commonValue);
+          } else if (typeof commonValue === "number" && !isNaN(commonValue)) {
+            value = commonValue;
+          }
+        }
+      }
+    } else if (typeof data === "number" && !isNaN(data)) {
+      value = data;
+    } else if (typeof data === "string") {
+      value = this.parseEraValue(data);
+    }
+
+    if (value === null || isNaN(value)) {
+      console.warn(\`MqttService: Could not extract numeric value from config ID \${configId}:\`, data);
+      return;
+    }
+
+    // Map config ID to sensor type
+    const sensorType = this.mapConfigIdToSensorType(configId);
+    if (sensorType) {
+      console.log(\`MqttService: Updating \${sensorType} (ID: \${configId}) = \${value}\`);
+      
+      if (!this.currentData) {
+        this.currentData = {
+          temperature: null,
+          humidity: null,
+          pm25: null,
+          pm10: null,
+          lastUpdated: new Date(),
+          status: "success",
+        };
+      }
+      
+      this.currentData[sensorType] = value;
+      this.currentData.lastUpdated = new Date();
+      this.notifyDataUpdateCallbacks();
+    } else {
+      console.warn(\`MqttService: Unknown config ID: \${configId}\`);
+    }
+  }
+
+  parseEraValue(valueStr) {
+    try {
+      // Apply exact parsing strategies from test-era-mqtt-simple.js
+      if (valueStr.startsWith("+")) {
+        const withoutPlus = valueStr.substring(1);
+        const parsed = parseFloat(withoutPlus);
+        if (!isNaN(parsed)) {
+          console.log(\`MqttService: Parsed E-RA value "\${valueStr}" as \${parsed} (removed + prefix)\`);
+          return parsed;
+        }
+      }
+
+      const directParse = parseFloat(valueStr);
+      if (!isNaN(directParse)) {
+        console.log(\`MqttService: Parsed E-RA value "\${valueStr}" as \${directParse} (direct parse)\`);
+        return directParse;
+      }
+
+      if (valueStr.includes(",")) {
+        const withDot = valueStr.replace(",", ".");
+        const parsed = parseFloat(withDot);
+        if (!isNaN(parsed)) {
+          console.log(\`MqttService: Parsed E-RA value "\${valueStr}" as \${parsed} (comma to dot)\`);
+          return parsed;
+        }
+      }
+
+      const numericMatch = valueStr.match(/[-+]?\\d*\\.?\\d+/);
+      if (numericMatch) {
+        const parsed = parseFloat(numericMatch[0]);
+        if (!isNaN(parsed)) {
+          console.log(\`MqttService: Parsed E-RA value "\${valueStr}" as \${parsed} (regex extract)\`);
+          return parsed;
+        }
+      }
+
+      console.warn(\`MqttService: Could not parse E-RA value: "\${valueStr}"\`);
+      return null;
+    } catch (error) {
+      console.error(\`MqttService: Error parsing E-RA value "\${valueStr}":\`, error);
+      return null;
+    }
+  }
+
+  mapConfigIdToSensorType(configId) {
+    if (this.config.sensorConfigs.temperature === configId) return "temperature";
+    if (this.config.sensorConfigs.humidity === configId) return "humidity";
+    if (this.config.sensorConfigs.pm25 === configId) return "pm25";
+    if (this.config.sensorConfigs.pm10 === configId) return "pm10";
+    return null;
+  }
+
+  handleLwtMessage(messageStr) {
+    try {
+      const lwtData = JSON.parse(messageStr);
+      if (lwtData.ol === 1) {
+        console.log("MqttService: Gateway is online");
+      } else if (lwtData.ol === 0) {
+        console.log("MqttService: Gateway is offline");
+      }
+    } catch (error) {
+      console.warn("MqttService: Could not parse LWT message:", messageStr);
+    }
+  }
+
+  startPeriodicDataUpdates() {
+    // Set up callback notifier every 1 second to ensure UI updates
     this.updateTimer = setInterval(() => {
-      this.fetchSensorData();
+      if (this.currentData) {
+        console.log("MqttService: Periodic update triggered - data pushed to components");
+        this.notifyDataUpdateCallbacks();
+      }
     }, 1000); // 1000ms = 1 second
-
-    console.log("EraIotService: Started periodic updates every 1 second for real-time data");
   }
 
   stopPeriodicUpdates() {
@@ -1302,110 +1674,21 @@ class EraIotService {
   }
 
   async fetchSensorData() {
-    if (this.isUpdating) {
-      console.log("EraIotService: Update already in progress, skipping");
-      return;
-    }
-
-    this.isUpdating = true;
-    console.log("EraIotService: Starting sensor data fetch");
-
-    try {
-      const sensorPromises = [
-        this.fetchSensorValue(this.config.sensorConfigs.temperature, "temperature"),
-        this.fetchSensorValue(this.config.sensorConfigs.humidity, "humidity"),
-        this.fetchSensorValue(this.config.sensorConfigs.pm25, "pm25"),
-        this.fetchSensorValue(this.config.sensorConfigs.pm10, "pm10"),
-      ];
-
-      const results = await Promise.allSettled(sensorPromises);
-      
-      const sensorData = {
-        temperature: null,
-        humidity: null,
-        pm25: null,
-        pm10: null,
-        lastUpdated: new Date(),
-      };
-
-      let successCount = 0;
-      const sensorNames = ["temperature", "humidity", "pm25", "pm10"];
-      
-      results.forEach((result, index) => {
-        const sensorName = sensorNames[index];
-        
-        if (result.status === "fulfilled" && result.value !== null) {
-          sensorData[sensorName] = result.value;
-          successCount++;
-          console.log(\`EraIotService: \${sensorName} = \${result.value}\`);
-        } else {
-          console.error(\`EraIotService: Failed to fetch \${sensorName}:\`, result.reason || "No data");
-        }
-      });
-
-      // Determine overall status
-      let status;
-      if (successCount === 4) {
-        status = "success";
-      } else if (successCount > 0) {
-        status = "partial";
-      } else {
-        status = "error";
-      }
-
-      this.currentData = {
-        ...sensorData,
-        status,
-        errorMessage: status === "error" ? "Connection failed" : undefined,
-      };
-
-      // Notify all data update callbacks
+    // MQTT-based data fetching - removed API calls
+    // Data is now received through MQTT service automatically
+    console.log("EraIotService: Using MQTT-based data updates");
+    
+    // Use current MQTT data or fallback values
+    if (this.currentData) {
       this.notifyDataUpdateCallbacks();
-
-      console.log("EraIotService: Data update completed", {
-        status,
-        successCount: \`\${successCount}/4\`,
-        temperature: sensorData.temperature,
-        humidity: sensorData.humidity,
-        pm25: sensorData.pm25,
-        pm10: sensorData.pm10,
-      });
-    } catch (error) {
-      console.error("EraIotService: Critical error during sensor fetch:", error);
-      this.useFallbackData(error);
-    } finally {
-      this.isUpdating = false;
+      console.log("EraIotService: MQTT data available, notifying callbacks");
+    } else {
+      this.useFallbackData({ message: "MQTT data not yet available" });
     }
   }
 
-  async fetchSensorValue(configId, sensorName) {
-    try {
-      console.log(\`EraIotService: Fetching \${sensorName} (config ID: \${configId})\`);
-
-      const response = await fetch(\`\${this.config.baseUrl}/api/chip_manager/configs/\${configId}/current_value/\`, {
-        method: 'GET',
-        headers: {
-          'Authorization': this.config.authToken,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'User-Agent': 'ITS-Billboard-EraIoT/1.0',
-        },
-        timeout: this.config.timeout,
-      });
-
-      if (!response.ok) {
-        throw new Error(\`HTTP \${response.status}\`);
-      }
-
-      const data = await response.json();
-      console.log(\`EraIotService: Raw API response for \${sensorName}:\`, data);
-
-      return this.extractValue(data);
-    } catch (error) {
-      console.error(\`EraIotService: Error fetching \${sensorName}:\`, error);
-      throw error;
-    }
-  }
+  // fetchSensorValue method removed - now using MQTT-based data updates
+  // All HTTP API calls have been eliminated
 
   extractValue(data) {
     if (typeof data === "number") return data;
@@ -1440,8 +1723,11 @@ class EraIotService {
   }
 
   async refreshData() {
-    console.log("EraIotService: Manual refresh requested");
-    await this.fetchSensorData();
+    console.log("EraIotService: Manual refresh requested - using MQTT data");
+    // In MQTT mode, just notify callbacks with current data
+    if (this.currentData) {
+      this.notifyDataUpdateCallbacks();
+    }
   }
 
   destroy() {
@@ -2030,15 +2316,15 @@ function BillboardLayout() {
     const unsubscribe = GlobalWeatherServiceManager.subscribe((data) => {
       setWeatherData(data);
       
-      // Determine if we should show weather alert
+      // Always show weather banner, just change the content and status
       if (data) {
-        const shouldShowAlert = data.rainProbability > 60 || // Lower threshold for testing
-                               data.weatherCondition?.includes("mưa to") || 
-                               data.weatherCondition?.includes("dông");
-        setShowWeatherAlert(shouldShowAlert);
-        console.log("BillboardLayout: Weather alert status:", shouldShowAlert, "Rain probability:", data.rainProbability);
+        const isHighRainRisk = data.rainProbability > 60 || 
+                              data.weatherCondition?.includes("mưa to") || 
+                              data.weatherCondition?.includes("dông");
+        setShowWeatherAlert(isHighRainRisk);
+        console.log("BillboardLayout: Weather banner - High rain risk:", isHighRainRisk, "Rain probability:", data.rainProbability);
       } else {
-        setShowWeatherAlert(false);
+        setShowWeatherAlert(false); // Default to stable when no data
       }
     });
 
@@ -2068,9 +2354,9 @@ function BillboardLayout() {
       React.createElement(WeatherPanel, { key: "weather", className: "unified-weather" })
     ]),
     
-    // Weather Alert Banner - OVERLAY positioning with proper spacing from edges
-    showWeatherAlert && React.createElement("div", { 
-      key: "global-weather-alert",
+    // Weather Banner - Always visible with dynamic content
+    React.createElement("div", { 
+      key: "global-weather-banner",
       style: { 
         position: "absolute",
         bottom: "110px", // Position above logo with 14px spacing from logo section
@@ -2078,7 +2364,9 @@ function BillboardLayout() {
         right: "16px", // 16px margin from right edge  
         height: "48px", // Fixed banner height
         width: "calc(100% - 32px)", // Full width minus left and right margins
-        background: "linear-gradient(135deg, #dc2626, #b91c1c)",
+        background: showWeatherAlert 
+          ? "linear-gradient(135deg, #dc2626, #b91c1c)" // Red for high rain risk
+          : "linear-gradient(135deg, #059669, #047857)", // Green for stable weather
         color: "#ffffff",
         display: "flex",
         alignItems: "center",
@@ -2088,17 +2376,19 @@ function BillboardLayout() {
         fontWeight: "bold",
         textTransform: "uppercase",
         letterSpacing: "1px",
-        boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)",
+        boxShadow: showWeatherAlert 
+          ? "0 4px 12px rgba(220, 38, 38, 0.4)" // Red shadow for alert
+          : "0 4px 12px rgba(5, 150, 105, 0.4)", // Green shadow for stable
         zIndex: 10000000,
         boxSizing: "border-box",
         borderRadius: "4px", // Subtle rounding for modern look
       }
     }, [
       React.createElement("div", {
-        key: "alert-icon",
+        key: "banner-icon",
         style: {
-          background: "#fbbf24",
-          color: "#dc2626",
+          background: showWeatherAlert ? "#fbbf24" : "#10b981", // Yellow for alert, light green for stable
+          color: showWeatherAlert ? "#dc2626" : "#ffffff",
           width: "24px",
           height: "24px",
           borderRadius: "50%",
@@ -2109,16 +2399,16 @@ function BillboardLayout() {
           fontWeight: "bold",
           flexShrink: 0
         }
-      }, "!"),
+      }, showWeatherAlert ? "!" : "✓"),
       React.createElement("div", {
-        key: "alert-text",
+        key: "banner-text",
         style: {
           fontSize: "16px",
           textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
           flex: 1,
           textAlign: "center"
         }
-      }, "CẢNH BÁO MƯA LỚN")
+      }, showWeatherAlert ? "CẢNH BÁO MƯA LỚN" : "THỜI TIẾT ỔN ĐỊNH")
     ]),
     
     React.createElement("div", {
