@@ -73,7 +73,7 @@
   height: 48px;
   width: calc(100% - 32px); /* Full width minus left and right margins */
   background: linear-gradient(135deg, #dc2626, #b91c1c);
-  color: #ffffff;
+  color: #ffe600ff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,6 +124,8 @@
 .bottom-row {
   flex: 1; /* Takes 1/4 = 25% height */
   background-color: #ff6b35;
+  border-radius: 0;
+  overflow: hidden;
 }
 
 /* Typography styles */

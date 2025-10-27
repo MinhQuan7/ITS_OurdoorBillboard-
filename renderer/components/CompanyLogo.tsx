@@ -264,27 +264,40 @@ const CompanyLogo: React.FC = () => {
   );
 
   // Render configured logo
-  const renderConfiguredLogo = (logo: any) => (
-    <div className="logo-container">
-      <div className="logo-image-container">
-        <img
-          src={logo.path}
-          alt={logo.name}
-          className="logo-image"
-          onError={(e) => {
-            console.error("Logo image failed to load:", logo.path);
-            // Fallback to default logo on error
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
-        />
-      </div>
-      {config?.logoMode === "loop" && config.logoImages.length > 1 && (
-        <div className="logo-indicator">
-          {currentLogoIndex + 1} / {config.logoImages.length}
+  const renderConfiguredLogo = (logo: any) => {
+    // Determine image class based on image dimensions or aspect ratio
+    const getImageClass = () => {
+      // Default to cover for banner/logo images
+      return "logo-image";
+
+      // You can extend this logic based on image properties:
+      // if (logo.aspectRatio && logo.aspectRatio > 2) return "logo-image banner-style";
+      // if (logo.preserveAspect) return "logo-image preserve-aspect";
+      // return "logo-image";
+    };
+
+    return (
+      <div className="logo-container">
+        <div className="logo-image-container">
+          <img
+            src={logo.path}
+            alt={logo.name}
+            className={getImageClass()}
+            onError={(e) => {
+              console.error("Logo image failed to load:", logo.path);
+              // Fallback to default logo on error
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
         </div>
-      )}
-    </div>
-  );
+        {config?.logoMode === "loop" && config.logoImages.length > 1 && (
+          <div className="logo-indicator">
+            {currentLogoIndex + 1} / {config.logoImages.length}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // All styles are now in CompanyLogo.css
 

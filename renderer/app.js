@@ -346,10 +346,11 @@ class CompanyLogo extends React.Component {
       src: `file://${logo.path}`,
       alt: logo.name,
       style: {
-        maxWidth: "100%",
-        maxHeight: "80px",
-        objectFit: "contain",
-        borderRadius: "4px",
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        objectPosition: "center",
+        borderRadius: "0",
       },
       onError: (e) => {
         console.error("Failed to load logo:", logo.path);
@@ -428,7 +429,7 @@ class CompanyLogo extends React.Component {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "8px",
+      padding: "0",
       position: "relative",
       overflow: "hidden",
     };

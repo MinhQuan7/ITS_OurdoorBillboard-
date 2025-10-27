@@ -180,7 +180,7 @@ class BillboardApp {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 8px;
+            padding: 0;
             position: relative;
             overflow: hidden;
         `;
@@ -258,10 +258,11 @@ class BillboardApp {
     const logoImg = document.createElement("img");
     logoImg.src = logo.path;
     logoImg.style.cssText = `
-            max-width: 100%;
-            max-height: 80px;
-            object-fit: contain;
-            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 0;
         `;
 
     logoImg.onerror = () => {

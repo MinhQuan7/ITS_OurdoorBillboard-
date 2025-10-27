@@ -2,14 +2,8 @@
   "logoMode": "loop",
   "logoImages": [
     {
-      "name": "2fcce3ef-f877-4328-8cdb-266a794ca5c1-cover.png",
-      "path": "C:\\Users\\lemin\\Downloads\\2fcce3ef-f877-4328-8cdb-266a794ca5c1-cover.png",
-      "size": 0,
-      "type": "image/*"
-    },
-    {
-      "name": "imagesFirebase.png",
-      "path": "C:\\Users\\lemin\\Downloads\\imagesFirebase.png",
+      "name": "addSymbol_IndustrialDashboard.png",
+      "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\addSymbol_IndustrialDashboard.png",
       "size": 0,
       "type": "image/*"
     }

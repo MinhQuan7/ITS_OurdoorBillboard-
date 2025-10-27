@@ -1200,10 +1200,11 @@ function CompanyLogo() {
       src: `file://${logo.path}`,
       alt: logo.name,
       style: {
-        maxWidth: "100%",
-        maxHeight: "80px",
-        objectFit: "contain",
-        borderRadius: "4px",
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        objectPosition: "center",
+        borderRadius: "0",
       },
       onError: (e) => {
         console.error("Failed to load logo:", logo.path);
@@ -2056,7 +2057,7 @@ function BillboardLayout() {
         background: showWeatherAlert 
           ? "linear-gradient(135deg, #dc2626, #b91c1c)" // Red for high rain risk
           : "linear-gradient(135deg, #059669, #047857)", // Green for stable weather
-        color: "#ffffff",
+        color: "#ffe600ff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -2109,7 +2110,7 @@ function BillboardLayout() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "8px",
+        padding: "0",
         position: "relative",
         overflow: "hidden",
       }

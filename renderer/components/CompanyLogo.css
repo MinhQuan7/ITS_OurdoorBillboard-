@@ -7,8 +7,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 0;
   position: relative;
+  overflow: hidden;
+  border-radius: 0;
 }
 
 .logo-container.loading {
@@ -52,15 +54,32 @@
 .logo-image-container {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
 }
 
 .logo-image {
-  max-width: 100%;
-  max-height: 80px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Alternative style for preserving aspect ratio */
+.logo-image.preserve-aspect {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  object-position: center;
+}
+
+/* Alternative style for banner-style logos (wide format) */
+.logo-image.banner-style {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
 }
 
 .logo-indicator {
