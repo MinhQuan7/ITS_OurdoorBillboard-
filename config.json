@@ -1,14 +1,20 @@
 {
-  "logoMode": "fixed",
+  "logoMode": "loop",
   "logoImages": [
     {
       "name": "addSymbol_IndustrialDashboard.png",
       "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\addSymbol_IndustrialDashboard.png",
       "size": 0,
       "type": "image/*"
+    },
+    {
+      "name": "EoH_ERa_Web-Banner_1920x800-1.png",
+      "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\EoH_ERa_Web-Banner_1920x800-1.png",
+      "size": 0,
+      "type": "image/*"
     }
   ],
-  "logoLoopDuration": 2,
+  "logoLoopDuration": 30,
   "layoutPositions": {
     "weather": {
       "x": 0,
@@ -49,6 +55,7 @@
   "eraIot": {
     "enabled": true,
     "authToken": "Token 78072b06a81e166b8b900d95f4c2ba1234272955",
+    "gatewayToken": "f7d2fe19-587d-471d-a7ff-273bb32c5d6a",
     "baseUrl": "https://backend.eoh.io",
     "sensorConfigs": {
       "temperature": 138997,

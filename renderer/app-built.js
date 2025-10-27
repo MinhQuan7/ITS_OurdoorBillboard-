@@ -1937,6 +1937,7 @@ function BillboardLayout() {
             const eraConfig = {
               authToken: config.eraIot.authToken,
               baseUrl: config.eraIot.baseUrl || "https://backend.eoh.io",
+              gatewayToken: config.eraIot.gatewayToken,
               sensorConfigs: config.eraIot.sensorConfigs || {
                 temperature: 138997,
                 humidity: 138998,

@@ -17,15 +17,10 @@ try {
   process.exit(1);
 }
 
-// Extract gateway token
-function extractGatewayToken(authToken) {
-  const tokenMatch = authToken.match(/Token\s+(.+)/);
-  return tokenMatch ? tokenMatch[1] : null;
-}
-
-const gatewayToken = extractGatewayToken(config.eraIot.authToken);
+// Extract gateway token - now directly from config
+const gatewayToken = config.eraIot.gatewayToken;
 if (!gatewayToken) {
-  console.error("Could not extract gateway token");
+  console.error("Gateway token is required in config.eraIot.gatewayToken");
   process.exit(1);
 }
 
