@@ -553,10 +553,12 @@ class MainProcessMqttService {
 
     this.config = eraIotConfig;
 
-    // Extract gateway token
-    const gatewayToken = this.extractGatewayToken(eraIotConfig.authToken);
+    // Use gatewayToken directly from config
+    const gatewayToken = eraIotConfig.gatewayToken;
     if (!gatewayToken) {
-      console.error("MainProcessMqttService: Could not extract gateway token");
+      console.error(
+        "MainProcessMqttService: Gateway token not found in config"
+      );
       return false;
     }
 
