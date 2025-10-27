@@ -2069,7 +2069,7 @@ function BillboardLayout() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "12px",
+        gap: "0px",
         padding: "0 16px",
         fontWeight: "bold",
         textTransform: "uppercase",
@@ -2083,30 +2083,54 @@ function BillboardLayout() {
       }
     }, [
       React.createElement("div", {
-        key: "banner-icon",
         style: {
-          background: showWeatherAlert ? "#fbbf24" : "#10b981", // Yellow for alert, light green for stable
-          color: showWeatherAlert ? "#dc2626" : "#ffffff",
-          width: "24px",
-          height: "24px",
-          borderRadius: "50%",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          fontSize: "16px",
-          fontWeight: "bold",
-          flexShrink: 0
+          gap: "6px"
         }
-      }, showWeatherAlert ? "!" : "✓"),
-      React.createElement("div", {
-        key: "banner-text",
-        style: {
-          fontSize: "16px",
-          textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
-          flex: 1,
-          textAlign: "center"
-        }
-      }, showWeatherAlert ? "CẢNH BÁO MƯA LỚN" : "THỜI TIẾT ỔN ĐỊNH")
+      }, [
+        React.createElement("div", {
+          key: "banner-icon",
+          style: {
+            position: "relative",
+            width: "32px",
+            height: "32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "16px",
+            fontWeight: "bold",
+            flexShrink: 0,
+            color: showWeatherAlert ? "#dc2626" : "#ffffff",
+            textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)"
+          }
+        }, [
+          showWeatherAlert ? React.createElement("div", {
+            style: {
+              position: "absolute",
+              top: "2px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 0,
+              height: 0,
+              borderLeft: "16px solid transparent",
+              borderRight: "16px solid transparent",
+              borderBottom: "26px solid #fbbf24",
+              zIndex: -1
+            }
+          }) : null,
+          showWeatherAlert ? "!" : "✓"
+        ]),
+        React.createElement("div", {
+          key: "banner-text",
+          style: {
+            fontSize: "16px",
+            textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
+            margin: 0,
+            whiteSpace: "nowrap"
+          }
+        }, showWeatherAlert ? "CẢNH BÁO MƯA LỚN" : "THỜI TIẾT ỔN ĐỊNH")
+      ])
     ]),
     
     React.createElement("div", {
