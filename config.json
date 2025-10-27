@@ -1,5 +1,5 @@
 {
-  "logoMode": "loop",
+  "logoMode": "fixed",
   "logoImages": [
     {
       "name": "addSymbol_IndustrialDashboard.png",
@@ -8,7 +8,7 @@
       "type": "image/*"
     }
   ],
-  "logoLoopDuration": 10,
+  "logoLoopDuration": 2,
   "layoutPositions": {
     "weather": {
       "x": 0,
@@ -48,7 +48,7 @@
   ],
   "eraIot": {
     "enabled": true,
-    "authToken": "Token f7d2fe19-587d-471d-a7ff-273bb32c5d6a",
+    "authToken": "Token 78072b06a81e166b8b900d95f4c2ba1234272955",
     "baseUrl": "https://backend.eoh.io",
     "sensorConfigs": {
       "temperature": 138997,
