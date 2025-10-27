@@ -85,7 +85,7 @@ const weatherService = new WeatherService({
     lon: 107.5909,
     city: "TP. THỪA THIÊN HUẾ",
   },
-  updateInterval: 15,
+  updateInterval: 2,
   retryInterval: 5,
   maxRetries: 3,
 });
@@ -326,7 +326,7 @@ GlobalWeatherServiceManager.notifySubscribers(this.currentData);
 - **Endpoint**: `https://api.open-meteo.com/v1/forecast`
 - **Location**: Huế, Vietnam (16.4637, 107.5909)
 - **Data Points**: Temperature, humidity, wind, UV index, precipitation
-- **Update Frequency**: 15 minutes
+- **Update Frequency**: 2 minutes
 - **Timeout**: 15 seconds
 - **Retry Strategy**: Exponential backoff with max 3 retries
 

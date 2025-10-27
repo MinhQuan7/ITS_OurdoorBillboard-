@@ -14,7 +14,7 @@
       "type": "image/*"
     }
   ],
-  "logoLoopDuration": 30,
+  "logoLoopDuration": 1,
   "layoutPositions": {
     "weather": {
       "x": 0,

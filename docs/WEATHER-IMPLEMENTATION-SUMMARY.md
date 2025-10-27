@@ -183,7 +183,7 @@ aqi: 1 - 5; // Color-coded visual indicator
 1. App Startup
    └─> Initialize WeatherService
        └─> Set location: Huế (16.4637°N, 107.5909°E)
-       └─> Start periodic updates (every 15 min)
+       └─> Start periodic updates (every 2 min)
 
 2. API Call Sequence (Primary - OpenWeatherMap)
    ├─> GET /weather        → Temperature, humidity, wind, condition
@@ -203,7 +203,7 @@ aqi: 1 - 5; // Color-coded visual indicator
    └─> Show connection status (green dot)
 
 5. Continuous Updates
-   └─> Every 15 minutes: Repeat steps 2-4
+   └─> Every 2 minutes: Repeat steps 2-4
 ```
 
 ### Error Handling Strategy
@@ -265,7 +265,7 @@ Stormy   → #4B0082 (Indigo)
 - **Response time**: ~500-1500ms per batch
 - **Daily API calls**: ~96 calls/day (well within free tier limit)
 - **Cache duration**: 2 hours
-- **Update frequency**: 15 minutes
+- **Update frequency**: 2 minutes
 
 ### Memory Usage
 
@@ -289,7 +289,7 @@ Stormy   → #4B0082 (Indigo)
 ```typescript
 Location: Thừa Thiên Huế, Vietnam
 Coordinates: 16.4637°N, 107.5909°E
-Update Interval: 15 minutes
+Update Interval: 2 minutes
 Retry Interval: 5 minutes (exponential backoff)
 Max Retries: 3 attempts
 API Timeout: 15 seconds
@@ -314,7 +314,7 @@ const weatherConfig: WeatherConfig = {
 #### Change Update Frequency
 
 ```typescript
-updateInterval: 15,  // Minutes (10, 15, 20, 30, etc.)
+updateInterval: 2,  // Minutes (10, 15, 20, 30, etc.)
 ```
 
 #### Change API Provider
@@ -346,7 +346,7 @@ private apiEndpoints = [
 
    ```
    WeatherService: Initializing weather service
-   WeatherService: Started periodic updates every 15 minutes
+   WeatherService: Started periodic updates every 2 minutes
    WeatherService: Successfully updated weather data from OpenWeatherMap
    ```
 
@@ -373,7 +373,7 @@ private apiEndpoints = [
 
 ```javascript
 ✅ WeatherService: Initializing weather service
-✅ WeatherService: Started periodic updates every 15 minutes
+✅ WeatherService: Started periodic updates every 2 minutes
 ✅ WeatherService: Successfully updated weather data from OpenWeatherMap
 
 // Weather data object:
@@ -416,7 +416,7 @@ private apiEndpoints = [
 ```typescript
 Production Configuration:
 - API Key: Use environment variable
-- Update Interval: 15 minutes
+- Update Interval: 2 minutes
 - Timeout: 15 seconds
 - Max Retries: 3
 - Cache Duration: 2 hours
@@ -556,7 +556,7 @@ Production Configuration:
 - 🎨 Beautiful visual design
 - 🌍 Properly localized
 - 📱 LED screen optimized (384x384)
-- 🔄 Auto-updating (15 min intervals)
+- 🔄 Auto-updating (2 min intervals)
 - 💾 Efficient caching
 - 🔍 Easy to debug
 

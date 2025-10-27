@@ -2,7 +2,7 @@
 // This replaces the old app.js with real API integration
 
 // Import React from CDN (already loaded in HTML)
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 // Weather Icons System - Using Custom Image Files
 const WeatherIcons = {
@@ -252,7 +252,7 @@ class GlobalWeatherServiceManager {
           lon: 107.5909,
           city: "TP. THỪA THIÊN HUẾ",
         },
-        updateInterval: 15,
+        updateInterval: 2,
         retryInterval: 5,
         maxRetries: 3,
       };
@@ -1110,18 +1110,35 @@ function WeatherPanel({ className = "", eraIotService = null }) {
 
 // IoTPanel removed - integrated into unified WeatherPanel
 
-// CompanyLogo Component (functional version with hooks)
+// CompanyLogo Component (functional version with hooks and proper hot reload)
 function CompanyLogo() {
   const [config, setConfig] = useState(null);
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     loadConfig();
     
     if (window.electronAPI && window.electronAPI.onConfigUpdated) {
       window.electronAPI.onConfigUpdated((event, newConfig) => {
-        console.log("Config updated:", newConfig);
+        console.log("CompanyLogo: Config hot-reload received:", {
+          logoMode: newConfig.logoMode,
+          logoLoopDuration: newConfig.logoLoopDuration,
+          logoImages: newConfig.logoImages?.length
+        });
         setConfig(newConfig);
+      });
+    }
+
+    if (window.electronAPI && window.electronAPI.onLogoConfigUpdated) {
+      window.electronAPI.onLogoConfigUpdated((event, logoConfig) => {
+        console.log("CompanyLogo: Logo-specific config update received:", logoConfig);
+        setConfig(prevConfig => ({
+          ...prevConfig,
+          logoMode: logoConfig.logoMode,
+          logoLoopDuration: logoConfig.logoLoopDuration,
+          logoImages: logoConfig.logoImages
+        }));
       });
     }
     
@@ -1129,12 +1146,22 @@ function CompanyLogo() {
       if (window.electronAPI && window.electronAPI.removeConfigListener) {
         window.electronAPI.removeConfigListener();
       }
+      clearLogoInterval();
     };
   }, []);
 
   useEffect(() => {
+    clearLogoInterval();
     startLogoRotation();
   }, [config]);
+
+  const clearLogoInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      console.log("CompanyLogo: Previous logo rotation interval cleared");
+    }
+  };
 
   const loadConfig = async () => {
     try {
@@ -1157,11 +1184,17 @@ function CompanyLogo() {
     if (config && config.logoMode === "loop" && config.logoImages && config.logoImages.length > 1) {
       const duration = (config.logoLoopDuration || 5) * 1000;
       
-      const interval = setInterval(() => {
-        setCurrentLogoIndex(prev => (prev + 1) % config.logoImages.length);
-      }, duration);
+      console.log(`CompanyLogo: Starting logo rotation with ${duration}ms interval (${config.logoLoopDuration}s)`);
       
-      return () => clearInterval(interval);
+      intervalRef.current = setInterval(() => {
+        setCurrentLogoIndex(prev => {
+          const newIndex = (prev + 1) % config.logoImages.length;
+          console.log(`CompanyLogo: Switching to logo ${newIndex + 1}/${config.logoImages.length}`);
+          return newIndex;
+        });
+      }, duration);
+    } else {
+      console.log("CompanyLogo: Logo rotation not applicable - mode:", config?.logoMode, "images:", config?.logoImages?.length);
     }
   };
 

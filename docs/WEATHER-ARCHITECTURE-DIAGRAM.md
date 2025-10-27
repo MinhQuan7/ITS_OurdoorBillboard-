@@ -77,7 +77,7 @@
 │                                                                              │
 │  Configuration:                                                              │
 │  ├─ Location: Huế (16.4637°N, 107.5909°E)                                  │
-│  ├─ Update Interval: 15 minutes                                             │
+│  ├─ Update Interval: 2 minutes                                              │
 │  ├─ Retry Interval: 5 minutes (exponential backoff)                         │
 │  ├─ Max Retries: 3                                                          │
 │  └─ Timeout: 15 seconds                                                     │
@@ -85,7 +85,7 @@
 │  ┌──────────────────────────────────────────────────────────────────┐      │
 │  │                    FETCH WEATHER DATA                             │      │
 │  │                                                                   │      │
-│  │  Every 15 minutes:                                                │      │
+│  │  Every 2 minutes:                                                 │      │
 │  │  1. Try Primary API (OpenWeatherMap)                             │      │
 │  │  2. If fails, try Fallback API (OpenMeteo)                       │      │
 │  │  3. If fails, use Cached Data                                    │      │

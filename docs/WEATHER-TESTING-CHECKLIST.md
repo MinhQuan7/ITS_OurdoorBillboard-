@@ -20,7 +20,7 @@
 - [x] Error handling with fallback
 - [x] Connection status indicator
 - [x] Manual refresh capability
-- [x] Auto-update every 15 minutes
+- [x] Auto-update every 2 minutes
 
 ---
 
@@ -46,7 +46,7 @@ npm start
 
 ```
 ✅ WeatherService: Initializing weather service
-✅ WeatherService: Started periodic updates every 15 minutes
+✅ WeatherService: Started periodic updates every 2 minutes
 ✅ WeatherService: Successfully updated weather data from OpenWeatherMap
 ```
 
@@ -183,7 +183,7 @@ npm start
 **Long-Running Test:**
 
 1. [ ] Note current weather data
-2. [ ] Wait 15 minutes
+2. [ ] Wait 2 minutes
 3. [ ] Verify data auto-updates
 4. [ ] Check console for update log
 5. [ ] Confirm timestamp changed
@@ -375,15 +375,15 @@ console.log("Check for red error messages");
 ### Production Ready?
 
 - [ ] **YES** - All checks passed
-- [ ] NO - Issues to resolve: ******\_\_\_******
+- [ ] NO - Issues to resolve: **\*\***\_\_\_**\*\***
 
 ---
 
 ## Test Results
 
-**Date Tested:** ******\_\_\_******  
-**Tested By:** ******\_\_\_******  
-**Environment:** ******\_\_\_******  
+**Date Tested:** **\*\***\_\_\_**\*\***  
+**Tested By:** **\*\***\_\_\_**\*\***  
+**Environment:** **\*\***\_\_\_**\*\***  
 **Result:** ⭐ PASS / ❌ FAIL
 
 **Notes:**
