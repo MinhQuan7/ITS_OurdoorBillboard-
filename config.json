@@ -1,7 +1,44 @@
 {
-  "logoMode": "scheduled",
-  "logoImages": [],
-  "logoLoopDuration": 20,
+  "logoMode": "loop",
+  "logoImages": [
+    {
+      "name": "2",
+      "path": "downloads\\logos\\2-1761638158646.jpg",
+      "size": 831404,
+      "type": "image/jpeg",
+      "id": "2-1761638158646",
+      "source": "github_cdn",
+      "checksum": "2jpg8314041761638161681"
+    },
+    {
+      "name": "561713702_1389494612602698_416665571935816183_n",
+      "path": "downloads\\logos\\561713702-1389494612602698-416665571935816183-n-1761638439295.jpg",
+      "size": 42851,
+      "type": "image/jpeg",
+      "id": "561713702-1389494612602698-416665571935816183-n-1761638439295",
+      "source": "github_cdn",
+      "checksum": "5617137021389494612602698416665571935816183njpg428511761638441239"
+    },
+    {
+      "name": "565640542_1362303825896826_6400460134318525991_n",
+      "path": "downloads\\logos\\565640542-1362303825896826-6400460134318525991-n-1761638931562.jpg",
+      "size": 98085,
+      "type": "image/jpeg",
+      "id": "565640542-1362303825896826-6400460134318525991-n-1761638931562",
+      "source": "github_cdn",
+      "checksum": "56564054213623038258968266400460134318525991njpg980851761638934878"
+    },
+    {
+      "name": "background6",
+      "path": "downloads\\logos\\background6-1761640792545.png",
+      "size": 4092287,
+      "type": "image/png",
+      "id": "background6-1761640792545",
+      "source": "github_cdn",
+      "checksum": "background6png40922871761640796979"
+    }
+  ],
+  "logoLoopDuration": 10,
   "layoutPositions": {
     "weather": {
       "x": 0,
@@ -32,6 +69,21 @@
       "time": "14:55",
       "logoIndex": "0",
       "days": "weekdays"
+    },
+    {
+      "time": "",
+      "logoIndex": null,
+      "days": "daily"
+    },
+    {
+      "time": "",
+      "logoIndex": null,
+      "days": "daily"
+    },
+    {
+      "time": "",
+      "logoIndex": null,
+      "days": "daily"
     },
     {
       "time": "",
@@ -75,5 +127,6 @@
     "retryAttempts": 3,
     "retryDelay": 2000
   },
-  "_manifestVersion": "1.0.0"
+  "_manifestVersion": "1.0.1761640797806",
+  "_manifestLastUpdated": "2025-10-28T08:39:57.806Z"
 }

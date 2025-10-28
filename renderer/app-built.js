@@ -10,8 +10,11 @@ class RendererLogoManifestService {
     this.currentManifest = null;
     this.isInitialized = false;
     this.updateCallbacks = [];
+    this.mqttConnected = false;
+    this.downloadQueue = [];
+    this.isDownloading = false;
     
-    console.log("RendererLogoManifestService: Initialized");
+    console.log("RendererLogoManifestService: Initialized with remote sync support");
   }
 
   async initialize() {
@@ -21,11 +24,17 @@ class RendererLogoManifestService {
       // Setup IPC listeners for manifest updates from main process
       this.setupIpcListeners();
       
+      // Setup MQTT listeners for admin-web commands
+      this.setupMqttListeners();
+      
       // Get initial manifest from main process
       await this.fetchInitialManifest();
       
+      // Start auto-sync service
+      this.startAutoSync();
+      
       this.isInitialized = true;
-      console.log("RendererLogoManifestService: Initialized successfully");
+      console.log("RendererLogoManifestService: Initialized successfully with remote sync");
       
       return true;
     } catch (error) {
@@ -45,9 +54,193 @@ class RendererLogoManifestService {
       console.log("RendererLogoManifestService: Received manifest update from main process:", data);
       this.currentManifest = data.manifest;
       this.notifyUpdateCallbacks();
+      
+      // Trigger download of new banners
+      this.downloadNewBanners();
+    });
+
+    // Listen for MQTT status updates
+    window.electronAPI.onMqttStatusUpdate((event, status) => {
+      console.log("RendererLogoManifestService: MQTT status update:", status);
+      this.mqttConnected = status.connected;
+    });
+
+    // Listen for banner download progress
+    window.electronAPI.onBannerDownloadProgress((event, progress) => {
+      console.log("RendererLogoManifestService: Download progress:", progress);
     });
 
     console.log("RendererLogoManifestService: IPC listeners established");
+  }
+
+  setupMqttListeners() {
+    if (!window.electronAPI) {
+      console.error("RendererLogoManifestService: electronAPI not available for MQTT");
+      return;
+    }
+
+    // Listen for remote admin commands via MQTT
+    window.electronAPI.onRemoteAdminCommand((event, command) => {
+      console.log("RendererLogoManifestService: Received remote admin command:", command);
+      
+      switch (command.action) {
+        case 'force-refresh-manifest':
+          this.handleForceRefresh(command);
+          break;
+        case 'banner-update':
+          this.handleBannerUpdate(command);
+          break;
+        case 'banner-delete':
+          this.handleBannerDelete(command);
+          break;
+        case 'settings-sync':
+          this.handleSettingsSync(command);
+          break;
+        default:
+          console.warn("Unknown remote command:", command.action);
+      }
+    });
+
+    console.log("RendererLogoManifestService: MQTT command listeners established");
+  }
+
+  async handleForceRefresh(command) {
+    console.log("RendererLogoManifestService: Handling force refresh from admin-web");
+    
+    try {
+      // Send acknowledgment back to admin-web
+      await window.electronAPI.sendMqttMessage({
+        topic: 'its/billboard/status',
+        message: {
+          action: 'refresh-started',
+          timestamp: Date.now(),
+          source: 'desktop-app'
+        }
+      });
+
+      // Force sync manifest
+      const result = await this.forceSync();
+      
+      if (result.success) {
+        await window.electronAPI.sendMqttMessage({
+          topic: 'its/billboard/status', 
+          message: {
+            action: 'refresh-completed',
+            timestamp: Date.now(),
+            manifest: this.currentManifest,
+            source: 'desktop-app'
+          }
+        });
+        console.log("RendererLogoManifestService: Force refresh completed successfully");
+      } else {
+        await window.electronAPI.sendMqttMessage({
+          topic: 'its/billboard/status',
+          message: {
+            action: 'refresh-failed',
+            timestamp: Date.now(),
+            error: result.error,
+            source: 'desktop-app'
+          }
+        });
+      }
+    } catch (error) {
+      console.error("RendererLogoManifestService: Force refresh failed:", error);
+    }
+  }
+
+  async handleBannerUpdate(command) {
+    console.log("RendererLogoManifestService: Handling banner update from admin-web:", command);
+    
+    // Force sync to get latest manifest with new banner
+    await this.forceSync();
+    
+    // Send confirmation back to admin-web
+    try {
+      await window.electronAPI.sendMqttMessage({
+        topic: 'its/billboard/banner/sync',
+        message: {
+          action: 'banner-received',
+          bannerId: command.id,
+          timestamp: Date.now(),
+          source: 'desktop-app'
+        }
+      });
+    } catch (error) {
+      console.error("Failed to send banner update confirmation:", error);
+    }
+  }
+
+  async handleBannerDelete(command) {
+    console.log("RendererLogoManifestService: Handling banner delete from admin-web:", command);
+    
+    // Remove banner from local storage if needed
+    if (command.bannerId) {
+      await window.electronAPI.deleteBannerFile(command.bannerId);
+    }
+    
+    // Force sync to get updated manifest
+    await this.forceSync();
+  }
+
+  async handleSettingsSync(command) {
+    console.log("RendererLogoManifestService: Handling settings sync from admin-web:", command);
+    
+    // Apply new settings
+    if (command.settings) {
+      await window.electronAPI.updateDisplaySettings({
+        displayMode: command.settings.displayMode,
+        loopDuration: command.settings.loopDuration
+      });
+      
+      console.log("RendererLogoManifestService: Display settings updated:", command.settings);
+    }
+  }
+
+  startAutoSync() {
+    // Sync manifest every 30 seconds
+    setInterval(async () => {
+      if (this.isInitialized) {
+        console.log("RendererLogoManifestService: Auto-sync check...");
+        await this.forceSync();
+      }
+    }, 30000);
+
+    console.log("RendererLogoManifestService: Auto-sync started (30s interval)");
+  }
+
+  async downloadNewBanners() {
+    if (!this.currentManifest?.logos || this.isDownloading) {
+      return;
+    }
+
+    this.isDownloading = true;
+    
+    try {
+      const logosToDownload = this.currentManifest.logos.filter(logo => 
+        logo.active && logo.url && !logo.isDownloaded
+      );
+
+      if (logosToDownload.length > 0) {
+        console.log(`RendererLogoManifestService: Downloading ${logosToDownload.length} new banners...`);
+        
+        for (const logo of logosToDownload) {
+          try {
+            await window.electronAPI.downloadBanner({
+              url: logo.url,
+              filename: logo.filename,
+              id: logo.id
+            });
+            console.log(`Downloaded banner: ${logo.filename}`);
+          } catch (error) {
+            console.error(`Failed to download banner ${logo.filename}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("RendererLogoManifestService: Banner download failed:", error);
+    } finally {
+      this.isDownloading = false;
+    }
   }
 
   async fetchInitialManifest() {
@@ -91,6 +284,9 @@ class RendererLogoManifestService {
         console.log("RendererLogoManifestService: Force sync successful");
         this.currentManifest = result.manifest;
         this.notifyUpdateCallbacks();
+        
+        // Download any new banners after sync
+        await this.downloadNewBanners();
       } else {
         console.error("RendererLogoManifestService: Force sync failed:", result.error);
       }
@@ -98,6 +294,24 @@ class RendererLogoManifestService {
     } catch (error) {
       console.error("RendererLogoManifestService: Failed to trigger force sync:", error);
       return { success: false, error: error.message };
+    }
+  }
+
+  async sendStatusToAdminWeb(status) {
+    try {
+      if (this.mqttConnected && window.electronAPI) {
+        await window.electronAPI.sendMqttMessage({
+          topic: 'its/billboard/status',
+          message: {
+            ...status,
+            timestamp: Date.now(),
+            source: 'desktop-app',
+            manifest: this.currentManifest
+          }
+        });
+      }
+    } catch (error) {
+      console.error("RendererLogoManifestService: Failed to send status to admin-web:", error);
     }
   }
 
@@ -1374,7 +1588,36 @@ function CompanyLogo() {
       }
       clearLogoInterval();
       unsubscribeManifest();
+      
+      // Enhanced cleanup for real-time sync event listeners
+      if (typeof window !== "undefined") {
+        window.removeEventListener('manifestUpdated', handleManifestRefresh);
+        window.removeEventListener('bannerSyncComplete', handleManifestRefresh);
+        window.removeEventListener('admin-banner-updated', handleAdminBannerUpdate);
+      }
     };
+
+    // Enhanced real-time event handlers for admin-web sync
+    function handleManifestRefresh() {
+      console.log("CompanyLogo: Admin triggered manifest refresh, reloading...");
+      if (GlobalLogoManifestServiceManager) {
+        GlobalLogoManifestServiceManager.forceRefresh();
+      }
+    }
+
+    function handleAdminBannerUpdate(event) {
+      console.log("CompanyLogo: Admin banner update event received:", event.detail);
+      // Force immediate re-render with new banners
+      setCurrentLogoIndex(0);
+      handleManifestRefresh();
+    }
+
+    // Listen for admin-web remote sync events
+    if (typeof window !== "undefined") {
+      window.addEventListener('manifestUpdated', handleManifestRefresh);
+      window.addEventListener('bannerSyncComplete', handleManifestRefresh);
+      window.addEventListener('admin-banner-updated', handleAdminBannerUpdate);
+    }
   }, []);
 
   useEffect(() => {
@@ -1469,10 +1712,17 @@ function CompanyLogo() {
   };
 
   const renderCustomLogo = (logo) => {
-    // Use different path resolution for manifest vs local logos
-    const logoSrc = logo.source === 'github_cdn' 
-      ? `file://${path.resolve(logo.path)}`  // Use absolute path for downloaded logos
-      : `file://${logo.path}`;  // Use original path for local logos
+    // Enhanced path resolution with multiple fallbacks for remote sync
+    let logoSrc;
+    
+    if (logo.source === 'github_cdn') {
+      // Try local downloaded file first
+      const localPath = path.resolve(`./downloads/logos/${logo.filename}`);
+      logoSrc = `file://${localPath}`;
+    } else {
+      // Local logo files
+      logoSrc = `file://${logo.path}`;
+    }
       
     return React.createElement("img", {
       src: logoSrc,
@@ -1483,21 +1733,40 @@ function CompanyLogo() {
         objectFit: "cover",
         objectPosition: "center",
         borderRadius: "0",
+        transition: "opacity 0.3s ease-in-out" // Smooth transitions for remote updates
       },
       onError: (e) => {
         console.error("Failed to load logo:", logo.path, "Source:", logo.source);
-        // Fallback to HTTP URL for GitHub CDN logos
+        
+        // Enhanced fallback strategy for GitHub CDN logos
         if (logo.source === 'github_cdn') {
-          const manifest = GlobalLogoManifestServiceManager.getCurrentManifest();
-          const manifestLogo = manifest?.logos.find(l => l.id === logo.id);
-          if (manifestLogo) {
-            console.log("Trying fallback URL:", manifestLogo.url);
-            e.target.src = manifestLogo.url;
+          if (logo.url && !e.target.src.includes('http')) {
+            // First fallback: try direct HTTP URL from GitHub CDN
+            console.log("CompanyLogo: Trying direct CDN URL fallback:", logo.url);
+            e.target.src = logo.url;
             return;
+          } else {
+            // Second fallback: try to find URL from current manifest
+            const manifest = GlobalLogoManifestServiceManager.getCurrentManifest();
+            const manifestLogo = manifest?.logos.find(l => l.id === logo.id);
+            if (manifestLogo && manifestLogo.url && !e.target.src.includes(manifestLogo.url)) {
+              console.log("CompanyLogo: Trying manifest URL fallback:", manifestLogo.url);
+              e.target.src = manifestLogo.url;
+              return;
+            }
           }
         }
+        
+        // Final fallback: hide image and show default logo
+        console.warn("CompanyLogo: All fallbacks failed, hiding banner");
         e.target.style.display = "none";
       },
+      onLoad: () => {
+        // Log successful banner load from remote admin-web
+        if (logo.source === 'github_cdn') {
+          console.log(`CompanyLogo: Successfully loaded remote banner: ${logo.name}`);
+        }
+      }
     });
   };
 

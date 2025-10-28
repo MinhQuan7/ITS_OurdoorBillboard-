@@ -990,8 +990,57 @@ class BillboardConfigManager {
     this.config.logoImages.forEach((logo, index) => {
       const logoItem = document.createElement("div");
       logoItem.className = "logo-item";
+
+      // Fix path resolution for downloaded files
+      let logoSrc = logo.path;
+      console.log(
+        `Config: Processing logo ${logo.name}, original path: ${logo.path}, source: ${logo.source}`
+      );
+
+      if (logo.source === "github_cdn" && logo.path) {
+        // Convert Windows backslash to forward slash, then create absolute path
+        const normalizedPath = logo.path.replace(/\\/g, "/");
+        // Check if it's a relative path and make it absolute
+        if (
+          !normalizedPath.startsWith("/") &&
+          !normalizedPath.match(/^[A-Za-z]:/)
+        ) {
+          logoSrc = `file:///f:/EoH Company/ITS_OurdoorScreen/${normalizedPath}`;
+        } else {
+          logoSrc = `file:///${normalizedPath}`;
+        }
+        console.log(`Config: GitHub CDN logo converted to: ${logoSrc}`);
+      } else if (
+        logo.path &&
+        !logo.path.startsWith("data:") &&
+        !logo.path.startsWith("http")
+      ) {
+        // For local files, ensure proper file:// protocol
+        const normalizedPath = logo.path.replace(/\\/g, "/");
+        if (
+          !normalizedPath.startsWith("/") &&
+          !normalizedPath.match(/^[A-Za-z]:/)
+        ) {
+          logoSrc = `file:///f:/EoH Company/ITS_OurdoorScreen/${normalizedPath}`;
+        } else {
+          logoSrc = `file:///${normalizedPath}`;
+        }
+        console.log(`Config: Local logo converted to: ${logoSrc}`);
+      }
+
       logoItem.innerHTML = `
-                <img src="${logo.path}" alt="${logo.name}" />
+                <img src="${logoSrc}" alt="${logo.name}" 
+                     onerror="
+                       console.error('Config: Failed to load logo:', '${logoSrc}'); 
+                       if (this.src !== './assets/imgs/${logo.name}') {
+                         console.log('Config: Trying assets fallback for:', '${logo.name}');
+                         this.src = './assets/imgs/${logo.name}';
+                       } else {
+                         this.style.display='none'; 
+                         this.nextElementSibling.textContent='${logo.name} (Load Failed)';
+                       }
+                     "
+                     onload="console.log('Config: Logo loaded successfully:', '${logoSrc}')" />
                 <p style="font-size: 12px; margin-top: 5px; word-break: break-all;">${logo.name}</p>
                 <button class="remove-btn" onclick="configManager.removeLogo(${index})">×</button>
             `;

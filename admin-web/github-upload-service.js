@@ -6,18 +6,21 @@
 
 class GitHubUploadService {
   constructor() {
+    // Use configuration from github-config.js
     this.config = {
-      owner: "mquan-eoh",
-      repo: "billboard-logos-cdn",
-      branch: "main",
-      apiEndpoint: "https://api.github.com",
-      uploadPath: "logos/",
+      owner: window.GitHubConfig?.repository?.owner || "MQuan-eoh",
+      repo: window.GitHubConfig?.repository?.repo || "billboard-logos-cdn",
+      branch: window.GitHubConfig?.repository?.branch || "main",
+      apiEndpoint:
+        window.GitHubConfig?.api?.endpoint || "https://api.github.com",
+      uploadPath: window.GitHubConfig?.repository?.uploadPath || "logos/",
     };
 
     this.token = null;
     this.isAuthenticated = false;
+    this.authenticatedUser = null;
 
-    console.log("GitHubUploadService: Initialized");
+    console.log("GitHubUploadService: Initialized with config:", this.config);
   }
 
   /**
@@ -27,11 +30,15 @@ class GitHubUploadService {
     try {
       this.token = token;
 
-      // Test authentication
+      // Test authentication and auto-correct owner if needed
       const authTest = await this.testAuthentication();
       if (authTest) {
         this.isAuthenticated = true;
         console.log("GitHubUploadService: Authentication successful");
+        console.log(
+          "GitHubUploadService: Using repository:",
+          `${this.config.owner}/${this.config.repo}`
+        );
         return true;
       } else {
         console.error("GitHubUploadService: Authentication failed");
@@ -65,39 +72,197 @@ class GitHubUploadService {
 
       if (response.ok) {
         const userData = await response.json();
+        this.authenticatedUser = userData;
         console.log("GitHubUploadService: Authenticated user:", userData.login);
 
-        // Test repository access
-        const repoResponse = await fetch(
-          `${this.config.apiEndpoint}/repos/${this.config.owner}/${this.config.repo}`,
-          {
-            headers: {
-              Authorization: `token ${this.token}`,
-              Accept: "application/vnd.github.v3+json",
-            },
-          }
-        );
+        // Check if authenticated user can access the configured repository
+        console.log("GitHubUploadService: Testing repository access...");
+        const repoAccess = await this.testRepositoryAccess();
 
-        console.log(
-          "GitHubUploadService: Repository access status:",
-          repoResponse.status
-        );
+        if (repoAccess.success) {
+          console.log("GitHubUploadService: Repository access confirmed");
+          return true;
+        } else {
+          console.log(
+            "GitHubUploadService: Repository access denied, trying alternatives..."
+          );
 
-        if (repoResponse.status === 404) {
-          console.warn(
-            `GitHubUploadService: Repository ${this.config.owner}/${this.config.repo} not found. Please create it first.`
-          );
-          throw new Error(
-            `Repository ${this.config.owner}/${this.config.repo} not found. Please create the repository first.`
-          );
+          // Try alternative repositories or create new one
+          const fallbackSuccess = await this.handleRepositoryFallback();
+          return fallbackSuccess;
         }
-
-        return response.ok && repoResponse.ok;
       }
 
       return response.ok;
     } catch (error) {
       console.error("GitHubUploadService: Auth test failed:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Test repository access
+   */
+  async testRepositoryAccess() {
+    try {
+      const repoResponse = await fetch(
+        `${this.config.apiEndpoint}/repos/${this.config.owner}/${this.config.repo}`,
+        {
+          headers: {
+            Authorization: `token ${this.token}`,
+            Accept: "application/vnd.github.v3+json",
+          },
+        }
+      );
+
+      console.log(
+        "GitHubUploadService: Repository access status:",
+        repoResponse.status
+      );
+
+      if (repoResponse.ok) {
+        return { success: true, status: repoResponse.status };
+      } else {
+        const errorData = await repoResponse.json().catch(() => ({}));
+        return {
+          success: false,
+          status: repoResponse.status,
+          error: errorData.message || repoResponse.statusText,
+        };
+      }
+    } catch (error) {
+      console.error(
+        "GitHubUploadService: Repository access test failed:",
+        error
+      );
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Handle repository fallback - try alternatives or create new
+   */
+  async handleRepositoryFallback() {
+    // If authenticated user is different from configured owner, try user's own repo
+    if (
+      this.authenticatedUser &&
+      this.authenticatedUser.login !== this.config.owner
+    ) {
+      console.log(
+        `GitHubUploadService: Trying user's own repository: ${this.authenticatedUser.login}/${this.config.repo}`
+      );
+
+      const originalOwner = this.config.owner;
+      this.config.owner = this.authenticatedUser.login;
+
+      const userRepoAccess = await this.testRepositoryAccess();
+
+      if (userRepoAccess.success) {
+        console.log("GitHubUploadService: Using user's repository");
+        // Update config
+        if (window.GitHubConfig) {
+          window.GitHubConfig.repository.owner = this.authenticatedUser.login;
+          window.GitHubConfig.api.cdnEndpoint = `https://${this.authenticatedUser.login}.github.io/${this.config.repo}`;
+        }
+        return true;
+      } else if (userRepoAccess.status === 404) {
+        // Try to create repository
+        console.log("GitHubUploadService: Attempting to create repository...");
+        const createSuccess = await this.createRepository();
+        if (createSuccess) {
+          return true;
+        }
+      }
+
+      // Restore original owner if user repo doesn't work
+      this.config.owner = originalOwner;
+    }
+
+    // Show clear error message
+    throw new Error(
+      `Cannot access repository ${this.config.owner}/${this.config.repo}. ` +
+        `The token for user '${this.authenticatedUser?.login}' does not have write access. ` +
+        `Please use the correct token for account '${this.config.owner}' or add '${this.authenticatedUser?.login}' as a collaborator.`
+    );
+  }
+
+  /**
+   * Create repository for authenticated user
+   */
+  async createRepository() {
+    try {
+      const createRepoResponse = await fetch(
+        `${this.config.apiEndpoint}/user/repos`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `token ${this.token}`,
+            Accept: "application/vnd.github.v3+json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: this.config.repo,
+            description: "Billboard logos CDN repository",
+            auto_init: true,
+            public: true,
+          }),
+        }
+      );
+
+      if (createRepoResponse.ok) {
+        console.log("GitHubUploadService: Repository created successfully");
+
+        // Enable GitHub Pages
+        await this.enableGitHubPages();
+
+        // Wait for repository to be ready
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        return true;
+      } else {
+        const createError = await createRepoResponse.json().catch(() => ({}));
+        console.error(
+          "GitHubUploadService: Repository creation failed:",
+          createError
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("GitHubUploadService: Error creating repository:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Enable GitHub Pages for the repository
+   */
+  async enableGitHubPages() {
+    try {
+      const pagesResponse = await fetch(
+        `${this.config.apiEndpoint}/repos/${this.config.owner}/${this.config.repo}/pages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `token ${this.token}`,
+            Accept: "application/vnd.github.v3+json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            source: {
+              branch: this.config.branch,
+            },
+          }),
+        }
+      );
+
+      if (pagesResponse.ok) {
+        console.log("GitHubUploadService: GitHub Pages enabled");
+        return true;
+      } else {
+        console.warn("GitHubUploadService: Could not enable GitHub Pages");
+        return false;
+      }
+    } catch (error) {
+      console.error("GitHubUploadService: Error enabling GitHub Pages:", error);
       return false;
     }
   }
@@ -188,11 +353,29 @@ class GitHubUploadService {
       );
 
       if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
+        const errorData = await uploadResponse.json().catch(() => ({
+          message: `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`,
+        }));
         console.error("GitHubUploadService: Upload error response:", errorData);
-        throw new Error(
-          `Upload failed: ${errorData.message || uploadResponse.statusText}`
-        );
+
+        // Provide more specific error messages
+        if (uploadResponse.status === 404) {
+          throw new Error(
+            `Repository or path not found. Please check if the repository '${this.config.owner}/${this.config.repo}' exists and you have write access.`
+          );
+        } else if (uploadResponse.status === 401) {
+          throw new Error(
+            "Authentication failed. Please check your GitHub token."
+          );
+        } else if (uploadResponse.status === 403) {
+          throw new Error(
+            "Access denied. Please check if you have write permissions to the repository."
+          );
+        } else {
+          throw new Error(
+            `Upload failed: ${errorData.message || uploadResponse.statusText}`
+          );
+        }
       }
 
       const uploadResult = await uploadResponse.json();
@@ -299,7 +482,10 @@ class GitHubUploadService {
 
       if (fileInfo) {
         const content = atob(fileInfo.content);
-        return JSON.parse(content);
+        const manifest = JSON.parse(content);
+
+        // Validate and fix manifest structure if needed
+        return this.validateAndFixManifest(manifest);
       } else {
         // Return default manifest
         return this.createDefaultManifest();
@@ -311,6 +497,44 @@ class GitHubUploadService {
       );
       return this.createDefaultManifest();
     }
+  }
+
+  /**
+   * Validate and fix manifest structure
+   */
+  validateAndFixManifest(manifest) {
+    const fixedManifest = { ...manifest };
+
+    // Ensure required properties exist
+    if (!fixedManifest.version) {
+      fixedManifest.version = `1.0.${Date.now()}`;
+    }
+
+    if (!fixedManifest.lastUpdated) {
+      fixedManifest.lastUpdated = new Date().toISOString();
+    }
+
+    if (!fixedManifest.logos || !Array.isArray(fixedManifest.logos)) {
+      fixedManifest.logos = [];
+    }
+
+    if (!fixedManifest.settings) {
+      fixedManifest.settings = {
+        logoMode: "loop",
+        logoLoopDuration: 30,
+        schedules: [],
+      };
+    }
+
+    if (!fixedManifest.metadata) {
+      fixedManifest.metadata = {
+        author: "Admin Web Interface",
+        description: "Billboard logo manifest",
+        apiVersion: "v1",
+      };
+    }
+
+    return fixedManifest;
   }
 
   /**
@@ -340,6 +564,11 @@ class GitHubUploadService {
   addLogoToManifest(manifest, logoMetadata) {
     const updatedManifest = { ...manifest };
 
+    // Ensure logos array exists
+    if (!updatedManifest.logos) {
+      updatedManifest.logos = [];
+    }
+
     // Remove existing logo with same ID if exists
     updatedManifest.logos = updatedManifest.logos.filter(
       (logo) => logo.id !== logoMetadata.id
@@ -354,6 +583,15 @@ class GitHubUploadService {
     // Update manifest metadata
     updatedManifest.version = `1.0.${Date.now()}`;
     updatedManifest.lastUpdated = new Date().toISOString();
+
+    // Ensure metadata object exists before setting properties
+    if (!updatedManifest.metadata) {
+      updatedManifest.metadata = {
+        author: "Admin Web Interface",
+        description: "Billboard logo manifest",
+        apiVersion: "v1",
+      };
+    }
     updatedManifest.metadata.lastModifiedBy = "Admin Web Interface";
 
     return updatedManifest;
@@ -496,34 +734,53 @@ class GitHubUploadService {
     try {
       console.log("GitHubUploadService: Triggering deployment workflow...");
 
-      const response = await fetch(
-        `${this.config.apiEndpoint}/repos/${this.config.owner}/${this.config.repo}/actions/workflows/deploy-manifest.yml/dispatches`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `token ${this.token}`,
-            Accept: "application/vnd.github.v3+json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ref: this.config.branch,
-            inputs: {
-              force_rebuild: "true",
-            },
-          }),
-        }
-      );
+      // Try different workflow file names
+      const workflowNames = [
+        "jekyll-gh-pages.yml",
+        "deploy-manifest.yml",
+        "pages-build-deployment",
+      ];
 
-      if (response.ok) {
-        console.log("GitHubUploadService: Workflow triggered successfully");
-        return true;
-      } else {
-        console.warn(
-          "GitHubUploadService: Workflow trigger failed:",
-          response.statusText
+      for (const workflowName of workflowNames) {
+        console.log(`GitHubUploadService: Trying workflow: ${workflowName}`);
+
+        const response = await fetch(
+          `${this.config.apiEndpoint}/repos/${this.config.owner}/${this.config.repo}/actions/workflows/${workflowName}/dispatches`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `token ${this.token}`,
+              Accept: "application/vnd.github.v3+json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ref: this.config.branch,
+              inputs: {
+                force_rebuild: "true",
+              },
+            }),
+          }
         );
-        return false;
+
+        if (response.ok) {
+          console.log(
+            `GitHubUploadService: Workflow '${workflowName}' triggered successfully`
+          );
+          return true;
+        } else if (response.status !== 404) {
+          console.warn(
+            `GitHubUploadService: Workflow '${workflowName}' trigger failed:`,
+            response.status,
+            response.statusText
+          );
+        }
       }
+
+      // If all workflows fail, just log warning and continue
+      console.warn(
+        "GitHubUploadService: No suitable workflow found, GitHub Pages will auto-deploy on push"
+      );
+      return false;
     } catch (error) {
       console.error("GitHubUploadService: Error triggering workflow:", error);
       return false;

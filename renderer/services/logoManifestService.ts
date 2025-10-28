@@ -377,6 +377,59 @@ class LogoManifestService {
   }
 
   /**
+   * Download a single banner by URL and filename (for renderer process)
+   */
+  public async downloadSingleBanner(
+    url: string,
+    filename: string
+  ): Promise<string | null> {
+    try {
+      const axios = require("axios");
+      const fs = require("fs");
+      const path = require("path");
+
+      const localPath = path.join(this.config.downloadPath, filename);
+
+      // Ensure directory exists
+      const dir = path.dirname(localPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      // Download file
+      const response = await axios({
+        method: "GET",
+        url: url,
+        responseType: "stream",
+        timeout: 30000,
+      });
+
+      // Save to local file
+      const writer = fs.createWriteStream(localPath);
+      response.data.pipe(writer);
+
+      return new Promise((resolve, reject) => {
+        writer.on("finish", () => {
+          console.log(
+            `LogoManifestService: Banner downloaded successfully: ${localPath}`
+          );
+          resolve(localPath);
+        });
+        writer.on("error", (error: any) => {
+          console.error("LogoManifestService: Banner download error:", error);
+          reject(error);
+        });
+      });
+    } catch (error) {
+      console.error(
+        `LogoManifestService: Error downloading banner from ${url}:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
    * Get local path for logo file
    */
   private getLocalLogoPath(logo: LogoItem): string {

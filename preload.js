@@ -69,4 +69,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("logo-manifest-updated", callback),
   removeLogoManifestListener: () =>
     ipcRenderer.removeAllListeners("logo-manifest-updated"),
+
+  // Banner download operations
+  downloadBanner: (url, filename) =>
+    ipcRenderer.invoke("download-banner", url, filename),
 });

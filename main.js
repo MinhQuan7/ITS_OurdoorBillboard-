@@ -441,6 +441,60 @@ class LogoManifestService {
       manifestUrl: this.manifestUrl,
     };
   }
+
+  /**
+   * Download a single banner by URL and filename (for renderer process requests)
+   */
+  async downloadSingleBanner(url, filename) {
+    try {
+      const axios = require("axios");
+      const fs = require("fs");
+      const path = require("path");
+
+      console.log(
+        `LogoManifestService: Downloading banner from ${url} as ${filename}`
+      );
+
+      // Ensure download directory exists
+      const logoDir = path.join(this.downloadPath, "logos");
+      if (!fs.existsSync(logoDir)) {
+        fs.mkdirSync(logoDir, { recursive: true });
+      }
+
+      const localPath = path.join(logoDir, filename);
+
+      // Download file
+      const response = await axios({
+        method: "GET",
+        url: url,
+        responseType: "stream",
+        timeout: 30000,
+      });
+
+      // Save to local file
+      const writer = fs.createWriteStream(localPath);
+      response.data.pipe(writer);
+
+      return new Promise((resolve, reject) => {
+        writer.on("finish", () => {
+          console.log(
+            `LogoManifestService: Banner downloaded successfully: ${localPath}`
+          );
+          resolve(localPath);
+        });
+        writer.on("error", (error) => {
+          console.error("LogoManifestService: Banner download error:", error);
+          reject(error);
+        });
+      });
+    } catch (error) {
+      console.error(
+        `LogoManifestService: Error downloading banner from ${url}:`,
+        error
+      );
+      throw error;
+    }
+  }
 }
 
 /**
@@ -723,7 +777,9 @@ class MainProcessMqttService {
       // Set connection timeout
       this.connectionTimer = setTimeout(() => {
         console.log("MainProcessMqttService: ❌ Connection timeout");
-        this.client.end();
+        if (this.client) {
+          this.client.end();
+        }
         this.updateConnectionStatus("timeout");
       }, 20000);
 
@@ -748,7 +804,9 @@ class MainProcessMqttService {
           "MainProcessMqttService: ❌ Connection error:",
           error.message
         );
-        this.client.end();
+        if (this.client) {
+          this.client.end();
+        }
         this.updateConnectionStatus("error", error.message);
       });
 
@@ -1451,4 +1509,21 @@ ipcMain.handle("refresh-era-iot-connection", async () => {
     return { success: true };
   }
   return { success: false, message: "MQTT service not initialized" };
+});
+
+// Banner download handler for renderer process
+ipcMain.handle("download-banner", async (event, bannerData) => {
+  if (logoManifestService) {
+    try {
+      const result = await logoManifestService.downloadSingleBanner(
+        bannerData.url,
+        bannerData.filename
+      );
+      return { success: true, filePath: result };
+    } catch (error) {
+      console.error("Main: Failed to download banner:", error);
+      return { success: false, error: error.message };
+    }
+  }
+  return { success: false, error: "Logo manifest service not available" };
 });
