@@ -57,4 +57,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("auth-token-updated", callback),
   // Convenience method: return parsed gateway token (without the "Token " prefix)
   getGatewayToken: () => ipcRenderer.invoke("get-gateway-token"),
+
+  // Logo Manifest Service handlers (GitHub CDN Integration)
+  getLogoManifest: () => ipcRenderer.invoke("get-logo-manifest"),
+  forceSyncManifest: () => ipcRenderer.invoke("force-sync-manifest"),
+  getManifestStatus: () => ipcRenderer.invoke("get-manifest-status"),
+  restartManifestService: () => ipcRenderer.invoke("restart-manifest-service"),
+
+  // Logo Manifest event listeners
+  onLogoManifestUpdated: (callback) =>
+    ipcRenderer.on("logo-manifest-updated", callback),
+  removeLogoManifestListener: () =>
+    ipcRenderer.removeAllListeners("logo-manifest-updated"),
 });

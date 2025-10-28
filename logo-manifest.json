@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-27T12:00:00Z",
+  "logos": [
+    {
+      "id": "logo-001",
+      "name": "Company Main Logo",
+      "url": "https://raw.githubusercontent.com/MinhQuan7/ITS_OurdoorBillboard-/main/logos/company-logo.png",
+      "filename": "company-logo.png",
+      "size": 25600,
+      "type": "image/png",
+      "checksum": "abc123def456",
+      "priority": 1,
+      "active": true,
+      "uploadedAt": "2025-10-27T11:30:00Z"
+    },
+    {
+      "id": "logo-002",
+      "name": "EoH Era Banner",
+      "url": "https://raw.githubusercontent.com/MinhQuan7/ITS_OurdoorBillboard-/main/logos/eoh-era-banner.png",
+      "filename": "eoh-era-banner.png",
+      "size": 48200,
+      "type": "image/png",
+      "checksum": "def456ghi789",
+      "priority": 2,
+      "active": true,
+      "uploadedAt": "2025-10-27T11:45:00Z"
+    },
+    {
+      "id": "logo-003",
+      "name": "Promotional Banner",
+      "url": "https://raw.githubusercontent.com/MinhQuan7/ITS_OurdoorBillboard-/main/logos/promo-banner.jpg",
+      "filename": "promo-banner.jpg",
+      "size": 35800,
+      "type": "image/jpeg",
+      "checksum": "ghi789jkl012",
+      "priority": 3,
+      "active": false,
+      "uploadedAt": "2025-10-27T10:15:00Z"
+    }
+  ],
+  "settings": {
+    "logoMode": "loop",
+    "logoLoopDuration": 8,
+    "schedules": [
+      {
+        "time": "09:00",
+        "logoId": "logo-001",
+        "days": "weekdays"
+      },
+      {
+        "time": "12:00",
+        "logoId": "logo-002",
+        "days": "daily"
+      }
+    ]
+  }
+}

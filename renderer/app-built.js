@@ -4,6 +4,199 @@
 // Import React from CDN (already loaded in HTML)
 const { useState, useEffect, useRef } = React;
 
+// Logo Manifest Service for GitHub CDN Integration (Renderer Side)
+class RendererLogoManifestService {
+  constructor() {
+    this.currentManifest = null;
+    this.isInitialized = false;
+    this.updateCallbacks = [];
+    
+    console.log("RendererLogoManifestService: Initialized");
+  }
+
+  async initialize() {
+    try {
+      console.log("RendererLogoManifestService: Starting initialization...");
+      
+      // Setup IPC listeners for manifest updates from main process
+      this.setupIpcListeners();
+      
+      // Get initial manifest from main process
+      await this.fetchInitialManifest();
+      
+      this.isInitialized = true;
+      console.log("RendererLogoManifestService: Initialized successfully");
+      
+      return true;
+    } catch (error) {
+      console.error("RendererLogoManifestService: Initialization failed:", error);
+      return false;
+    }
+  }
+
+  setupIpcListeners() {
+    if (!window.electronAPI) {
+      console.error("RendererLogoManifestService: electronAPI not available");
+      return;
+    }
+
+    // Listen for manifest updates from main process
+    window.electronAPI.onLogoManifestUpdated((event, data) => {
+      console.log("RendererLogoManifestService: Received manifest update from main process:", data);
+      this.currentManifest = data.manifest;
+      this.notifyUpdateCallbacks();
+    });
+
+    console.log("RendererLogoManifestService: IPC listeners established");
+  }
+
+  async fetchInitialManifest() {
+    if (!window.electronAPI) {
+      throw new Error("electronAPI not available");
+    }
+
+    try {
+      const manifest = await window.electronAPI.getLogoManifest();
+      if (manifest) {
+        console.log("RendererLogoManifestService: Retrieved initial manifest from main process:", {
+          version: manifest.version,
+          logoCount: manifest.logos?.length || 0
+        });
+        this.currentManifest = manifest;
+        this.notifyUpdateCallbacks();
+      } else {
+        console.log("RendererLogoManifestService: No initial manifest available from main process");
+      }
+    } catch (error) {
+      console.error("RendererLogoManifestService: Failed to fetch initial manifest:", error);
+      throw error;
+    }
+  }
+
+  getCurrentManifest() {
+    return this.currentManifest;
+  }
+
+  async forceSync() {
+    console.log("RendererLogoManifestService: Force sync requested...");
+    
+    if (!window.electronAPI) {
+      console.error("RendererLogoManifestService: electronAPI not available for force sync");
+      return { success: false, error: "electronAPI not available" };
+    }
+
+    try {
+      const result = await window.electronAPI.forceSyncManifest();
+      if (result.success) {
+        console.log("RendererLogoManifestService: Force sync successful");
+        this.currentManifest = result.manifest;
+        this.notifyUpdateCallbacks();
+      } else {
+        console.error("RendererLogoManifestService: Force sync failed:", result.error);
+      }
+      return result;
+    } catch (error) {
+      console.error("RendererLogoManifestService: Failed to trigger force sync:", error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getStatus() {
+    if (!window.electronAPI) {
+      return { enabled: false, error: "electronAPI not available" };
+    }
+
+    try {
+      return await window.electronAPI.getManifestStatus();
+    } catch (error) {
+      console.error("RendererLogoManifestService: Failed to get status:", error);
+      return { enabled: false, error: error.message };
+    }
+  }
+
+  onManifestUpdate(callback) {
+    this.updateCallbacks.push(callback);
+
+    // Immediately call with current manifest if available
+    if (this.currentManifest) {
+      try {
+        callback(this.currentManifest);
+      } catch (error) {
+        console.error("RendererLogoManifestService: Error in initial manifest callback:", error);
+      }
+    }
+
+    return () => {
+      const index = this.updateCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.updateCallbacks.splice(index, 1);
+      }
+    };
+  }
+
+  notifyUpdateCallbacks() {
+    if (!this.currentManifest) return;
+
+    this.updateCallbacks.forEach((callback) => {
+      try {
+        callback(this.currentManifest);
+      } catch (error) {
+        console.error("RendererLogoManifestService: Error in manifest update callback:", error);
+      }
+    });
+  }
+
+  destroy() {
+    this.currentManifest = null;
+    this.updateCallbacks = [];
+    this.isInitialized = false;
+    console.log("RendererLogoManifestService: Destroyed");
+  }
+}
+
+// Global Logo Manifest Service Manager
+class GlobalLogoManifestServiceManager {
+  static instance = null;
+  
+  static getInstance() {
+    if (!GlobalLogoManifestServiceManager.instance) {
+      console.log("Creating global logo manifest service");
+      GlobalLogoManifestServiceManager.instance = new RendererLogoManifestService();
+      
+      // Initialize the service
+      GlobalLogoManifestServiceManager.instance.initialize().then(success => {
+        if (success) {
+          console.log("Global logo manifest service initialized successfully");
+        } else {
+          console.error("Failed to initialize global logo manifest service");
+        }
+      });
+    }
+    
+    return GlobalLogoManifestServiceManager.instance;
+  }
+  
+  static subscribe(callback) {
+    const instance = GlobalLogoManifestServiceManager.getInstance();
+    return instance.onManifestUpdate(callback);
+  }
+  
+  static async forceSync() {
+    const instance = GlobalLogoManifestServiceManager.getInstance();
+    return await instance.forceSync();
+  }
+  
+  static getCurrentManifest() {
+    const instance = GlobalLogoManifestServiceManager.getInstance();
+    return instance.getCurrentManifest();
+  }
+  
+  static async getStatus() {
+    const instance = GlobalLogoManifestServiceManager.getInstance();
+    return await instance.getStatus();
+  }
+}
+
 // Weather Icons System - Using Custom Image Files
 const WeatherIcons = {
   CLEAR_DAY: "../assets/imgs/sun.png",
@@ -1110,15 +1303,18 @@ function WeatherPanel({ className = "", eraIotService = null }) {
 
 // IoTPanel removed - integrated into unified WeatherPanel
 
-// CompanyLogo Component (functional version with hooks and proper hot reload)
+// CompanyLogo Component (Enhanced with GitHub CDN Manifest Support)
 function CompanyLogo() {
   const [config, setConfig] = useState(null);
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
+  const [manifestLogos, setManifestLogos] = useState([]);
+  const [useManifestLogos, setUseManifestLogos] = useState(false);
   const intervalRef = useRef(null);
 
   useEffect(() => {
     loadConfig();
     
+    // Setup config hot-reload listeners
     if (window.electronAPI && window.electronAPI.onConfigUpdated) {
       window.electronAPI.onConfigUpdated((event, newConfig) => {
         console.log("CompanyLogo: Config hot-reload received:", {
@@ -1141,19 +1337,50 @@ function CompanyLogo() {
         }));
       });
     }
+
+    // Setup manifest service subscription
+    const unsubscribeManifest = GlobalLogoManifestServiceManager.subscribe((manifest) => {
+      console.log("CompanyLogo: Received manifest update:", {
+        version: manifest.version,
+        logoCount: manifest.logos?.length || 0
+      });
+      
+      // Convert manifest logos to local format
+      const logos = manifest.logos
+        .filter(logo => logo.active)
+        .sort((a, b) => a.priority - b.priority)
+        .map(logo => ({
+          name: logo.name,
+          path: `./downloads/logos/${logo.filename}`, // Use downloaded path
+          size: logo.size,
+          type: logo.type,
+          id: logo.id,
+          source: 'github_cdn',
+          checksum: logo.checksum,
+        }));
+      
+      setManifestLogos(logos);
+      
+      // Use manifest logos if available and no local logos
+      if (logos.length > 0 && (!config?.logoImages || config.logoImages.length === 0)) {
+        console.log("CompanyLogo: Using manifest logos as primary source");
+        setUseManifestLogos(true);
+      }
+    });
     
     return () => {
       if (window.electronAPI && window.electronAPI.removeConfigListener) {
         window.electronAPI.removeConfigListener();
       }
       clearLogoInterval();
+      unsubscribeManifest();
     };
   }, []);
 
   useEffect(() => {
     clearLogoInterval();
     startLogoRotation();
-  }, [config]);
+  }, [config, manifestLogos, useManifestLogos]);
 
   const clearLogoInterval = () => {
     if (intervalRef.current) {
@@ -1181,56 +1408,74 @@ function CompanyLogo() {
   };
 
   const startLogoRotation = () => {
-    if (config && config.logoMode === "loop" && config.logoImages && config.logoImages.length > 1) {
-      const duration = (config.logoLoopDuration || 5) * 1000;
+    const activeLogos = getActiveLogos();
+    const mode = config?.logoMode || 'fixed';
+    
+    if (mode === "loop" && activeLogos && activeLogos.length > 1) {
+      const duration = (config?.logoLoopDuration || 5) * 1000;
       
-      console.log(`CompanyLogo: Starting logo rotation with ${duration}ms interval (${config.logoLoopDuration}s)`);
+      console.log(`CompanyLogo: Starting logo rotation with ${duration}ms interval (${config?.logoLoopDuration || 5}s)`);
+      console.log(`CompanyLogo: Using ${useManifestLogos ? 'manifest' : 'local'} logos (${activeLogos.length} total)`);
       
       intervalRef.current = setInterval(() => {
         setCurrentLogoIndex(prev => {
-          const newIndex = (prev + 1) % config.logoImages.length;
-          console.log(`CompanyLogo: Switching to logo ${newIndex + 1}/${config.logoImages.length}`);
+          const newIndex = (prev + 1) % activeLogos.length;
+          console.log(`CompanyLogo: Switching to logo ${newIndex + 1}/${activeLogos.length} (${useManifestLogos ? 'manifest' : 'local'})`);
           return newIndex;
         });
       }, duration);
     } else {
-      console.log("CompanyLogo: Logo rotation not applicable - mode:", config?.logoMode, "images:", config?.logoImages?.length);
+      console.log("CompanyLogo: Logo rotation not applicable - mode:", mode, "logos:", activeLogos?.length);
     }
+  };
+
+  const getActiveLogos = () => {
+    if (useManifestLogos && manifestLogos.length > 0) {
+      return manifestLogos;
+    }
+    return config?.logoImages || [];
   };
 
   const getCurrentLogo = () => {
-    if (!config || !config.logoImages || config.logoImages.length === 0) {
+    const activeLogos = getActiveLogos();
+    
+    if (!activeLogos || activeLogos.length === 0) {
       return null;
     }
 
-    switch (config.logoMode) {
+    switch (config?.logoMode || 'fixed') {
       case "fixed":
-        return config.logoImages[0];
+        return activeLogos[0];
       case "loop":
-        return config.logoImages[currentLogoIndex % config.logoImages.length];
+        return activeLogos[currentLogoIndex % activeLogos.length];
       case "scheduled":
-        return getScheduledLogo();
+        return getScheduledLogo(activeLogos);
       default:
-        return config.logoImages[0];
+        return activeLogos[0];
     }
   };
 
-  const getScheduledLogo = () => {
+  const getScheduledLogo = (activeLogos) => {
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
 
-    const matchingSchedule = config.schedules?.find(schedule => schedule.time === currentTime);
+    const matchingSchedule = config?.schedules?.find(schedule => schedule.time === currentTime);
 
-    if (matchingSchedule && config.logoImages[matchingSchedule.logoIndex]) {
-      return config.logoImages[matchingSchedule.logoIndex];
+    if (matchingSchedule && activeLogos[matchingSchedule.logoIndex]) {
+      return activeLogos[matchingSchedule.logoIndex];
     }
 
-    return config.logoImages[0];
+    return activeLogos[0];
   };
 
   const renderCustomLogo = (logo) => {
+    // Use different path resolution for manifest vs local logos
+    const logoSrc = logo.source === 'github_cdn' 
+      ? `file://${path.resolve(logo.path)}`  // Use absolute path for downloaded logos
+      : `file://${logo.path}`;  // Use original path for local logos
+      
     return React.createElement("img", {
-      src: `file://${logo.path}`,
+      src: logoSrc,
       alt: logo.name,
       style: {
         width: "100%",
@@ -1240,7 +1485,17 @@ function CompanyLogo() {
         borderRadius: "0",
       },
       onError: (e) => {
-        console.error("Failed to load logo:", logo.path);
+        console.error("Failed to load logo:", logo.path, "Source:", logo.source);
+        // Fallback to HTTP URL for GitHub CDN logos
+        if (logo.source === 'github_cdn') {
+          const manifest = GlobalLogoManifestServiceManager.getCurrentManifest();
+          const manifestLogo = manifest?.logos.find(l => l.id === logo.id);
+          if (manifestLogo) {
+            console.log("Trying fallback URL:", manifestLogo.url);
+            e.target.src = manifestLogo.url;
+            return;
+          }
+        }
         e.target.style.display = "none";
       },
     });
@@ -1296,6 +1551,7 @@ function CompanyLogo() {
   };
 
   const currentLogo = getCurrentLogo();
+  const activeLogos = getActiveLogos();
 
   return React.createElement("div", {
     style: {
@@ -1306,8 +1562,32 @@ function CompanyLogo() {
       justifyContent: "center",
       position: "relative",
       overflow: "hidden",
+    },
+    onClick: async () => {
+      // Debug click - force sync manifest
+      console.log("CompanyLogo: Debug click - forcing manifest sync...");
+      const result = await GlobalLogoManifestServiceManager.forceSync();
+      console.log("CompanyLogo: Force sync result:", result);
     }
-  }, currentLogo ? renderCustomLogo(currentLogo) : renderDefaultLogo());
+  }, [
+    currentLogo ? renderCustomLogo(currentLogo) : renderDefaultLogo(),
+    
+    // Debug overlay showing source
+    React.createElement("div", {
+      key: "debug-overlay",
+      style: {
+        position: "absolute",
+        bottom: "2px",
+        right: "2px",
+        fontSize: "8px",
+        color: "rgba(255,255,255,0.5)",
+        background: "rgba(0,0,0,0.3)",
+        padding: "1px 3px",
+        borderRadius: "2px",
+        pointerEvents: "none",
+      }
+    }, `${useManifestLogos ? 'CDN' : 'Local'} (${activeLogos.length})`)
+  ]);
 }
 
 // E-Ra IoT Service Integration (IPC-based)

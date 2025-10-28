@@ -1,20 +1,7 @@
 {
-  "logoMode": "loop",
-  "logoImages": [
-    {
-      "name": "addSymbol_IndustrialDashboard.png",
-      "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\addSymbol_IndustrialDashboard.png",
-      "size": 0,
-      "type": "image/*"
-    },
-    {
-      "name": "EoH_ERa_Web-Banner_1920x800-1.png",
-      "path": "F:\\EoH Company\\ITS_OurdoorScreen\\assets\\imgs\\EoH_ERa_Web-Banner_1920x800-1.png",
-      "size": 0,
-      "type": "image/*"
-    }
-  ],
-  "logoLoopDuration": 1,
+  "logoMode": "scheduled",
+  "logoImages": [],
+  "logoLoopDuration": 20,
   "layoutPositions": {
     "weather": {
       "x": 0,
@@ -78,5 +65,15 @@
     },
     "downloadPath": "./downloads",
     "maxCacheSize": 100
-  }
+  },
+  "logoManifest": {
+    "enabled": true,
+    "manifestUrl": "https://mquan-eoh.github.io/billboard-logos-cdn/manifest.json",
+    "pollInterval": 10,
+    "downloadPath": "./downloads",
+    "maxCacheSize": 50,
+    "retryAttempts": 3,
+    "retryDelay": 2000
+  },
+  "_manifestVersion": "1.0.0"
 }

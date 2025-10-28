@@ -1,13 +1,14 @@
 // Configuration for Banner Management System
 const CONFIG = {
-  // Firebase Configuration (sẽ được setup sau)
-  firebase: {
-    apiKey: "your-firebase-api-key",
-    authDomain: "your-project.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "your-app-id",
+  // GitHub CDN Configuration (Primary upload system)
+  github: {
+    enabled: true,
+    owner: "mquan-eoh",
+    repo: "billboard-logos-cdn",
+    branch: "main",
+    apiEndpoint: "https://api.github.com",
+    cdnEndpoint: "https://mquan-eoh.github.io/billboard-logos-cdn",
+    uploadPath: "logos/",
   },
 
   // MQTT Configuration

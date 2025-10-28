@@ -1,6 +1,395 @@
 // app.js - JavaScript version of React App
 // Clean architecture using React components with proper logo management
 
+// ====================================
+// LOGO MANIFEST SERVICE (GitHub CDN Sync) - Phương án A Implementation
+// ====================================
+
+/**
+ * Logo Manifest Service - JavaScript Implementation
+ * Implements GitHub-based CDN sync for remote logo updates
+ * Features: Auto-polling, download caching, hot-reload integration
+ */
+class LogoManifestService {
+  constructor() {
+    this.config = null;
+    this.pollInterval = null;
+    this.isInitialized = false;
+    this.manifestCache = null;
+    this.lastFetchTime = 0;
+    this.retryCount = 0;
+
+    console.log("LogoManifestService: Constructor called");
+  }
+
+  async initialize(config) {
+    console.log("LogoManifestService: Initialize called with config:", config);
+
+    if (!config || !config.enabled) {
+      console.log("LogoManifestService: Service disabled or no config");
+      return false;
+    }
+
+    this.config = config;
+
+    try {
+      console.log("LogoManifestService: Starting service...");
+      console.log(`LogoManifestService: Manifest URL: ${config.manifestUrl}`);
+      console.log(
+        `LogoManifestService: Poll interval: ${config.pollInterval}s`
+      );
+
+      // Create download directory if needed
+      await this.ensureDownloadDirectory();
+
+      // Start polling
+      this.startPolling();
+
+      // Immediate first fetch
+      await this.fetchAndProcessManifest();
+
+      this.isInitialized = true;
+      console.log("LogoManifestService: ✅ Initialized successfully");
+      return true;
+    } catch (error) {
+      console.error("LogoManifestService: ❌ Initialization failed:", error);
+      return false;
+    }
+  }
+
+  async ensureDownloadDirectory() {
+    try {
+      if (window.electronAPI && window.electronAPI.ensureDirectory) {
+        await window.electronAPI.ensureDirectory(
+          this.config.downloadPath + "/logos"
+        );
+        console.log("LogoManifestService: Download directory ensured");
+      }
+    } catch (error) {
+      console.warn(
+        "LogoManifestService: Could not ensure download directory:",
+        error
+      );
+    }
+  }
+
+  startPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+
+    const intervalMs = (this.config.pollInterval || 30) * 1000;
+    console.log(`LogoManifestService: Starting polling every ${intervalMs}ms`);
+
+    this.pollInterval = setInterval(() => {
+      this.fetchAndProcessManifest();
+    }, intervalMs);
+  }
+
+  async fetchAndProcessManifest() {
+    console.log("LogoManifestService: Fetching manifest from CDN...");
+
+    try {
+      const manifest = await this.fetchManifest();
+
+      if (manifest) {
+        console.log("LogoManifestService: ✅ Manifest fetched successfully");
+        console.log(`LogoManifestService: Version: ${manifest.version}`);
+        console.log(
+          `LogoManifestService: Active logos: ${
+            manifest.logos.filter((l) => l.active).length
+          }`
+        );
+
+        // Check if manifest has changed
+        if (this.hasManifestChanged(manifest)) {
+          console.log(
+            "LogoManifestService: 🔄 Manifest has changed, processing updates..."
+          );
+
+          // Process logo downloads
+          await this.processLogoDownloads(manifest);
+
+          // Update local config
+          await this.updateLocalConfig(manifest);
+
+          // Cache new manifest
+          this.manifestCache = manifest;
+
+          // Trigger hot reload
+          this.triggerHotReload(manifest);
+
+          this.retryCount = 0;
+        } else {
+          console.log("LogoManifestService: No changes detected");
+        }
+
+        this.lastFetchTime = Date.now();
+      } else {
+        throw new Error("Manifest fetch returned null");
+      }
+    } catch (error) {
+      console.error("LogoManifestService: ❌ Fetch failed:", error);
+      this.retryCount++;
+
+      if (this.retryCount < (this.config.retryAttempts || 3)) {
+        console.log(
+          `LogoManifestService: Retrying in ${
+            this.config.retryDelay || 2000
+          }ms... (${this.retryCount}/${this.config.retryAttempts})`
+        );
+        setTimeout(() => {
+          this.fetchAndProcessManifest();
+        }, this.config.retryDelay || 2000);
+      }
+    }
+  }
+
+  async fetchManifest() {
+    const url = this.config.manifestUrl;
+    console.log(`LogoManifestService: Fetching from ${url}`);
+
+    try {
+      // Handle file:// URLs (local testing)
+      if (url.startsWith("file://")) {
+        if (window.electronAPI && window.electronAPI.readFile) {
+          const localPath = url.replace("file:///", "").replace(/%20/g, " ");
+          console.log(`LogoManifestService: Reading local file: ${localPath}`);
+          const content = await window.electronAPI.readFile(localPath);
+          return JSON.parse(content);
+        } else {
+          throw new Error("electronAPI.readFile not available for local file");
+        }
+      }
+
+      // Handle HTTP/HTTPS URLs
+      const response = await fetch(url, {
+        cache: "no-cache",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`LogoManifestService: Failed to fetch manifest:`, error);
+      return null;
+    }
+  }
+
+  hasManifestChanged(newManifest) {
+    if (!this.manifestCache) {
+      return true; // First time
+    }
+
+    return (
+      this.manifestCache.version !== newManifest.version ||
+      this.manifestCache.lastUpdated !== newManifest.lastUpdated
+    );
+  }
+
+  async processLogoDownloads(manifest) {
+    console.log("LogoManifestService: Processing logo downloads...");
+
+    const activeLogos = manifest.logos.filter((logo) => logo.active);
+
+    for (const logo of activeLogos) {
+      try {
+        await this.downloadLogoIfNeeded(logo);
+      } catch (error) {
+        console.error(
+          `LogoManifestService: Failed to download logo ${logo.name}:`,
+          error
+        );
+      }
+    }
+  }
+
+  async downloadLogoIfNeeded(logo) {
+    const localPath = `${this.config.downloadPath}/logos/${logo.filename}`;
+
+    try {
+      if (window.electronAPI && window.electronAPI.fileExists) {
+        const exists = await window.electronAPI.fileExists(localPath);
+
+        if (!exists) {
+          console.log(`LogoManifestService: Downloading ${logo.name}...`);
+          await this.downloadLogo(logo, localPath);
+        } else {
+          console.log(`LogoManifestService: Logo ${logo.name} already cached`);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `LogoManifestService: Download check failed for ${logo.name}:`,
+        error
+      );
+    }
+  }
+
+  async downloadLogo(logo, localPath) {
+    try {
+      const response = await fetch(logo.url);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+
+      if (window.electronAPI && window.electronAPI.writeFile) {
+        await window.electronAPI.writeFile(localPath, Buffer.from(arrayBuffer));
+        console.log(
+          `LogoManifestService: ✅ Downloaded ${logo.name} to ${localPath}`
+        );
+      } else {
+        throw new Error("electronAPI.writeFile not available");
+      }
+    } catch (error) {
+      console.error(
+        `LogoManifestService: Download failed for ${logo.name}:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  async updateLocalConfig(manifest) {
+    try {
+      if (
+        window.electronAPI &&
+        window.electronAPI.getConfig &&
+        window.electronAPI.updateConfig
+      ) {
+        const currentConfig = await window.electronAPI.getConfig();
+
+        // Convert manifest logos to config format
+        const logoImages = manifest.logos
+          .filter((logo) => logo.active)
+          .sort((a, b) => a.priority - b.priority)
+          .map((logo) => ({
+            name: logo.filename,
+            path: `${this.config.downloadPath}/logos/${logo.filename}`,
+            size: logo.size,
+            type: logo.type,
+            id: logo.id,
+          }));
+
+        const updatedConfig = {
+          ...currentConfig,
+          logoImages: logoImages,
+          logoMode: manifest.settings?.logoMode || "loop",
+          logoLoopDuration: manifest.settings?.logoLoopDuration || 30,
+        };
+
+        await window.electronAPI.updateConfig(updatedConfig);
+        console.log(
+          "LogoManifestService: ✅ Local config updated with manifest data"
+        );
+      }
+    } catch (error) {
+      console.error(
+        "LogoManifestService: Failed to update local config:",
+        error
+      );
+    }
+  }
+
+  triggerHotReload(manifest) {
+    console.log("LogoManifestService: 🔄 Triggering hot reload event");
+
+    const event = new CustomEvent("logo-manifest-updated", {
+      detail: {
+        manifest: manifest,
+        source: "logoManifestService",
+        timestamp: Date.now(),
+      },
+    });
+
+    window.dispatchEvent(event);
+    console.log("LogoManifestService: ✅ Hot reload event dispatched");
+  }
+
+  destroy() {
+    console.log("LogoManifestService: Destroying service...");
+
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+
+    this.isInitialized = false;
+    this.manifestCache = null;
+    console.log("LogoManifestService: ✅ Service destroyed");
+  }
+}
+
+// Global instance
+let globalLogoManifestService = null;
+
+// Initialize Logo Manifest Service when DOM is ready
+async function initializeLogoManifestService() {
+  console.log("Initializing Logo Manifest Service...");
+
+  try {
+    if (window.electronAPI && window.electronAPI.getConfig) {
+      const config = await window.electronAPI.getConfig();
+
+      if (config.logoManifest && config.logoManifest.enabled) {
+        console.log("Logo Manifest config found, starting service...");
+
+        // Cleanup existing service
+        if (globalLogoManifestService) {
+          globalLogoManifestService.destroy();
+        }
+
+        // Create and initialize new service
+        globalLogoManifestService = new LogoManifestService();
+        const initialized = await globalLogoManifestService.initialize(
+          config.logoManifest
+        );
+
+        if (initialized) {
+          console.log("✅ Logo Manifest Service started successfully");
+        } else {
+          console.warn("⚠️ Logo Manifest Service failed to initialize");
+        }
+      } else {
+        console.log("Logo Manifest Service disabled or not configured");
+      }
+    } else {
+      console.log("electronAPI not available for Logo Manifest Service");
+    }
+  } catch (error) {
+    console.error("Failed to initialize Logo Manifest Service:", error);
+  }
+}
+
+// Auto-initialize when page loads
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM loaded, initializing Logo Manifest Service...");
+  initializeLogoManifestService();
+});
+
+// Also initialize on window load as backup
+window.addEventListener("load", () => {
+  if (!globalLogoManifestService || !globalLogoManifestService.isInitialized) {
+    console.log(
+      "Window loaded, initializing Logo Manifest Service as backup..."
+    );
+    initializeLogoManifestService();
+  }
+});
+
+// ====================================
+// REACT COMPONENTS
+// ====================================
+
 class WeatherPanel extends React.Component {
   constructor(props) {
     super(props);
@@ -243,6 +632,25 @@ class CompanyLogo extends React.Component {
         });
       });
     }
+
+    // Listen for logo manifest updates (GitHub CDN Sync)
+    const logoManifestHandler = (event) => {
+      console.log("LOGO MANIFEST UPDATED EVENT RECEIVED:", {
+        detail: event.detail,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+
+      // Reload configuration to get updated logos from manifest
+      setTimeout(() => {
+        this.loadConfig();
+      }, 500); // Small delay to ensure config is saved
+    };
+
+    // Add custom event listener for logo manifest updates
+    window.addEventListener("logo-manifest-updated", logoManifestHandler);
+
+    // Store handler for cleanup
+    this.logoManifestHandler = logoManifestHandler;
   }
 
   componentWillUnmount() {
@@ -250,6 +658,14 @@ class CompanyLogo extends React.Component {
 
     if (window.electronAPI && window.electronAPI.removeConfigListener) {
       window.electronAPI.removeConfigListener();
+    }
+
+    // Remove logo manifest event listener
+    if (this.logoManifestHandler) {
+      window.removeEventListener(
+        "logo-manifest-updated",
+        this.logoManifestHandler
+      );
     }
   }
 

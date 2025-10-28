@@ -2,11 +2,14 @@
 import React, { useState, useEffect } from "react";
 import WeatherPanel from "./WeatherPanel";
 import IoTPanel from "./IoTPanel";
-import CompanyLogo from "./CompanyLogo";
+// Note: CompanyLogo is handled in app.js, not imported here
 import EraIotService, { EraIotConfig } from "../services/eraIotService";
 import BannerSyncService, {
   BannerSyncConfig,
 } from "../services/bannerSyncService";
+import LogoManifestService, {
+  ManifestConfig,
+} from "../services/logoManifestService";
 import "./BillboardLayout.css";
 
 /**
@@ -17,19 +20,27 @@ import "./BillboardLayout.css";
  */
 interface BillboardLayoutProps {
   configUpdateTrigger?: number;
+  logoManifestService?: LogoManifestService | null;
 }
 
 const BillboardLayout: React.FC<BillboardLayoutProps> = ({
   configUpdateTrigger = 0,
+  logoManifestService: externalLogoManifestService = null,
 }) => {
   const [eraIotService, setEraIotService] = useState<EraIotService | null>(
     null
   );
   const [bannerSyncService, setBannerSyncService] =
     useState<BannerSyncService | null>(null);
+  const [internalLogoManifestService, setInternalLogoManifestService] =
+    useState<LogoManifestService | null>(null);
   const [showWeatherAlert, setShowWeatherAlert] = useState<boolean>(false);
   const [weatherData, setWeatherData] = useState<any>(null);
   const [logoUpdateTrigger, setLogoUpdateTrigger] = useState<number>(0);
+
+  // Use external service if provided, otherwise use internal
+  const logoManifestService =
+    externalLogoManifestService || internalLogoManifestService;
 
   console.log("BillboardLayout: Component initialized");
 
@@ -151,9 +162,59 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       }
     };
 
+    // Initialize Logo Manifest Service (GitHub CDN Sync)
+    const initializeLogoManifest = async () => {
+      try {
+        console.log("BillboardLayout: Initializing Logo Manifest Service...");
+
+        // Get logo manifest config
+        const config = await loadLogoManifestConfig();
+
+        if (config && config.enabled) {
+          // Cleanup existing service
+          if (logoManifestService) {
+            logoManifestService.destroy();
+          }
+
+          const service = new LogoManifestService(config);
+          const initialized = await service.initialize();
+
+          if (initialized) {
+            setInternalLogoManifestService(service);
+
+            // Setup logo update callback
+            service.onLogoUpdate((logos) => {
+              console.log("BillboardLayout: Logo manifest updated", {
+                logoCount: logos.length,
+              });
+              setLogoUpdateTrigger((prev) => prev + 1);
+            });
+
+            console.log(
+              "BillboardLayout: Logo Manifest Service initialized successfully"
+            );
+          } else {
+            console.warn(
+              "BillboardLayout: Logo Manifest Service failed to initialize"
+            );
+          }
+        } else {
+          console.log(
+            "BillboardLayout: Logo Manifest Service disabled or not configured"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "BillboardLayout: Failed to initialize Logo Manifest Service:",
+          error
+        );
+      }
+    };
+
     // Initial setup
     initializeEraIot();
     initializeBannerSync();
+    initializeLogoManifest();
 
     // Listen for configuration updates
     const handleConfigUpdate = (_event: any, updatedConfig: any) => {
@@ -223,6 +284,9 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       }
       if (bannerSyncService) {
         bannerSyncService.destroy();
+      }
+      if (logoManifestService) {
+        logoManifestService.destroy();
       }
     };
   }, [configUpdateTrigger]);
@@ -345,6 +409,56 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
     }
   };
 
+  // Load Logo Manifest configuration (GitHub CDN Sync)
+  const loadLogoManifestConfig = async (): Promise<ManifestConfig | null> => {
+    try {
+      console.log("BillboardLayout: Loading Logo Manifest configuration...");
+
+      // Try to access config from electron main process
+      if (typeof window !== "undefined" && (window as any).electronAPI) {
+        const config = await (window as any).electronAPI.getConfig?.();
+
+        // Check if logo manifest is configured
+        if (config?.logoManifest) {
+          return {
+            enabled: config.logoManifest.enabled || false,
+            manifestUrl:
+              config.logoManifest.manifestUrl ||
+              "https://minhquan7.github.io/ITS_OurdoorBillboard-/logo-manifest.json",
+            pollInterval: config.logoManifest.pollInterval || 30,
+            downloadPath: config.logoManifest.downloadPath || "./downloads",
+            maxCacheSize: config.logoManifest.maxCacheSize || 50,
+            retryAttempts: config.logoManifest.retryAttempts || 3,
+            retryDelay: config.logoManifest.retryDelay || 2000,
+          };
+        } else {
+          // Return default config for logo manifest
+          return {
+            enabled: true, // Enable by default
+            manifestUrl:
+              "https://minhquan7.github.io/ITS_OurdoorBillboard-/logo-manifest.json",
+            pollInterval: 30,
+            downloadPath: "./downloads",
+            maxCacheSize: 50,
+            retryAttempts: 3,
+            retryDelay: 2000,
+          };
+        }
+      }
+
+      console.log(
+        "BillboardLayout: electronAPI not available for logo manifest"
+      );
+      return null;
+    } catch (error) {
+      console.error(
+        "BillboardLayout: Failed to load Logo Manifest config:",
+        error
+      );
+      return null;
+    }
+  };
+
   return (
     <div className="billboard-container">
       {/* Top row: Two columns - Weather and IoT */}
@@ -377,7 +491,8 @@ const BillboardLayout: React.FC<BillboardLayoutProps> = ({
       {/* Bottom row: Company Logo */}
       {/* Bottom row: Company Logo */}
       <div className="bottom-row">
-        <CompanyLogo key={logoUpdateTrigger} />
+        {/* CompanyLogo handled in app.js */}
+        <div id="company-logo-placeholder">Logo will be rendered by app.js</div>
       </div>
     </div>
   );

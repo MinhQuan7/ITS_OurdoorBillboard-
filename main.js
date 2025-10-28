@@ -4,11 +4,17 @@
 const { app, BrowserWindow, globalShortcut, ipcMain } = require("electron");
 const path = require("path");
 const mqtt = require("mqtt");
+const axios = require("axios");
 
 // Global variables
 let mainWindow;
 let configWindow;
 let isConfigMode = false;
+
+// Logo Manifest Service variables
+let logoManifestService = null;
+let currentManifest = null;
+let manifestPollTimer = null;
 
 // MQTT Service for E-Ra IoT Integration
 let mqttService = null;
@@ -20,6 +26,422 @@ let currentSensorData = {
   lastUpdated: null,
   status: "offline",
 };
+
+/**
+ * Logo Manifest Service - GitHub CDN Integration
+ * Polls manifest.json from GitHub CDN and syncs logos
+ */
+class LogoManifestService {
+  constructor(config) {
+    this.config = config;
+    this.isPolling = false;
+    this.retryAttempts = 0;
+    this.maxRetries = config.retryAttempts || 3;
+    this.pollInterval = config.pollInterval * 1000; // Convert to milliseconds
+    this.manifestUrl = config.manifestUrl;
+    this.downloadPath = config.downloadPath;
+
+    console.log("LogoManifestService: Initialized with config", {
+      enabled: config.enabled,
+      manifestUrl: config.manifestUrl,
+      pollInterval: config.pollInterval,
+    });
+  }
+
+  async startService() {
+    if (!this.config.enabled) {
+      console.log("LogoManifestService: Service disabled in config");
+      return false;
+    }
+
+    try {
+      console.log("LogoManifestService: Starting service...");
+
+      // Create download directory
+      await this.ensureDownloadDirectory();
+
+      // Initial manifest fetch
+      const success = await this.fetchManifest();
+      if (!success) {
+        console.error("LogoManifestService: Failed to fetch initial manifest");
+        return false;
+      }
+
+      // Start periodic polling
+      this.startPeriodicPolling();
+
+      console.log("LogoManifestService: Service started successfully");
+      return true;
+    } catch (error) {
+      console.error("LogoManifestService: Failed to start service:", error);
+      return false;
+    }
+  }
+
+  startPeriodicPolling() {
+    if (manifestPollTimer) {
+      clearInterval(manifestPollTimer);
+    }
+
+    manifestPollTimer = setInterval(async () => {
+      if (!this.isPolling) {
+        await this.checkForUpdates();
+      }
+    }, this.pollInterval);
+
+    console.log(
+      `LogoManifestService: Started polling every ${this.config.pollInterval}s`
+    );
+  }
+
+  async checkForUpdates() {
+    if (this.isPolling) return;
+
+    this.isPolling = true;
+    try {
+      console.log("LogoManifestService: Checking for manifest updates...");
+
+      const newManifest = await this.fetchManifestFromCDN();
+      if (!newManifest) {
+        console.log("LogoManifestService: No manifest available");
+        return;
+      }
+
+      // Check if version changed
+      if (currentManifest && currentManifest.version === newManifest.version) {
+        console.log("LogoManifestService: No updates available");
+        return;
+      }
+
+      console.log(
+        `LogoManifestService: New version detected: ${currentManifest?.version} -> ${newManifest.version}`
+      );
+
+      // Process manifest updates
+      await this.processManifestUpdate(newManifest);
+    } catch (error) {
+      console.error("LogoManifestService: Error checking for updates:", error);
+    } finally {
+      this.isPolling = false;
+    }
+  }
+
+  async fetchManifestFromCDN() {
+    try {
+      console.log(
+        `LogoManifestService: Fetching manifest from ${this.manifestUrl}`
+      );
+
+      const response = await axios.get(this.manifestUrl, {
+        timeout: 15000,
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (response.status === 200) {
+        const manifest = response.data;
+        console.log("LogoManifestService: Manifest fetched successfully", {
+          version: manifest.version,
+          logoCount: manifest.logos?.length || 0,
+          lastUpdated: manifest.lastUpdated,
+        });
+        return manifest;
+      }
+
+      console.error(
+        `LogoManifestService: HTTP ${response.status} - ${response.statusText}`
+      );
+      return null;
+    } catch (error) {
+      console.error("LogoManifestService: Failed to fetch manifest:", error);
+      return null;
+    }
+  }
+
+  async fetchManifest() {
+    let attempts = 0;
+
+    while (attempts < this.maxRetries) {
+      try {
+        const manifest = await this.fetchManifestFromCDN();
+        if (manifest) {
+          currentManifest = manifest;
+          this.retryAttempts = 0;
+          return true;
+        }
+      } catch (error) {
+        console.error(
+          `LogoManifestService: Fetch attempt ${attempts + 1} failed:`,
+          error
+        );
+      }
+
+      attempts++;
+      if (attempts < this.maxRetries) {
+        const delay = this.config.retryDelay || 2000;
+        console.log(`LogoManifestService: Retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    console.error("LogoManifestService: All fetch attempts failed");
+    return false;
+  }
+
+  async processManifestUpdate(newManifest) {
+    try {
+      console.log("LogoManifestService: Processing manifest update...");
+
+      const oldManifest = currentManifest;
+      currentManifest = newManifest;
+
+      // Download new/updated logos
+      const downloadTasks = newManifest.logos
+        .filter((logo) => logo.active)
+        .map((logo) => this.downloadLogoIfNeeded(logo, oldManifest));
+
+      const results = await Promise.allSettled(downloadTasks);
+
+      // Log results
+      const successful = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      console.log(
+        `LogoManifestService: Download results: ${successful} successful, ${failed} failed`
+      );
+
+      // Update local configuration
+      await this.updateLocalConfigWithManifest(newManifest);
+
+      // Notify renderer about manifest update
+      this.notifyRendererManifestUpdate(newManifest);
+
+      console.log(
+        "LogoManifestService: Manifest update processed successfully"
+      );
+    } catch (error) {
+      console.error(
+        "LogoManifestService: Error processing manifest update:",
+        error
+      );
+    }
+  }
+
+  async downloadLogoIfNeeded(logo, oldManifest) {
+    try {
+      // Check if logo already exists and is up to date
+      const existingLogo = oldManifest?.logos.find((l) => l.id === logo.id);
+      const localPath = this.getLocalLogoPath(logo);
+
+      if (existingLogo && existingLogo.checksum === logo.checksum) {
+        const fs = require("fs");
+        if (fs.existsSync(localPath)) {
+          console.log(
+            `LogoManifestService: Logo ${logo.id} is up to date, skipping download`
+          );
+          return localPath;
+        }
+      }
+
+      console.log(
+        `LogoManifestService: Downloading logo ${logo.id} from ${logo.url}`
+      );
+
+      // Download logo
+      const downloadedPath = await this.downloadLogo(logo);
+      if (downloadedPath) {
+        console.log(
+          `LogoManifestService: Logo ${logo.id} downloaded successfully to ${downloadedPath}`
+        );
+        return downloadedPath;
+      }
+
+      return null;
+    } catch (error) {
+      console.error(
+        `LogoManifestService: Error downloading logo ${logo.id}:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  async downloadLogo(logo) {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+
+      const localPath = this.getLocalLogoPath(logo);
+
+      // Ensure directory exists
+      const dir = path.dirname(localPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      // Download file
+      const response = await axios({
+        method: "GET",
+        url: logo.url,
+        responseType: "stream",
+        timeout: 30000,
+      });
+
+      // Save to local file
+      const writer = fs.createWriteStream(localPath);
+      response.data.pipe(writer);
+
+      return new Promise((resolve, reject) => {
+        writer.on("finish", () => {
+          console.log(
+            `LogoManifestService: Logo downloaded successfully: ${localPath}`
+          );
+          resolve(localPath);
+        });
+        writer.on("error", (error) => {
+          console.error("LogoManifestService: Download error:", error);
+          reject(error);
+        });
+      });
+    } catch (error) {
+      console.error(
+        `LogoManifestService: Error downloading logo ${logo.id}:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  getLocalLogoPath(logo) {
+    const path = require("path");
+    return path.join(this.downloadPath, "logos", logo.filename);
+  }
+
+  async ensureDownloadDirectory() {
+    const fs = require("fs");
+    const path = require("path");
+
+    const logoDir = path.join(this.downloadPath, "logos");
+    if (!fs.existsSync(logoDir)) {
+      fs.mkdirSync(logoDir, { recursive: true });
+      console.log("LogoManifestService: Created download directory:", logoDir);
+    }
+  }
+
+  async updateLocalConfigWithManifest(manifest) {
+    try {
+      console.log(
+        "LogoManifestService: Updating local config with manifest data"
+      );
+
+      // Load current config
+      const config = await loadConfig();
+
+      // Convert manifest logos to config format
+      const logoImages = manifest.logos
+        .filter((logo) => logo.active)
+        .sort((a, b) => a.priority - b.priority)
+        .map((logo) => ({
+          name: logo.name,
+          path: this.getLocalLogoPath(logo),
+          size: logo.size,
+          type: logo.type,
+          id: logo.id,
+          source: "github_cdn",
+          checksum: logo.checksum,
+        }))
+        .filter((logo) => {
+          // Only include logos that were successfully downloaded
+          const fs = require("fs");
+          return fs.existsSync(logo.path);
+        });
+
+      // Update config with new logo settings
+      const updatedConfig = {
+        ...config,
+        logoImages,
+        logoMode: manifest.settings?.logoMode || config.logoMode || "loop",
+        logoLoopDuration:
+          manifest.settings?.logoLoopDuration || config.logoLoopDuration || 5,
+        // Add manifest metadata
+        _manifestVersion: manifest.version,
+        _manifestLastUpdated: manifest.lastUpdated,
+      };
+
+      // Save updated config
+      await saveConfig(updatedConfig);
+
+      console.log(
+        "LogoManifestService: Local config updated with manifest data",
+        {
+          logoCount: logoImages.length,
+          logoMode: updatedConfig.logoMode,
+          logoLoopDuration: updatedConfig.logoLoopDuration,
+          manifestVersion: manifest.version,
+        }
+      );
+
+      // Broadcast config update to trigger hot-reload
+      broadcastConfigUpdate(updatedConfig);
+    } catch (error) {
+      console.error("LogoManifestService: Error updating local config:", error);
+    }
+  }
+
+  notifyRendererManifestUpdate(manifest) {
+    // Send manifest update to renderer
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("logo-manifest-updated", {
+        manifest: manifest,
+        timestamp: Date.now(),
+        source: "github_cdn",
+      });
+
+      console.log(
+        "LogoManifestService: Manifest update notification sent to renderer"
+      );
+    }
+  }
+
+  async forceSync() {
+    console.log("LogoManifestService: Force sync requested...");
+
+    try {
+      const success = await this.fetchManifest();
+      if (success && currentManifest) {
+        await this.processManifestUpdate(currentManifest);
+        return { success: true, manifest: currentManifest };
+      }
+      return { success: false, error: "Failed to fetch manifest" };
+    } catch (error) {
+      console.error("LogoManifestService: Force sync failed:", error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  stopService() {
+    if (manifestPollTimer) {
+      clearInterval(manifestPollTimer);
+      manifestPollTimer = null;
+    }
+
+    this.isPolling = false;
+    console.log("LogoManifestService: Service stopped");
+  }
+
+  getStatus() {
+    return {
+      enabled: this.config.enabled,
+      polling: manifestPollTimer !== null,
+      lastUpdate: currentManifest?.lastUpdated || null,
+      logoCount: currentManifest?.logos?.length || 0,
+      manifestVersion: currentManifest?.version || null,
+      manifestUrl: this.manifestUrl,
+    };
+  }
+}
 
 /**
  * Create main billboard display window
@@ -133,188 +555,41 @@ function toggleConfigMode() {
   }
 }
 
-// Launch application when Electron is ready
-app.whenReady().then(async () => {
-  createMainWindow();
-
-  // Setup config file watcher for hot-reload
-  setupConfigWatcher();
-
-  // Initialize MQTT service
-  await initializeMqttService();
-
-  // Register global F1 shortcut for config mode
-  globalShortcut.register("F1", () => {
-    toggleConfigMode();
-  });
-
-  console.log("Billboard app started - Press F1 for config mode");
-  console.log("Config hot-reload watcher active");
-  console.log("MQTT service initialized");
-});
-
-// Quit application when all windows are closed (except macOS)
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
-
-// Recreate window when clicking dock icon (macOS)
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createMainWindow();
-  }
-});
-
-// Cleanup shortcuts and watchers on quit
-app.on("will-quit", () => {
-  globalShortcut.unregisterAll();
-
-  if (configWatcher) {
-    fs.unwatchFile(configPath);
-    configWatcher = null;
-    console.log("Config watcher cleaned up");
-  }
-
-  if (mqttService) {
-    mqttService.disconnect();
-    mqttService = null;
-    console.log("MQTT service cleaned up");
-  }
-});
-
-// IPC handlers for config communication
-const fs = require("fs");
-const { dialog } = require("electron");
-
-// Configuration file path
-const configPath = path.join(__dirname, "config.json");
-
-// File system watcher for config.json hot-reload
-let configWatcher = null;
-
-function setupConfigWatcher() {
-  if (configWatcher) {
-    configWatcher.close();
-  }
-
+/**
+ * Initialize Logo Manifest Service for GitHub CDN sync
+ */
+async function initializeLogoManifestService() {
   try {
-    configWatcher = fs.watchFile(configPath, (curr, prev) => {
-      if (curr.mtime > prev.mtime) {
-        console.log("Config file changed externally, triggering hot-reload...");
+    console.log("Initializing Logo Manifest Service...");
 
-        try {
-          const configData = fs.readFileSync(configPath, "utf8");
-          const config = JSON.parse(configData);
+    // Load config
+    const config = await loadConfig();
 
-          console.log("External config change detected:", {
-            logoMode: config.logoMode,
-            logoLoopDuration: config.logoLoopDuration,
-            logoImages: config.logoImages?.length,
-          });
+    if (!config.logoManifest?.enabled) {
+      console.log("Logo Manifest Service disabled in config");
+      return;
+    }
 
-          // Broadcast the updated config
-          broadcastConfigUpdate(config);
-        } catch (error) {
-          console.error("Error parsing externally changed config:", error);
-        }
-      }
-    });
+    // Create service instance
+    logoManifestService = new LogoManifestService(config.logoManifest);
 
-    console.log("Config file watcher established for hot-reload");
+    // Start the service
+    const success = await logoManifestService.startService();
+
+    if (success) {
+      console.log("Logo Manifest Service started successfully");
+    } else {
+      console.error("Failed to start Logo Manifest Service");
+    }
   } catch (error) {
-    console.error("Failed to setup config watcher:", error);
+    console.error("Error initializing Logo Manifest Service:", error);
   }
 }
 
 /**
- * Broadcast configuration updates to all active windows
+ * Load configuration from config.json
  */
-function broadcastConfigUpdate(config) {
-  console.log("Broadcasting config update to all windows", {
-    logoMode: config.logoMode,
-    logoLoopDuration: config.logoLoopDuration,
-    logoImages: config.logoImages?.length,
-    hasEraIot: !!config.eraIot,
-    timestamp: new Date().toLocaleTimeString(),
-  });
-
-  // Send to main window with immediate effect
-  if (
-    mainWindow &&
-    !mainWindow.isDestroyed() &&
-    mainWindow.webContents.isLoading() === false
-  ) {
-    console.log("Sending IMMEDIATE config-updated to main window");
-
-    // Send main config update
-    mainWindow.webContents.send("config-updated", config);
-
-    // Send force refresh
-    mainWindow.webContents.send("force-refresh-services", config);
-
-    // Force reload for logo changes specifically - send multiple times to ensure delivery
-    if (config.logoMode && config.logoLoopDuration) {
-      console.log(
-        `Forcing logo loop interval update: ${config.logoLoopDuration}s`
-      );
-
-      // Send immediately
-      mainWindow.webContents.send("logo-config-updated", {
-        logoMode: config.logoMode,
-        logoLoopDuration: config.logoLoopDuration,
-        logoImages: config.logoImages,
-      });
-
-      // Send with delay to ensure delivery
-      setTimeout(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send("logo-config-updated", {
-            logoMode: config.logoMode,
-            logoLoopDuration: config.logoLoopDuration,
-            logoImages: config.logoImages,
-          });
-          console.log("DELAYED logo-config-updated event sent");
-        }
-      }, 100);
-
-      // Send another one with longer delay
-      setTimeout(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send("config-updated", config);
-          console.log("FINAL config-updated event sent");
-        }
-      }, 200);
-    }
-  } else {
-    console.log(
-      "Main window not available for config broadcast - Window loading:",
-      mainWindow?.webContents.isLoading()
-    );
-  }
-
-  // Send to config window if open
-  if (configWindow && !configWindow.isDestroyed()) {
-    console.log("Sending config-updated to config window");
-    configWindow.webContents.send("config-updated", config);
-  }
-
-  // Send specific E-Ra IoT updates if applicable
-  if (config.eraIot) {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("era-iot-config-updated", config.eraIot);
-    }
-
-    // Restart MQTT service with new config
-    console.log("Restarting MQTT service due to config change...");
-    setTimeout(async () => {
-      await initializeMqttService();
-    }, 500);
-  }
-}
-
-ipcMain.handle("get-config", async () => {
+async function loadConfig() {
   try {
     if (fs.existsSync(configPath)) {
       const configData = fs.readFileSync(configPath, "utf8");
@@ -335,205 +610,33 @@ ipcMain.handle("get-config", async () => {
       logo: { x: 0, y: 288, width: 384, height: 96 },
     },
     schedules: [],
-    eraIot: {
+    logoManifest: {
       enabled: false,
-      authToken: "",
-      baseUrl: "https://backend.eoh.io",
-      sensorConfigs: {
-        temperature: null,
-        humidity: null,
-        pm25: null,
-        pm10: null,
-      },
-      updateInterval: 5,
-      timeout: 15000,
+      manifestUrl: "",
+      pollInterval: 10,
+      downloadPath: "./downloads",
+      maxCacheSize: 50,
       retryAttempts: 3,
       retryDelay: 2000,
     },
   };
-});
-
-ipcMain.handle("save-config", async (event, config) => {
-  try {
-    // Ensure E-Ra IoT config is preserved
-    let currentConfig = {};
-    if (fs.existsSync(configPath)) {
-      try {
-        const configData = fs.readFileSync(configPath, "utf8");
-        currentConfig = JSON.parse(configData);
-      } catch (error) {
-        console.warn("Could not load existing config, using defaults");
-      }
-    }
-
-    // Merge E-Ra IoT config if provided
-    const mergedConfig = {
-      ...currentConfig,
-      ...config,
-    };
-
-    if (config.eraIot) {
-      mergedConfig.eraIot = {
-        ...currentConfig.eraIot,
-        ...config.eraIot,
-      };
-    }
-
-    fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
-    console.log("Configuration saved successfully");
-
-    // IMMEDIATELY broadcast config update to all windows for instant effect (not waiting for file watcher)
-    console.log("IMMEDIATE CONFIG BROADCAST after save");
-    broadcastConfigUpdate(mergedConfig);
-
-    // Also send with delay to ensure delivery
-    setTimeout(() => {
-      console.log("DELAYED CONFIG BROADCAST after save");
-      broadcastConfigUpdate(mergedConfig);
-    }, 150);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error saving config:", error);
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle("exit-config", async () => {
-  if (configWindow) {
-    configWindow.close();
-  }
-});
-
-ipcMain.handle("select-logo-files", async () => {
-  try {
-    const result = await dialog.showOpenDialog(configWindow, {
-      title: "Select Logo Images",
-      filters: [
-        { name: "Images", extensions: ["png", "jpg", "jpeg", "svg", "gif"] },
-      ],
-      properties: ["openFile", "multiSelections"],
-    });
-
-    if (!result.canceled) {
-      return result.filePaths;
-    }
-    return [];
-  } catch (error) {
-    console.error("Error selecting files:", error);
-    return [];
-  }
-});
-
-ipcMain.handle("minimize-app", async () => {
-  if (configWindow) {
-    configWindow.minimize();
-  }
-});
-
-ipcMain.handle("close-app", async () => {
-  app.quit();
-});
-
-// E-Ra IoT specific configuration handler
-ipcMain.handle("update-era-iot-config", async (event, eraIotConfig) => {
-  try {
-    let currentConfig = {};
-    if (fs.existsSync(configPath)) {
-      try {
-        const configData = fs.readFileSync(configPath, "utf8");
-        currentConfig = JSON.parse(configData);
-      } catch (error) {
-        console.warn("Could not load existing config, using defaults");
-      }
-    }
-
-    // Update E-Ra IoT configuration
-    currentConfig.eraIot = {
-      ...currentConfig.eraIot,
-      ...eraIotConfig,
-    };
-
-    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
-    console.log("E-Ra IoT configuration updated successfully");
-
-    // Broadcast config update to all windows
-    broadcastConfigUpdate(currentConfig);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating E-Ra IoT config:", error);
-    return { success: false, error: error.message };
-  }
-});
-
-// Handle authentication token updates from login
-ipcMain.handle("update-auth-token", async (event, authToken) => {
-  try {
-    let currentConfig = {};
-    if (fs.existsSync(configPath)) {
-      try {
-        const configData = fs.readFileSync(configPath, "utf8");
-        currentConfig = JSON.parse(configData);
-      } catch (error) {
-        console.warn("Could not load existing config, using defaults");
-      }
-    }
-
-    // Ensure E-Ra IoT config exists
-    if (!currentConfig.eraIot) {
-      currentConfig.eraIot = {
-        enabled: true,
-        baseUrl: "https://backend.eoh.io",
-        sensorConfigs: {
-          temperature: null,
-          humidity: null,
-          pm25: null,
-          pm10: null,
-        },
-        updateInterval: 5,
-        timeout: 15000,
-        retryAttempts: 3,
-        retryDelay: 2000,
-      };
-    }
-
-    // Update auth token
-    currentConfig.eraIot.authToken = authToken;
-
-    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
-    console.log("Authentication token updated successfully");
-
-    // Broadcast config update to all windows
-    broadcastConfigUpdate(currentConfig);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating auth token:", error);
-    return { success: false, error: error.message };
-  }
-});
-
-// Provide parsed gateway token to renderer on demand
-ipcMain.handle("get-gateway-token", async () => {
-  try {
-    if (fs.existsSync(configPath)) {
-      const configData = fs.readFileSync(configPath, "utf8");
-      const cfg = JSON.parse(configData);
-      const auth = cfg?.eraIot?.authToken || "";
-      const match = auth.match(/Token\s+(.+)/);
-      return match ? match[1] : null;
-    }
-  } catch (error) {
-    console.error("get-gateway-token: failed to read config:", error);
-  }
-  return null;
-});
+}
 
 /**
- * MQTT Service for E-Ra IoT Integration (Main Process)
- * Handles MQTT connection and data processing in Node.js environment
+ * Save configuration to config.json
  */
+async function saveConfig(config) {
+  try {
+    const configData = JSON.stringify(config, null, 2);
+    fs.writeFileSync(configPath, configData, "utf8");
+    console.log("Configuration saved successfully");
+  } catch (error) {
+    console.error("Error saving config:", error);
+    throw error;
+  }
+}
+
+// MainProcessMqttService class - handles MQTT communication for E-Ra IoT and manifest sync
 class MainProcessMqttService {
   constructor() {
     this.client = null;
@@ -668,19 +771,36 @@ class MainProcessMqttService {
       return;
     }
 
-    const testTopic = `eoh/chip/${this.gatewayToken}/config/+/value`;
-    this.client.subscribe(testTopic, { qos: 1 }, (err) => {
+    // Subscribe to E-Ra IoT sensor data
+    const eraIotTopic = `eoh/chip/${this.gatewayToken}/config/+/value`;
+    this.client.subscribe(eraIotTopic, { qos: 1 }, (err) => {
       if (err) {
         console.log(
-          "MainProcessMqttService: ❌ Failed to subscribe:",
+          "MainProcessMqttService: ❌ Failed to subscribe to E-Ra IoT topic:",
           err.message
         );
       } else {
         console.log(
-          "MainProcessMqttService: ✅ Successfully subscribed to:",
-          testTopic
+          "MainProcessMqttService: ✅ Successfully subscribed to E-Ra IoT:",
+          eraIotTopic
         );
-        console.log("MainProcessMqttService: Waiting for messages...");
+        console.log("MainProcessMqttService: Waiting for E-Ra IoT messages...");
+      }
+    });
+
+    // Subscribe to manifest refresh signals from admin-web
+    const manifestTopic = "its/billboard/manifest/refresh";
+    this.client.subscribe(manifestTopic, { qos: 1 }, (err) => {
+      if (err) {
+        console.log(
+          "MainProcessMqttService: ❌ Failed to subscribe to manifest topic:",
+          err.message
+        );
+      } else {
+        console.log(
+          "MainProcessMqttService: ✅ Successfully subscribed to manifest refresh:",
+          manifestTopic
+        );
       }
     });
   }
@@ -691,6 +811,12 @@ class MainProcessMqttService {
       console.log(
         `MainProcessMqttService: [${new Date().toLocaleTimeString()}] ${topic}: ${messageStr}`
       );
+
+      // Handle manifest refresh messages
+      if (topic === "its/billboard/manifest/refresh") {
+        this.handleManifestRefreshMessage(messageStr);
+        return;
+      }
 
       // Parse E-RA message
       let value = null;
@@ -841,8 +967,444 @@ class MainProcessMqttService {
     this.isConnected = false;
     console.log("MainProcessMqttService: Disconnected");
   }
+
+  async handleManifestRefreshMessage(messageStr) {
+    try {
+      console.log(
+        "MainProcessMqttService: Received manifest refresh signal:",
+        messageStr
+      );
+
+      const data = JSON.parse(messageStr);
+
+      if (
+        data.type === "manifest_refresh" &&
+        data.action === "force-refresh-manifest"
+      ) {
+        console.log(
+          "MainProcessMqttService: Processing manifest force refresh request..."
+        );
+
+        // Trigger logo manifest service force sync
+        if (logoManifestService) {
+          const result = await logoManifestService.forceSync();
+          console.log(
+            "MainProcessMqttService: Manifest force sync result:",
+            result
+          );
+
+          if (result.success) {
+            console.log(
+              "MainProcessMqttService: ✅ Billboard manifest refreshed successfully via MQTT signal"
+            );
+          } else {
+            console.error(
+              "MainProcessMqttService: ❌ Failed to refresh manifest:",
+              result.error
+            );
+          }
+        } else {
+          console.warn(
+            "MainProcessMqttService: Logo Manifest Service not available"
+          );
+        }
+      } else {
+        console.log(
+          "MainProcessMqttService: Unknown manifest message type:",
+          data.type
+        );
+      }
+    } catch (error) {
+      console.error(
+        "MainProcessMqttService: Error handling manifest refresh message:",
+        error
+      );
+    }
+  }
 }
 
+app.whenReady().then(async () => {
+  createMainWindow();
+
+  // Setup config file watcher for hot-reload
+  setupConfigWatcher();
+
+  // Initialize MQTT service
+  await initializeMqttService();
+
+  // Initialize Logo Manifest Service
+  await initializeLogoManifestService();
+
+  // Register global F1 shortcut for config mode
+  globalShortcut.register("F1", () => {
+    toggleConfigMode();
+  });
+
+  console.log("Billboard app started - Press F1 for config mode");
+  console.log("Config hot-reload watcher active");
+  console.log("MQTT service initialized");
+  console.log("Logo Manifest Service initialized");
+});
+
+// Quit application when all windows are closed (except macOS)
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+
+// Recreate window when clicking dock icon (macOS)
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createMainWindow();
+  }
+});
+
+// Cleanup shortcuts and watchers on quit
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
+
+  if (configWatcher) {
+    fs.unwatchFile(configPath);
+    configWatcher = null;
+    console.log("Config watcher cleaned up");
+  }
+
+  if (mqttService) {
+    mqttService.disconnect();
+    mqttService = null;
+    console.log("MQTT service cleaned up");
+  }
+
+  if (logoManifestService) {
+    logoManifestService.stopService();
+    logoManifestService = null;
+    console.log("Logo Manifest Service cleaned up");
+  }
+});
+
+// IPC handlers for config communication
+const fs = require("fs");
+const { dialog } = require("electron");
+
+// Configuration file path
+const configPath = path.join(__dirname, "config.json");
+
+// File system watcher for config.json hot-reload
+let configWatcher = null;
+
+function setupConfigWatcher() {
+  if (configWatcher) {
+    configWatcher.close();
+  }
+
+  try {
+    configWatcher = fs.watchFile(configPath, (curr, prev) => {
+      if (curr.mtime > prev.mtime) {
+        console.log("Config file changed externally, triggering hot-reload...");
+
+        try {
+          const configData = fs.readFileSync(configPath, "utf8");
+          const config = JSON.parse(configData);
+
+          console.log("External config change detected:", {
+            logoMode: config.logoMode,
+            logoLoopDuration: config.logoLoopDuration,
+            logoImages: config.logoImages?.length,
+          });
+
+          // Broadcast the updated config
+          broadcastConfigUpdate(config);
+        } catch (error) {
+          console.error("Error parsing externally changed config:", error);
+        }
+      }
+    });
+
+    console.log("Config file watcher established for hot-reload");
+  } catch (error) {
+    console.error("Failed to setup config watcher:", error);
+  }
+}
+
+/**
+ * Broadcast configuration updates to all active windows
+ */
+function broadcastConfigUpdate(config) {
+  console.log("Broadcasting config update to all windows", {
+    logoMode: config.logoMode,
+    logoLoopDuration: config.logoLoopDuration,
+    logoImages: config.logoImages?.length,
+    hasEraIot: !!config.eraIot,
+    timestamp: new Date().toLocaleTimeString(),
+  });
+
+  // Send to main window with immediate effect
+  if (
+    mainWindow &&
+    !mainWindow.isDestroyed() &&
+    mainWindow.webContents.isLoading() === false
+  ) {
+    console.log("Sending IMMEDIATE config-updated to main window");
+
+    // Send main config update
+    mainWindow.webContents.send("config-updated", config);
+
+    // Send force refresh
+    mainWindow.webContents.send("force-refresh-services", config);
+
+    // Force reload for logo changes specifically - send multiple times to ensure delivery
+    if (config.logoMode && config.logoLoopDuration) {
+      console.log(
+        `Forcing logo loop interval update: ${config.logoLoopDuration}s`
+      );
+
+      // Send immediately
+      mainWindow.webContents.send("logo-config-updated", {
+        logoMode: config.logoMode,
+        logoLoopDuration: config.logoLoopDuration,
+        logoImages: config.logoImages,
+      });
+
+      // Send with delay to ensure delivery
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("logo-config-updated", {
+            logoMode: config.logoMode,
+            logoLoopDuration: config.logoLoopDuration,
+            logoImages: config.logoImages,
+          });
+          console.log("DELAYED logo-config-updated event sent");
+        }
+      }, 100);
+
+      // Send another one with longer delay
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("config-updated", config);
+          console.log("FINAL config-updated event sent");
+        }
+      }, 200);
+    }
+  } else {
+    console.log(
+      "Main window not available for config broadcast - Window loading:",
+      mainWindow?.webContents.isLoading()
+    );
+  }
+
+  // Send to config window if open
+  if (configWindow && !configWindow.isDestroyed()) {
+    console.log("Sending config-updated to config window");
+    configWindow.webContents.send("config-updated", config);
+  }
+
+  // Send specific E-Ra IoT updates if applicable
+  if (config.eraIot) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("era-iot-config-updated", config.eraIot);
+    }
+
+    // Restart MQTT service with new config
+    console.log("Restarting MQTT service due to config change...");
+    setTimeout(async () => {
+      await initializeMqttService();
+    }, 500);
+  }
+}
+
+ipcMain.handle("get-config", async () => {
+  return await loadConfig();
+});
+
+ipcMain.handle("save-config", async (event, config) => {
+  try {
+    await saveConfig(config);
+
+    // Broadcast config update for hot-reload
+    broadcastConfigUpdate(config);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving config via IPC:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Logo Manifest Service IPC Handlers
+ipcMain.handle("get-logo-manifest", async () => {
+  return currentManifest;
+});
+
+ipcMain.handle("force-sync-manifest", async () => {
+  if (logoManifestService) {
+    console.log("IPC: Force sync manifest requested");
+    return await logoManifestService.forceSync();
+  }
+  return { success: false, error: "Logo Manifest Service not available" };
+});
+
+ipcMain.handle("get-manifest-status", async () => {
+  if (logoManifestService) {
+    return logoManifestService.getStatus();
+  }
+  return { enabled: false, error: "Service not available" };
+});
+
+ipcMain.handle("restart-manifest-service", async () => {
+  try {
+    console.log("IPC: Restart manifest service requested");
+
+    // Stop existing service
+    if (logoManifestService) {
+      logoManifestService.stopService();
+    }
+
+    // Reinitialize
+    await initializeLogoManifestService();
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error restarting manifest service:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("exit-config", async () => {
+  if (configWindow) {
+    configWindow.close();
+  }
+});
+
+ipcMain.handle("select-logo-files", async () => {
+  try {
+    const result = await dialog.showOpenDialog(configWindow, {
+      title: "Select Logo Images",
+      filters: [
+        { name: "Images", extensions: ["png", "jpg", "jpeg", "svg", "gif"] },
+      ],
+      properties: ["openFile", "multiSelections"],
+    });
+
+    if (!result.canceled) {
+      return result.filePaths;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error selecting files:", error);
+    return [];
+  }
+});
+
+ipcMain.handle("minimize-app", async () => {
+  if (configWindow) {
+    configWindow.minimize();
+  }
+});
+
+ipcMain.handle("close-app", async () => {
+  app.quit();
+});
+
+// E-Ra IoT specific configuration handler
+ipcMain.handle("update-era-iot-config", async (event, eraIotConfig) => {
+  try {
+    let currentConfig = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        const configData = fs.readFileSync(configPath, "utf8");
+        currentConfig = JSON.parse(configData);
+      } catch (error) {
+        console.warn("Could not load existing config, using defaults");
+      }
+    }
+
+    // Update E-Ra IoT configuration
+    currentConfig.eraIot = {
+      ...currentConfig.eraIot,
+      ...eraIotConfig,
+    };
+
+    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
+    console.log("E-Ra IoT configuration updated successfully");
+
+    // Broadcast config update to all windows
+    broadcastConfigUpdate(currentConfig);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating E-Ra IoT config:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Handle authentication token updates from login
+ipcMain.handle("update-auth-token", async (event, authToken) => {
+  try {
+    let currentConfig = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        const configData = fs.readFileSync(configPath, "utf8");
+        currentConfig = JSON.parse(configData);
+      } catch (error) {
+        console.warn("Could not load existing config, using defaults");
+      }
+    }
+
+    // Ensure E-Ra IoT config exists
+    if (!currentConfig.eraIot) {
+      currentConfig.eraIot = {
+        enabled: true,
+        baseUrl: "https://backend.eoh.io",
+        sensorConfigs: {
+          temperature: null,
+          humidity: null,
+          pm25: null,
+          pm10: null,
+        },
+        updateInterval: 5,
+        timeout: 15000,
+        retryAttempts: 3,
+        retryDelay: 2000,
+      };
+    }
+
+    // Update auth token
+    currentConfig.eraIot.authToken = authToken;
+
+    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
+    console.log("Authentication token updated successfully");
+
+    // Broadcast config update to all windows
+    broadcastConfigUpdate(currentConfig);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating auth token:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Provide parsed gateway token to renderer on demand
+ipcMain.handle("get-gateway-token", async () => {
+  try {
+    if (fs.existsSync(configPath)) {
+      const configData = fs.readFileSync(configPath, "utf8");
+      const cfg = JSON.parse(configData);
+      const auth = cfg?.eraIot?.authToken || "";
+      const match = auth.match(/Token\s+(.+)/);
+      return match ? match[1] : null;
+    }
+  } catch (error) {
+    console.error("get-gateway-token: failed to read config:", error);
+  }
+  return null;
+});
+
+/**
+ * MQTT Service for E-Ra IoT Integration (Main Process)
+ * Handles MQTT connection and data processing in Node.js environment
+ */
 // Initialize MQTT service when config is loaded
 async function initializeMqttService() {
   try {
