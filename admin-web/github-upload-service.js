@@ -790,7 +790,7 @@ class GitHubUploadService {
   /**
    * Complete upload workflow: upload files + update manifest + trigger deploy
    */
-  async completeUploadWorkflow(files, options = {}) {
+  async completeUploadWorkflow(files, settings = {}, options = {}) {
     try {
       console.log(
         `GitHubUploadService: Starting complete upload workflow for ${files.length} files...`
@@ -806,8 +806,30 @@ class GitHubUploadService {
         throw new Error("No files were uploaded successfully");
       }
 
-      // Update manifest with all uploaded logos
+      // Clear all old banners/logos before adding new ones
       let currentManifest = await this.getCurrentManifest();
+      currentManifest.logos = [];
+
+      // Update manifest settings with new settings from web-admin
+      if (!currentManifest.settings) {
+        currentManifest.settings = {
+          logoMode: "loop",
+          logoLoopDuration: 30,
+          schedules: [],
+        };
+      }
+
+      if (settings.logoMode) {
+        currentManifest.settings.logoMode = settings.logoMode;
+      }
+      if (settings.logoLoopDuration) {
+        currentManifest.settings.logoLoopDuration = settings.logoLoopDuration;
+      }
+
+      console.log(
+        "GitHubUploadService: Updated manifest settings:",
+        currentManifest.settings
+      );
 
       for (const logoMetadata of results) {
         currentManifest = this.addLogoToManifest(currentManifest, logoMetadata);
@@ -857,10 +879,14 @@ window.initializeGitHubService = async function (token) {
   return await window.GitHubUploadService.initialize(token);
 };
 
-window.uploadLogosToGitHub = async function (files, onProgress) {
-  return await window.GitHubUploadService.completeUploadWorkflow(files, {
-    onProgress,
-  });
+window.uploadLogosToGitHub = async function (files, settings = {}, onProgress) {
+  return await window.GitHubUploadService.completeUploadWorkflow(
+    files,
+    settings,
+    {
+      onProgress,
+    }
+  );
 };
 
 window.getGitHubServiceStatus = function () {

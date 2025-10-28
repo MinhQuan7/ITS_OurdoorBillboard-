@@ -2345,36 +2345,8 @@ function CompanyLogo() {
         position: "relative",
         overflow: "hidden",
       },
-      onClick: async () => {
-        // Debug click - force sync manifest
-        console.log("CompanyLogo: Debug click - forcing manifest sync...");
-        const result = await GlobalLogoManifestServiceManager.forceSync();
-        console.log("CompanyLogo: Force sync result:", result);
-      },
     },
-    [
-      currentLogo ? renderCustomLogo(currentLogo) : renderDefaultLogo(),
-
-      // Debug overlay showing source
-      React.createElement(
-        "div",
-        {
-          key: "debug-overlay",
-          style: {
-            position: "absolute",
-            bottom: "2px",
-            right: "2px",
-            fontSize: "8px",
-            color: "rgba(255,255,255,0.5)",
-            background: "rgba(0,0,0,0.3)",
-            padding: "1px 3px",
-            borderRadius: "2px",
-            pointerEvents: "none",
-          },
-        },
-        `${useManifestLogos ? "CDN" : "Local"} (${activeLogos.length})`
-      ),
-    ]
+    [currentLogo ? renderCustomLogo(currentLogo) : renderDefaultLogo()]
   );
 }
 

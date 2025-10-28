@@ -2,43 +2,34 @@
   "logoMode": "loop",
   "logoImages": [
     {
-      "name": "2",
-      "path": "downloads\\logos\\2-1761638158646.jpg",
-      "size": 831404,
+      "name": "z7085121749220_c83d918f22452e1f42f4482f2e22fb03",
+      "path": "downloads\\logos\\z7085121749220-c83d918f22452e1f42f4482f2e22fb03-1761645383075.jpg",
+      "size": 380580,
       "type": "image/jpeg",
-      "id": "2-1761638158646",
+      "id": "z7085121749220-c83d918f22452e1f42f4482f2e22fb03-1761645383075",
       "source": "github_cdn",
-      "checksum": "2jpg8314041761638161681"
+      "checksum": "z7085121749220c83d918f22452e1f42f4482f2e22fb03jpg3805801761645386079"
     },
     {
-      "name": "561713702_1389494612602698_416665571935816183_n",
-      "path": "downloads\\logos\\561713702-1389494612602698-416665571935816183-n-1761638439295.jpg",
-      "size": 42851,
+      "name": "z7085121748382_2e70b519ccb0599d9938ad438aea41f7",
+      "path": "downloads\\logos\\z7085121748382-2e70b519ccb0599d9938ad438aea41f7-1761645386087.jpg",
+      "size": 561794,
       "type": "image/jpeg",
-      "id": "561713702-1389494612602698-416665571935816183-n-1761638439295",
+      "id": "z7085121748382-2e70b519ccb0599d9938ad438aea41f7-1761645386087",
       "source": "github_cdn",
-      "checksum": "5617137021389494612602698416665571935816183njpg428511761638441239"
+      "checksum": "z70851217483822e70b519ccb0599d9938ad438aea41f7jpg5617941761645390141"
     },
     {
-      "name": "565640542_1362303825896826_6400460134318525991_n",
-      "path": "downloads\\logos\\565640542-1362303825896826-6400460134318525991-n-1761638931562.jpg",
-      "size": 98085,
+      "name": "z7085121756040_358cffc35564647bef9a6fef40de1c01",
+      "path": "downloads\\logos\\z7085121756040-358cffc35564647bef9a6fef40de1c01-1761645390146.jpg",
+      "size": 430656,
       "type": "image/jpeg",
-      "id": "565640542-1362303825896826-6400460134318525991-n-1761638931562",
+      "id": "z7085121756040-358cffc35564647bef9a6fef40de1c01-1761645390146",
       "source": "github_cdn",
-      "checksum": "56564054213623038258968266400460134318525991njpg980851761638934878"
-    },
-    {
-      "name": "background6",
-      "path": "downloads\\logos\\background6-1761640792545.png",
-      "size": 4092287,
-      "type": "image/png",
-      "id": "background6-1761640792545",
-      "source": "github_cdn",
-      "checksum": "background6png40922871761640796979"
+      "checksum": "z7085121756040358cffc35564647bef9a6fef40de1c01jpg4306561761645392978"
     }
   ],
-  "logoLoopDuration": 10,
+  "logoLoopDuration": 4,
   "layoutPositions": {
     "weather": {
       "x": 0,
@@ -127,6 +118,6 @@
     "retryAttempts": 3,
     "retryDelay": 2000
   },
-  "_manifestVersion": "1.0.1761640797806",
-  "_manifestLastUpdated": "2025-10-28T08:39:57.806Z"
+  "_manifestVersion": "1.0.1761645393396",
+  "_manifestLastUpdated": "2025-10-28T09:56:33.396Z"
 }
