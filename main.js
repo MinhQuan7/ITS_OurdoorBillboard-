@@ -5,6 +5,7 @@ const { app, BrowserWindow, globalShortcut, ipcMain } = require("electron");
 const path = require("path");
 const mqtt = require("mqtt");
 const axios = require("axios");
+const { autoUpdater } = require("electron-updater");
 
 // Global variables
 let mainWindow;
@@ -691,12 +692,16 @@ async function saveConfig(config) {
 }
 
 // MainProcessMqttService class - handles MQTT communication for E-Ra IoT and manifest sync
+// Now uses dual-broker: mqtt1.eoh.io for sensor data, HiveMQ for commands
 class MainProcessMqttService {
   constructor() {
-    this.client = null;
+    this.client = null; // E-Ra IoT broker
+    this.commandClient = null; // Command broker (HiveMQ)
     this.config = null;
     this.isConnected = false;
+    this.isCommandConnected = false;
     this.connectionTimer = null;
+    this.commandConnectionTimer = null;
     this.updateTimer = null;
   }
 
@@ -725,7 +730,9 @@ class MainProcessMqttService {
       gatewayToken.substring(0, 10) + "..."
     );
 
+    // Connect to both brokers
     await this.connectMQTT();
+    await this.connectCommandBroker();
     return true;
   }
 
@@ -821,6 +828,66 @@ class MainProcessMqttService {
     }
   }
 
+  async connectCommandBroker() {
+    if (this.commandClient) {
+      console.warn("MainProcessMqttService: Command broker already connecting");
+      return;
+    }
+
+    try {
+      console.log(
+        "MainProcessMqttService: Connecting to Command Broker (HiveMQ)..."
+      );
+
+      this.commandClient = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
+        clean: true,
+        connectTimeout: 15000,
+        clientId: `billboard_cmd_${Date.now()}`,
+        keepalive: 60,
+      });
+
+      this.commandConnectionTimer = setTimeout(() => {
+        console.log(
+          "MainProcessMqttService: ❌ Command broker connection timeout"
+        );
+        if (this.commandClient) {
+          this.commandClient.end();
+        }
+      }, 20000);
+
+      this.commandClient.on("connect", () => {
+        clearTimeout(this.commandConnectionTimer);
+        console.log(
+          "MainProcessMqttService: ✅ Successfully connected to Command Broker!"
+        );
+        this.isCommandConnected = true;
+        this.subscribeToCommandTopics();
+      });
+
+      this.commandClient.on("message", (topic, message) => {
+        this.handleCommandMessage(message.toString());
+      });
+
+      this.commandClient.on("error", (error) => {
+        clearTimeout(this.commandConnectionTimer);
+        console.log(
+          "MainProcessMqttService: ❌ Command broker error:",
+          error.message
+        );
+      });
+
+      this.commandClient.on("close", () => {
+        console.log("MainProcessMqttService: Command broker connection closed");
+        this.isCommandConnected = false;
+      });
+    } catch (error) {
+      console.error(
+        "MainProcessMqttService: Failed to connect command broker:",
+        error
+      );
+    }
+  }
+
   subscribeToTopics() {
     if (!this.client || !this.client.connected) {
       console.warn(
@@ -845,10 +912,37 @@ class MainProcessMqttService {
         console.log("MainProcessMqttService: Waiting for E-Ra IoT messages...");
       }
     });
+  }
 
-    // Subscribe to manifest refresh signals from admin-web
+  subscribeToCommandTopics() {
+    if (!this.commandClient || !this.commandClient.connected) {
+      console.warn(
+        "MainProcessMqttService: Cannot subscribe to command topics - client not connected"
+      );
+      return;
+    }
+
+    // Subscribe to remote commands from admin-web
+    const commandsTopic = "its/billboard/commands";
+    this.commandClient.subscribe(commandsTopic, { qos: 1 }, (err) => {
+      if (err) {
+        console.log(
+          "MainProcessMqttService: ❌ Failed to subscribe to commands topic:",
+          err.message
+        );
+        // Retry after 5 seconds
+        setTimeout(() => this.subscribeToCommandTopics(), 5000);
+      } else {
+        console.log(
+          "MainProcessMqttService: ✅ Successfully subscribed to commands:",
+          commandsTopic
+        );
+      }
+    });
+
+    // Subscribe to manifest refresh signals
     const manifestTopic = "its/billboard/manifest/refresh";
-    this.client.subscribe(manifestTopic, { qos: 1 }, (err) => {
+    this.commandClient.subscribe(manifestTopic, { qos: 1 }, (err) => {
       if (err) {
         console.log(
           "MainProcessMqttService: ❌ Failed to subscribe to manifest topic:",
@@ -873,6 +967,12 @@ class MainProcessMqttService {
       // Handle manifest refresh messages
       if (topic === "its/billboard/manifest/refresh") {
         this.handleManifestRefreshMessage(messageStr);
+        return;
+      }
+
+      // Handle OTA update commands
+      if (topic === "its/billboard/commands") {
+        this.handleCommandMessage(messageStr);
         return;
       }
 
@@ -1017,64 +1117,270 @@ class MainProcessMqttService {
       this.connectionTimer = null;
     }
 
+    if (this.commandConnectionTimer) {
+      clearTimeout(this.commandConnectionTimer);
+      this.commandConnectionTimer = null;
+    }
+
     if (this.client) {
       this.client.end();
       this.client = null;
     }
 
+    if (this.commandClient) {
+      this.commandClient.end();
+      this.commandClient = null;
+    }
+
     this.isConnected = false;
-    console.log("MainProcessMqttService: Disconnected");
+    this.isCommandConnected = false;
+    console.log("MainProcessMqttService: Disconnected from all brokers");
   }
 
-  async handleManifestRefreshMessage(messageStr) {
+  async handleCommandMessage(messageStr) {
     try {
       console.log(
-        "MainProcessMqttService: Received manifest refresh signal:",
+        "MainProcessMqttService: Received command message:",
         messageStr
       );
 
-      const data = JSON.parse(messageStr);
+      const command = JSON.parse(messageStr);
 
-      if (
-        data.type === "manifest_refresh" &&
-        data.action === "force-refresh-manifest"
-      ) {
+      switch (command.action) {
+        case "check_update":
+          console.log(
+            "MainProcessMqttService: Processing check_update command"
+          );
+          await this.handleCheckUpdateCommand();
+          break;
+        case "force_update":
+          console.log(
+            "MainProcessMqttService: Processing force_update command"
+          );
+          await this.handleForceUpdateCommand();
+          break;
+        case "reset_app":
+          console.log("MainProcessMqttService: Processing reset_app command");
+          await this.handleResetAppCommand(command);
+          break;
+        default:
+          console.warn(
+            "MainProcessMqttService: Unknown command action:",
+            command.action
+          );
+      }
+    } catch (error) {
+      console.error(
+        "MainProcessMqttService: Error handling command message:",
+        error
+      );
+    }
+  }
+
+  async handleCheckUpdateCommand() {
+    try {
+      console.log("MainProcessMqttService: Checking for updates...");
+      const result = await autoUpdater.checkForUpdates();
+
+      if (result && result.updateInfo) {
         console.log(
-          "MainProcessMqttService: Processing manifest force refresh request..."
+          "MainProcessMqttService: Update available:",
+          result.updateInfo.version
+        );
+        // Send status back via MQTT
+        this.sendUpdateStatus({
+          status: "update_available",
+          version: result.updateInfo.version,
+          timestamp: Date.now(),
+        });
+      } else {
+        console.log("MainProcessMqttService: No updates available");
+        this.sendUpdateStatus({
+          status: "no_updates",
+          timestamp: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error(
+        "MainProcessMqttService: Error checking for updates:",
+        error
+      );
+      this.sendUpdateStatus({
+        status: "error",
+        error: error.message,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  async handleForceUpdateCommand() {
+    try {
+      console.log("MainProcessMqttService: Force update initiated...");
+
+      // Send status - update in progress
+      this.sendUpdateStatus({
+        status: "update_in_progress",
+        timestamp: Date.now(),
+      });
+
+      // Check for updates
+      const result = await autoUpdater.checkForUpdates();
+
+      if (result && result.updateInfo) {
+        console.log(
+          "MainProcessMqttService: Update available, downloading:",
+          result.updateInfo.version
         );
 
-        // Trigger logo manifest service force sync
-        if (logoManifestService) {
-          const result = await logoManifestService.forceSync();
-          console.log(
-            "MainProcessMqttService: Manifest force sync result:",
-            result
-          );
+        this.sendUpdateStatus({
+          status: "downloading",
+          version: result.updateInfo.version,
+          timestamp: Date.now(),
+        });
 
-          if (result.success) {
-            console.log(
-              "MainProcessMqttService: ✅ Billboard manifest refreshed successfully via MQTT signal"
-            );
-          } else {
-            console.error(
-              "MainProcessMqttService: ❌ Failed to refresh manifest:",
-              result.error
-            );
-          }
-        } else {
-          console.warn(
-            "MainProcessMqttService: Logo Manifest Service not available"
-          );
-        }
+        // Download update
+        await autoUpdater.downloadUpdate();
       } else {
         console.log(
-          "MainProcessMqttService: Unknown manifest message type:",
-          data.type
+          "MainProcessMqttService: No updates available for force update"
+        );
+        this.sendUpdateStatus({
+          status: "no_updates",
+          timestamp: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error("MainProcessMqttService: Error in force update:", error);
+      this.sendUpdateStatus({
+        status: "error",
+        error: error.message,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  async handleResetAppCommand(command) {
+    try {
+      console.log("MainProcessMqttService: Resetting app...", command);
+
+      // Send acknowledgment back to admin-web
+      this.sendResetStatus({
+        status: "reset_started",
+        timestamp: Date.now(),
+        reason: command.reason || "Manual reset",
+      });
+
+      // Wait a moment for acknowledgment to be sent
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Perform app reset
+      console.log("MainProcessMqttService: Performing app reset...");
+
+      // Disconnect MQTT temporarily
+      if (mqttService) {
+        mqttService.disconnect();
+      }
+
+      // Stop manifest polling
+      if (logoManifestService) {
+        logoManifestService.stopService();
+      }
+
+      // Clear any timers/intervals
+      if (manifestPollTimer) {
+        clearInterval(manifestPollTimer);
+        manifestPollTimer = null;
+      }
+
+      // Send final status before restart
+      this.sendResetStatus({
+        status: "restarting",
+        timestamp: Date.now(),
+      });
+
+      // Wait a bit then restart the app
+      setTimeout(() => {
+        console.log("MainProcessMqttService: Restarting Electron app...");
+        app.relaunch();
+        app.exit(0);
+      }, 1000);
+    } catch (error) {
+      console.error("MainProcessMqttService: Error resetting app:", error);
+      this.sendResetStatus({
+        status: "error",
+        error: error.message,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  sendResetStatus(status) {
+    try {
+      if (this.commandClient && this.commandClient.connected) {
+        this.commandClient.publish(
+          "its/billboard/reset/status",
+          JSON.stringify(status),
+          { qos: 1 }
+        );
+        console.log(
+          "MainProcessMqttService: Sent reset status via command broker:",
+          status
+        );
+      } else if (this.client && this.client.connected) {
+        // Fallback to E-Ra broker if command broker not available
+        this.client.publish(
+          "its/billboard/reset/status",
+          JSON.stringify(status),
+          { qos: 1 }
+        );
+        console.log(
+          "MainProcessMqttService: Sent reset status via E-Ra broker:",
+          status
+        );
+      } else {
+        console.warn(
+          "MainProcessMqttService: Cannot send reset status - no MQTT broker connected"
         );
       }
     } catch (error) {
       console.error(
-        "MainProcessMqttService: Error handling manifest refresh message:",
+        "MainProcessMqttService: Error sending reset status:",
+        error
+      );
+    }
+  }
+
+  sendUpdateStatus(status) {
+    try {
+      if (this.commandClient && this.commandClient.connected) {
+        this.commandClient.publish(
+          "its/billboard/update/status",
+          JSON.stringify(status),
+          { qos: 1 }
+        );
+        console.log(
+          "MainProcessMqttService: Sent update status via command broker:",
+          status
+        );
+      } else if (this.client && this.client.connected) {
+        // Fallback to E-Ra broker if command broker not available
+        this.client.publish(
+          "its/billboard/update/status",
+          JSON.stringify(status),
+          { qos: 1 }
+        );
+        console.log(
+          "MainProcessMqttService: Sent update status via E-Ra broker:",
+          status
+        );
+      } else {
+        console.warn(
+          "MainProcessMqttService: Cannot send update status - no MQTT broker connected"
+        );
+      }
+    } catch (error) {
+      console.error(
+        "MainProcessMqttService: Error sending update status:",
         error
       );
     }
@@ -1093,6 +1399,9 @@ app.whenReady().then(async () => {
   // Initialize Logo Manifest Service
   await initializeLogoManifestService();
 
+  // Initialize Auto-Updater
+  initializeAutoUpdater();
+
   // Register global F1 shortcut for config mode
   globalShortcut.register("F1", () => {
     toggleConfigMode();
@@ -1102,6 +1411,7 @@ app.whenReady().then(async () => {
   console.log("Config hot-reload watcher active");
   console.log("MQTT service initialized");
   console.log("Logo Manifest Service initialized");
+  console.log("Auto-Updater initialized");
 });
 
 // Quit application when all windows are closed (except macOS)
@@ -1463,6 +1773,89 @@ ipcMain.handle("get-gateway-token", async () => {
  * MQTT Service for E-Ra IoT Integration (Main Process)
  * Handles MQTT connection and data processing in Node.js environment
  */
+// Initialize Auto-Updater
+async function initializeAutoUpdater() {
+  try {
+    console.log("AutoUpdater: Initializing OTA updates...");
+
+    // Configure electron-updater for GitHub releases
+    autoUpdater.allowDowngrade = false;
+    autoUpdater.allowPrerelease = false;
+
+    // Configure GitHub as update provider
+    const updateCheckResult = autoUpdater.checkForUpdatesAndNotify();
+
+    // Configure auto-updater with safe logger setup
+    autoUpdater.logger = console;
+    // Safe logger setup - check if transports exists before accessing
+    if (
+      autoUpdater.logger &&
+      autoUpdater.logger.transports &&
+      autoUpdater.logger.transports.file
+    ) {
+      autoUpdater.logger.transports.file.level = "info";
+    }
+
+    // Auto-updater event handlers with fallback safety
+    autoUpdater.on("checking-for-update", () => {
+      console.log("AutoUpdater: Checking for update...");
+    });
+
+    autoUpdater.on("update-available", (info) => {
+      console.log("AutoUpdater: Update available:", info.version);
+      // Send notification to renderer (optional)
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("update-available", info);
+      }
+    });
+
+    autoUpdater.on("update-not-available", (info) => {
+      console.log("AutoUpdater: Update not available");
+    });
+
+    autoUpdater.on("error", (err) => {
+      console.error("AutoUpdater: Error in auto-updater:", err);
+      // Log error but don't crash app
+    });
+
+    autoUpdater.on("download-progress", (progressObj) => {
+      let log_message = "Download speed: " + progressObj.bytesPerSecond;
+      log_message = log_message + " - Downloaded " + progressObj.percent + "%";
+      log_message =
+        log_message +
+        " (" +
+        progressObj.transferred +
+        "/" +
+        progressObj.total +
+        ")";
+      console.log("AutoUpdater: Download progress:", log_message);
+    });
+
+    autoUpdater.on("update-downloaded", (info) => {
+      console.log("AutoUpdater: Update downloaded:", info.version);
+      // Send notification to renderer
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("update-downloaded", info);
+      }
+
+      // Auto-install after 5 seconds (gives time for user notification)
+      setTimeout(() => {
+        console.log("AutoUpdater: Installing update and restarting...");
+        autoUpdater.quitAndInstall(false, true); // isSilent=true, forceRunAfter=true
+      }, 5000);
+    });
+
+    // Check for updates (but don't download automatically)
+    console.log("AutoUpdater: Checking for updates...");
+    await autoUpdater.checkForUpdates();
+
+    console.log("AutoUpdater: Initialized successfully");
+  } catch (error) {
+    console.error("AutoUpdater: Failed to initialize:", error);
+    // Don't crash app if auto-updater fails
+  }
+}
+
 // Initialize MQTT service when config is loaded
 async function initializeMqttService() {
   try {

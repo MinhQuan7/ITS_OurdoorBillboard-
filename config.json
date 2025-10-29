@@ -2,31 +2,13 @@
   "logoMode": "loop",
   "logoImages": [
     {
-      "name": "z7085121749220_c83d918f22452e1f42f4482f2e22fb03",
-      "path": "downloads\\logos\\z7085121749220-c83d918f22452e1f42f4482f2e22fb03-1761645383075.jpg",
-      "size": 380580,
+      "name": "565640542_1362303825896826_6400460134318525991_n",
+      "path": "downloads\\logos\\565640542-1362303825896826-6400460134318525991-n-1761708053310.jpg",
+      "size": 98085,
       "type": "image/jpeg",
-      "id": "z7085121749220-c83d918f22452e1f42f4482f2e22fb03-1761645383075",
+      "id": "565640542-1362303825896826-6400460134318525991-n-1761708053310",
       "source": "github_cdn",
-      "checksum": "z7085121749220c83d918f22452e1f42f4482f2e22fb03jpg3805801761645386079"
-    },
-    {
-      "name": "z7085121748382_2e70b519ccb0599d9938ad438aea41f7",
-      "path": "downloads\\logos\\z7085121748382-2e70b519ccb0599d9938ad438aea41f7-1761645386087.jpg",
-      "size": 561794,
-      "type": "image/jpeg",
-      "id": "z7085121748382-2e70b519ccb0599d9938ad438aea41f7-1761645386087",
-      "source": "github_cdn",
-      "checksum": "z70851217483822e70b519ccb0599d9938ad438aea41f7jpg5617941761645390141"
-    },
-    {
-      "name": "z7085121756040_358cffc35564647bef9a6fef40de1c01",
-      "path": "downloads\\logos\\z7085121756040-358cffc35564647bef9a6fef40de1c01-1761645390146.jpg",
-      "size": 430656,
-      "type": "image/jpeg",
-      "id": "z7085121756040-358cffc35564647bef9a6fef40de1c01-1761645390146",
-      "source": "github_cdn",
-      "checksum": "z7085121756040358cffc35564647bef9a6fef40de1c01jpg4306561761645392978"
+      "checksum": "56564054213623038258968266400460134318525991njpg980851761708055939"
     }
   ],
   "logoLoopDuration": 4,
@@ -118,6 +100,6 @@
     "retryAttempts": 3,
     "retryDelay": 2000
   },
-  "_manifestVersion": "1.0.1761645393396",
-  "_manifestLastUpdated": "2025-10-28T09:56:33.396Z"
+  "_manifestVersion": "1.0.1761708056631",
+  "_manifestLastUpdated": "2025-10-29T03:20:56.631Z"
 }

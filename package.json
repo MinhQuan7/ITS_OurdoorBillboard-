@@ -11,7 +11,6 @@
     "kill": "taskkill /f /im electron.exe 2>nul",
     "clean-start": "taskkill /f /im electron.exe 2>nul & taskkill /f /im node.exe 2>nul & timeout /t 2 & npm run dev",
     "build": "electron-builder",
-    
     "build:win": "electron-builder --win",
     "build:portable": "electron-builder --win portable",
     "pack": "electron-packager . --platform=win32 --arch=x64 --out=dist/ --overwrite",
@@ -29,6 +28,7 @@
   },
   "dependencies": {
     "axios": "^1.0.0",
+    "electron-updater": "^6.0.0",
     "mqtt": "^5.0.0",
     "node-cron": "^3.0.0",
     "react": "^18.0.0",
@@ -43,11 +43,18 @@
     },
     "files": [
       "main.js",
+      "preload.js",
       "renderer/**/*",
       "package.json"
     ],
     "win": {
       "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
         {
           "target": "portable",
           "arch": [
@@ -57,8 +64,20 @@
       ],
       "requestedExecutionLevel": "asInvoker"
     },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ITS Billboard"
+    },
     "portable": {
-      "artifactName": "ITS-Billboard-Portable.exe"
+      "artifactName": "ITS-Billboard-${version}-portable.exe"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "MinhQuan7",
+      "repo": "ITS_OurdoorBillboard-"
     },
     "extraMetadata": {
       "main": "main.js"
